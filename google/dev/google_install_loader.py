@@ -19,9 +19,8 @@ Acts as a "bootloader" for setting up GCE instances from scratch.
 If this is run as a startup script, it will extract files from the
 instance metadata, then run another startup script. This makes it convienent
 to write startup scripts that use existing modules that may span multiple
-files so that setting up a GCE instance (such as an image) can use the
-same basic scripts and procedures as non-GCE instances. This bootloader
-is specific to GCE in that it "bootloads" off GCE metadata. However, once
+files so that setting up a Google Compute Engine instance (such as an image)
+can use the same basic scripts and procedures as non-GCE instances. Thisjbootloader is specific to GCE in that it "bootloads" off GCE metadata. However, once
 it does that (thus preparing the filesystem with the files that are needed
 for the "real" startup script), it forks the specified standard script.
 If additional GCE specific initialization is required, the standard script

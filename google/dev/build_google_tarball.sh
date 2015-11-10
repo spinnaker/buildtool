@@ -14,11 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [[ $# -eq 0 ]]; then
-  args="ALL"
-else
-  args="$@"
-fi
-
-PYTHONPATH=$(dirname $0)/../pylib \
-python $(dirname $0)/../pylib/spinnaker/spinnaker_runner.py STOP $args
+PYTHONPATH=$(dirname $0)/../../pylib \
+python \
+$(dirname $0)/build_google_tarball.py "$@"
