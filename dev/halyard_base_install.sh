@@ -83,7 +83,7 @@ function main() {
   mkdir -p /var/spinnaker/startup/
 
   echo "Installing boot script"
-  wget https://raw.githubusercontent.com/spinnaker/spinnaker/master/install/first_halyard_boot.sh
+  wget https://raw.githubusercontent.com/spinnaker/buildtool/master/install/first_halyard_boot.sh
   chmod +x first_halyard_boot.sh
   mv first_halyard_boot.sh /var/spinnaker/startup/
 }

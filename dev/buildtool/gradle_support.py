@@ -184,7 +184,7 @@ class GradleRunner(object):
         ' Argument is a file path relative to the directory this script is'
         ' executed in.'
         ' The default value assumes we run this script from the parent'
-        ' directory of spinnaker/spinnaker.')
+        ' directory of spinnaker/buildtool.')
 
   @property
   def source_code_manager(self):

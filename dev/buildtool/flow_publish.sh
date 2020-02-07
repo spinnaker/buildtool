@@ -14,8 +14,8 @@
 # limitations under the License.
 
 
-# Usage:  spinnaker/dev/buildtool/flow_release.sh <defaults-file>
-#   e.g.  spinnaker/dev/buildtool/flow_release.sh ga-defaults.yml
+# Usage:  buildtool/dev/buildtool/flow_release.sh <defaults-file>
+#   e.g.  buildtool/dev/buildtool/flow_release.sh ga-defaults.yml
 #
 # Note: This can be run from any directory, however root_dir path
 #       in the <defaults-file> will be relative to the CWD so it

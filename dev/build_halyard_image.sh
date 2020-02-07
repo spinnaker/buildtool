@@ -40,7 +40,7 @@ ADD_MONITORING=true
 UPDATE_OS=true
 
 TIME_DECORATOR=$(date +%Y%m%d%H%M%S)
-INSTALL_SCRIPT=https://raw.githubusercontent.com/spinnaker/spinnaker/master/dev/halyard_base_install.sh
+INSTALL_SCRIPT=https://raw.githubusercontent.com/spinnaker/buildtool/master/dev/halyard_base_install.sh
 
 BASE_IMAGE_OR_FAMILY=ubuntu-1604-lts
 IMAGE_PROJECT=

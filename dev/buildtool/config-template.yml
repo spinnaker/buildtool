@@ -73,7 +73,7 @@
 ################################
 # Git Clone Configuration
 ################################
-# github_owner: 
+# github_owner:
 # github_pull_ssh: false
 # github_push_ssh: true
 # github_disable_upstream_push: false
@@ -114,7 +114,7 @@
 ################################
 # bintray_jar_repository:
 # gradle_cache_path: environ('HOME')/.gradle
-# maven_custom_init_file: spinnaker/dev/maven-init.gradle
+# maven_custom_init_file: buildtool/dev/maven-init.gradle
 # bintray_org:
 # bintray_debian_repository:
 # max_local_builds:
@@ -134,7 +134,7 @@
 ################################
 #### "build" only
 # NOTE: the bom_dependencies_path defaults to
-#       spinnaker/dev/buildtool/bom-dependencies.yml
+#       buildtool/dev/buildtool/bom-dependencies.yml
 #       if no refresh bom is defined, otherwise dependencies come from the
 #       refresh bom unless overriden by an explicit bom_dependencies_path
 #       (to refresh from bom)
@@ -151,7 +151,7 @@
 ################################
 ### "build" only
 # include_changelog_details: false
-# build_changelog_gist_url: 
+# build_changelog_gist_url:
 
 
 ################################
@@ -188,7 +188,7 @@
 # build_gce_service_account:
 # build_gce_project:
 # build_gce_zone: us-central1-f
-# install_image_script: spinnaker/dev/halyard_install_component.sh
+# install_image_script: buildtool/dev/halyard_install_component.sh
 # publish_gce_image_script: spinnaker/google/dev/publish_gce_release.sh
 
 
