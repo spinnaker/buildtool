@@ -68,14 +68,14 @@ Then navigate back to the Spinnaker testing directory and install the
 requirements for the Spinnaker testing library.
 
 ```
-cd <parent directory>/spinnaker/testing/citest
+cd <parent directory>/buildtool/testing/citest
 pip install -r requirements.txt
 ```
 
-When executing tests, the `spinnaker/testing/citest/spinnaker_testing` library
+When executing tests, the `buildtool/testing/citest/spinnaker_testing` library
 needs to be added to your `PYTHONPATH`, e.g.
 
-    cd spinnaker/testing/citest
+    cd buildtool/testing/citest
     PYTHONPATH=.:spinnaker_testing python <test name>.py <args>
 
 ## Install Platform Dependencies
@@ -111,7 +111,7 @@ bake_and_deploy test requires special configuration, which is basically a
 Jenkins job that it can trigger. Even there, the triggering information is
 passed to the test via command-line arguments. Instructions for this can be
 found in the test itself:
-[bake_and_deploy_test.py](https://github.com/spinnaker/spinnaker/blob/master/testing/citest/tests/bake_and_deploy_test.py)
+[bake_and_deploy_test.py](https://github.com/spinnaker/buildtool/blob/master/testing/citest/tests/bake_and_deploy_test.py)
 
 ## Providing access
 
@@ -198,7 +198,7 @@ Flag | Description
 test_stack | The default Spinnaker Stack to specify in test operations. Setting this could be helpful to identify where resources have come from if you have a shared environment where multiple people or accounts can be running tests independently.
 test_app | The Spinnaker application name to use for the test. The tests usually set a default unique name.
 managed_gce_project | The Google Cloud Platform for the project that GCE is
-managing. 
+managing.
 test_gce_zone | The Google Cloud Platform zone you prefer to deploy test
 resources into.
 test_gce_region | The Google Cloud Platform region you prefer to deploy test
@@ -246,7 +246,7 @@ typical invocation has three sets of commandline parameters. One set specifies
 "spinnaker" things, another specifies "managed resource" things, and lastly,
 additional "observer" things.
 
-    # Assuming cwd is spinnaker/testing/citest
+    # Assuming cwd is buildtool/testing/citest
     PYTHONPATH=.:spinnaker_testing \
     python tests/<fixture name>.py \
     <Talking to Spinnaker Parameters> \
@@ -293,7 +293,7 @@ additional "observer" things.
 
 # Usage Examples
 
-Assuming you are in the `spinnaker/testing/citest` directory and testing against
+Assuming you are in the `buildtool/testing/citest` directory and testing against
 GCE where:
 
     PROJECT_ID=ewiseblatt-spinnaker-test

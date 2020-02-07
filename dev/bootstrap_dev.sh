@@ -262,9 +262,9 @@ if [[ "$CONFIRMED_GITHUB_REPOSITORY_OWNER" != "none" ]]; then
   pip install --upgrade pip
 
   # Pull the spinnaker source into a fresh build directory.
-  pip install -r ./spinnaker/dev/requirements.txt
-  pip install -r ./spinnaker/dev/buildtool/requirements.txt
-  ./spinnaker/dev/buildtool.sh --input_dir=tmp.in --output_dir=tmp.out \
+  pip install -r ./buildtool/dev/requirements.txt
+  pip install -r ./buildtool/dev/buildtool/requirements.txt
+  ./buildtool/dev/buildtool.sh --input_dir=tmp.in --output_dir=tmp.out \
       fetch_source \
       --github_disable_upstream_push true \
       --github_owner $CONFIRMED_GITHUB_REPOSITORY_OWNER

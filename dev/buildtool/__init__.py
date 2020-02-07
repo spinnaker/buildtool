@@ -10,7 +10,7 @@ SPINNAKER_RUNNABLE_REPOSITORY_NAMES = [
     'gate', 'igor', 'kayenta', 'orca', 'rosco']
 
 # For building and validating a release
-SPINNAKER_PROCESS_REPOSITORY_NAMES = ['spinnaker']
+SPINNAKER_PROCESS_REPOSITORY_NAMES = ['buildtool']
 
 # Additional tools that accompany a release
 SPIN_REPOSITORY_NAMES = ['spin']

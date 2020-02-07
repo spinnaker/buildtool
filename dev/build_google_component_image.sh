@@ -83,7 +83,7 @@ Usage:  $0 [options]
        The github spinnaker repository owner to get install scripts from
        on the provisioned machines building the image. This is only used
        during the build.
-       
+
    --spinnaker_dev_github_branch
        [$SPINNAKER_DEV_GITHUB_BRANCH]
        The github spinnaker repository branch for SPINNAKER_DEV_GITHUB_OWNER
@@ -205,7 +205,7 @@ function create_component_prototype_disk() {
       --image-project $IMAGE_PROJECT >& /dev/null&)
 
   args="--component $component --version $version"
-  command_path="/spinnaker/dev/$(basename $INSTALL_SCRIPT)"
+  command_path="/buildtool/dev/$(basename $INSTALL_SCRIPT)"
   command="sudo bash $command_path ${args}"
   command="$command ${EXTRA_INSTALL_SCRIPT_ARGS}"
 
@@ -298,7 +298,7 @@ function extract_clean_component_disk() {
       --account $ACCOUNT \
       --zone $ZONE \
       --ssh-key-file $SSH_KEY_FILE \
-      --command="sudo bash /spinnaker/dev/clean_google_image.sh spinnaker"
+      --command="sudo bash /buildtool/dev/clean_google_image.sh spinnaker"
 
   if [[ $output_file != "" ]]; then
     echo "`date`: Extracting disk as tar file '$output_file.'"
@@ -307,7 +307,7 @@ function extract_clean_component_disk() {
         --account $ACCOUNT \
         --zone $ZONE \
         --ssh-key-file $SSH_KEY_FILE \
-        --command="sudo bash /spinnaker/dev/extract_disk_to_gcs.sh spinnaker $output_file"
+        --command="sudo bash /buildtool/dev/extract_disk_to_gcs.sh spinnaker $output_file"
   fi
 
   gcloud compute instances detach-disk ${worker_instance} \

@@ -31,7 +31,7 @@
 # Invoke this test by executing this python command:
 #
 # PYTHONPATH=$CITEST_ROOT \
-# python spinnaker/testing/citest/tests/gcs_pubsub_gae_test.py
+# python buildtool/testing/citest/tests/gcs_pubsub_gae_test.py
 # --native_hostname
 # --native_port
 # --git_repo_url <app to deploy>

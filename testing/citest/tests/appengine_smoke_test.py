@@ -29,14 +29,14 @@ Sample Usage:
     .ssh/compute_google_engine.
 
   PYTHONPATH=$CITEST_ROOT \
-    python spinnaker/testing/citest/tests/appengine_smoke_test.py \
+    python buildtool/testing/citest/tests/appengine_smoke_test.py \
     --gce_ssh_passphrase_file=$PASSPHRASE_FILE \
     --gce_project=$PROJECT \
     --gce_zone=$ZONE \
     --gce_instance=$INSTANCE
 or
   PYTHONPATH=$CITEST_ROOT \
-    python spinnaker/testing/citest/tests/appengine_smoke_test.py \
+    python buildtool/testing/citest/tests/appengine_smoke_test.py \
     --native_hostname=host-running-smoke-test
 """
 
