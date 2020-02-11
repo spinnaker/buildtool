@@ -4,4 +4,5 @@ FROM openjdk:8-jdk
 
 # Docker can only manipulate directories within the root it is invoked in,
 # so the gradle cache needs copied to the CWD before executing the Docker build.
-ADD .gradle /gradle_cache/.gradle
+ADD .gradle/caches /gradle_cache/.gradle/caches
+ADD .gradle/wrapper /gradle_cache/.gradle/wrapper
