@@ -471,7 +471,7 @@ class CollectArtifactVersions(CommandProcessor):
     password = os.environ.get('BINTRAY_KEY')
     if user and password:
       user_password = '{user}:{password}'.format(user=user, password=password)
-      encoded_auth = base64.encodestring(user_password.encode())[:-1] # no eoln
+      encoded_auth = base64.b64encode(user_password)
       self.__basic_auth = 'Basic %s' % encoded_auth.decode()
     else:
       self.__basic_auth = None
@@ -1120,7 +1120,7 @@ class AuditArtifactVersions(CommandProcessor):
             unused_list = unused_map.get('spinnaker-monitoring', [])
             if unused_list:
               name = 'spinnaker-monitoring'
-            
+
         newest_version = self.most_recent_version(name, unused_list)
         candidates = filter_from_candidates(newest_version, unused_list)
 
