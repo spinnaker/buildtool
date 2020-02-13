@@ -102,10 +102,11 @@ class BuildContainerCommand(GradleCommandProcessor):
     # Note this command assumes a cwd of git_dir
     command = ('gcloud builds submit '
                ' --account={account} --project={project}'
-               ' --substitutions=TAG_NAME={tag_name},_IMAGE_NAME={image_name}'
+               ' --substitutions=TAG_NAME={tag_name},_IMAGE_NAME={image_name},_DOCKER_REGISTRY={docker_registry}'
                ' --config={cloudbuild_config} .'
                .format(account=options.gcb_service_account,
                        project=options.gcb_project,
+                       docker_registry=options.docker_registry,
                        tag_name=build_version,
                        image_name=service_name,
                        cloudbuild_config=cloudbuild_config))
@@ -136,7 +137,7 @@ class BuildContainerFactory(GradleCommandFactory):
     self.add_bom_parser_args(parser, defaults)
     self.add_argument(
         parser, 'gcb_project', defaults, None,
-        help='The GCP project ID to publish containers to when'
+        help='The GCP project ID that builds the containers when'
         ' using Google Container Builder.')
     self.add_argument(
         parser, 'gcb_service_account', defaults, None,
