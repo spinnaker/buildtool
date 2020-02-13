@@ -209,8 +209,7 @@ class GradleRunner(object):
     """Adds bintray authentication header to the request."""
     user = os.environ['BINTRAY_USER']
     password = os.environ['BINTRAY_KEY']
-    encoded_auth = base64.encodestring(str.encode('{user}:{password}'.format(
-        user=user, password=password)))[:-1]  # strip eoln
+    encoded_auth = base64.b64encode('{user}:{password}'.format(user=user, password=password))
     request.add_header('Authorization', 'Basic ' + bytes.decode(encoded_auth))
 
   def bintray_repo_has_version(self, repo, package_name, repository,
