@@ -1,0 +1,12 @@
+# This file publishes the images that are used by containers-*.yml. It should be
+# run manually to create these images.
+steps:
+  - id: fetchCachingRepo
+    waitFor: ["-"]
+    name: gcr.io/cloud-builders/git
+    args: ["clone", "https://github.com/GoogleCloudPlatform/cloud-builders-community"]
+  # The caching repo contains its own cloud build file which will publish 'save_cache' and 'restore_cache' images.
+  - id: buildCachingRepo
+    waitFor: ["fetchCachingRepo"]
+    name: gcr.io/cloud-builders/gcloud
+    args: ["builds", "submit", "--config", "cloud-builders-community/cache/cloudbuild.yaml", "cloud-builders-community/cache"]

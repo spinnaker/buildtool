@@ -93,22 +93,25 @@ class BuildContainerCommand(GradleCommandProcessor):
     if os.path.isdir(gradle_cache):
       shutil.rmtree(gradle_cache)
 
-    cloudbuild_file_name = 'cloudbuild-tag-java8.yml'
+    cloudbuild_file_name = 'containers-tag-java8.yml'
     if os.path.exists(os.path.join(git_dir, 'Dockerfile.java8')):
-      cloudbuild_file_name = 'cloudbuild-build-java8.yml'
+      cloudbuild_file_name = 'containers-build-java8.yml'
 
-    cloudbuild_config = os.path.join(os.path.dirname(os.path.abspath(__file__)), cloudbuild_file_name)
+    cloudbuild_config = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                     'cloudbuild',
+                                     cloudbuild_file_name)
     service_name = self.scm.repository_name_to_service_name(repository.name)
     # Note this command assumes a cwd of git_dir
     command = ('gcloud builds submit '
                ' --account={account} --project={project}'
-               ' --substitutions=TAG_NAME={tag_name},_IMAGE_NAME={image_name},_DOCKER_REGISTRY={docker_registry}'
+               ' --substitutions=TAG_NAME={tag_name},_IMAGE_NAME={image_name},_DOCKER_REGISTRY={docker_registry},_BRANCH_NAME={branch_name},'
                ' --config={cloudbuild_config} .'
                .format(account=options.gcb_service_account,
                        project=options.gcb_project,
                        docker_registry=options.docker_registry,
                        tag_name=build_version,
                        image_name=service_name,
+                       branch_name=options.git_branch,
                        cloudbuild_config=cloudbuild_config))
 
     logfile = self.get_logfile_path(name + '-gcb-build')
@@ -135,6 +138,7 @@ class BuildContainerFactory(GradleCommandFactory):
     super(BuildContainerFactory, self).init_argparser(parser, defaults)
 
     self.add_bom_parser_args(parser, defaults)
+    BranchSourceCodeManager.add_parser_args(parser, defaults)
     self.add_argument(
         parser, 'gcb_project', defaults, None,
         help='The GCP project ID that builds the containers when'
