@@ -2,7 +2,7 @@ steps:
   - id: restoreCache
     name: $_DOCKER_REGISTRY/restore_cache:latest
     args:
-      - "--bucket=gs://spinnaker-build-cache"
+      - "--bucket=gs://$_COMPILE_CACHE_BUCKET"
       - "--key=$_IMAGE_NAME-$_BRANCH_NAME"
   - id: buildCompileImage
     waitFor: ["restoreCache"]
@@ -15,7 +15,7 @@ steps:
     waitFor: ["compile"]
     name: $_DOCKER_REGISTRY/save_cache:latest
     args:
-      - "--bucket=gs://spinnaker-build-cache/"
+      - "--bucket=gs://$_COMPILE_CACHE_BUCKET"
       - "--key=$_IMAGE_NAME-$_BRANCH_NAME"
       - "--path=.gradle/caches"
       - "--path=.gradle/wrapper"
@@ -65,3 +65,5 @@ images:
 timeout: 3600s
 options:
   machineType: N1_HIGHCPU_8
+substitutions:
+  _COMPILE_CACHE_BUCKET: spinnaker-build-cache
