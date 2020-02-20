@@ -1,6 +1,6 @@
 steps:
   - id: restoreCache
-    name: $_DOCKER_REGISTRY/restore_cache:latest
+    name: gcr.io/$PROJECT_ID/restore_cache:latest
     args:
       - "--bucket=gs://$_COMPILE_CACHE_BUCKET"
       - "--key=$_IMAGE_NAME-$_BRANCH_NAME"
@@ -13,7 +13,7 @@ steps:
     name: compile
   - id: saveCache
     waitFor: ["compile"]
-    name: $_DOCKER_REGISTRY/save_cache:latest
+    name: gcr.io/$PROJECT_ID/save_cache:latest
     args:
       - "--bucket=gs://$_COMPILE_CACHE_BUCKET"
       - "--key=$_IMAGE_NAME-$_BRANCH_NAME"
