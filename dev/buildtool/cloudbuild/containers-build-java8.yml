@@ -1,15 +1,26 @@
 steps:
+  - id: restoreCache
+    name: gcr.io/$PROJECT_ID/restore_cache:latest
+    args:
+      - "--bucket=gs://$_COMPILE_CACHE_BUCKET"
+      - "--key=$_IMAGE_NAME-$_BRANCH_NAME"
   - id: buildCompileImage
-    waitFor: ["-"]
+    waitFor: ["restoreCache"]
     name: gcr.io/cloud-builders/docker
-    args: [
-            "build",
-            "-t", "compile",
-            "-f", "Dockerfile.compile",
-            ".",
-          ]
-  - id: buildSlimImage
+    args: ["build", "-t", "compile", "-f", "Dockerfile.compile", "."]
+  - id: compile
     waitFor: ["buildCompileImage"]
+    name: compile
+  - id: saveCache
+    waitFor: ["compile"]
+    name: gcr.io/$PROJECT_ID/save_cache:latest
+    args:
+      - "--bucket=gs://$_COMPILE_CACHE_BUCKET"
+      - "--key=$_IMAGE_NAME-$_BRANCH_NAME"
+      - "--path=.gradle/caches"
+      - "--path=.gradle/wrapper"
+  - id: buildSlimImage
+    waitFor: ["compile"]
     name: gcr.io/cloud-builders/docker
     args: [
             "build",
@@ -19,7 +30,7 @@ steps:
             ".",
           ]
   - id: buildUbuntuImage
-    waitFor: ["buildCompileImage"]
+    waitFor: ["compile"]
     name: gcr.io/cloud-builders/docker
     args: [
             "build",
@@ -28,7 +39,7 @@ steps:
             ".",
           ]
   - id: buildJava8Image
-    waitFor: ["buildCompileImage"]
+    waitFor: ["compile"]
     name: gcr.io/cloud-builders/docker
     args: [
             "build",
@@ -37,7 +48,7 @@ steps:
             ".",
           ]
   - id: buildUbuntuJava8Image
-    waitFor: ["buildCompileImage"]
+    waitFor: ["compile"]
     name: gcr.io/cloud-builders/docker
     args: [
             "build",
@@ -54,3 +65,5 @@ images:
 timeout: 3600s
 options:
   machineType: N1_HIGHCPU_8
+substitutions:
+  _COMPILE_CACHE_BUCKET: spinnaker-build-cache
