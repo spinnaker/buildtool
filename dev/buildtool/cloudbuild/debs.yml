@@ -1,0 +1,61 @@
+steps:
+- id: restoreCache
+  name: gcr.io/$PROJECT_ID/restore_cache:latest
+  args:
+  - "--bucket=gs://$_COMPILE_CACHE_BUCKET"
+  - "--key=$_IMAGE_NAME-$_BRANCH_NAME"
+- id: buildCompileImage
+  waitFor: ["restoreCache"]
+  name: gcr.io/cloud-builders/docker
+  args: ["build", "-t", "compile", "-f", "Dockerfile.compile", "."]
+- id: publishDeb
+  waitFor: ["buildCompileImage"]
+  name: compile
+  args:
+  - "./gradlew"
+  - "--stacktrace"
+  - "--info"
+  - "--gradle-user-home=/workspace/.gradle"
+  - "-PbintrayOrg=spinnaker-releases"
+  - "-PbintrayPackageRepo=$_BINTRAY_PACKAGE_REPO"
+  - "-PbintrayJarRepo=$_BINTRAY_JAR_REPO"
+  - "-PbintrayUser=cloud-build@spinnaker-releases"
+  - "-PbintrayPackageDebDistribution=trusty,xenial,bionic"
+  - "-PbintrayPublishWaitForSecs=-1"
+  - "-PenablePublishing=true"
+  - "-Prelease.disableGitChecks=true"
+  - "-Prelease.version=$_VERSION-$_BUILD_NUMBER"
+  - "-PbintrayPackageBuildNumber=$_BUILD_NUMBER"
+  - "-Dorg.gradle.internal.http.socketTimeout=120000"
+  - "-Dorg.gradle.internal.http.connectionTimeout=120000"
+  - "-Dorg.gradle.jvmargs=-Xmx4g"
+  - "-x"
+  - "test"
+  - "-x"
+  - "javadoc"
+  - "candidate"
+  env:
+  - 'ORG_GRADLE_PROJECT_org.gradle.jvmargs=-Xmx4g'
+  secretEnv: ['ORG_GRADLE_PROJECT_bintrayKey']
+- id: saveCache
+  waitFor: ["publishDeb"]
+  name: gcr.io/$PROJECT_ID/save_cache:latest
+  args:
+  - "--bucket=gs://$_COMPILE_CACHE_BUCKET"
+  - "--key=$_IMAGE_NAME-$_BRANCH_NAME"
+  - "--path=.gradle/caches"
+  - "--path=.gradle/wrapper"
+secrets:
+- kmsKeyName: projects/spinnaker-community/locations/global/keyRings/build-secrets/cryptoKeys/build-secrets
+  secretEnv:
+    ORG_GRADLE_PROJECT_bintrayKey:
+      CiQAyyijOXkj3ydSGmPDpXMNOdA4XF9fWVP6yDmyVKB0E9XPGcESUQAZ27TDp+VMDm/CvmTNu55W
+      ffjjgHSh9T3eqPQ9RmnQDOpuUtOxjnpc0RSXxqfvuaqeG7F6fmrX5oLxXIyichHuKyhEE3RMsuxY
+      1kwEo+HO6A==
+timeout: 3600s
+options:
+  machineType: N1_HIGHCPU_8
+substitutions:
+  _COMPILE_CACHE_BUCKET: spinnaker-build-cache
+  _BINTRAY_PACKAGE_REPO: debians
+  _BINTRAY_JAR_REPO: jars
