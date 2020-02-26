@@ -961,7 +961,8 @@ class KubernetesConfigurator(Configurator):
     account_params = [options.k8s_account_name]
     account_params.extend([
         '--docker-registries', options.k8s_account_docker_account,
-        '--kubeconfig-file', os.path.basename(options.k8s_account_credentials)
+        '--kubeconfig-file', os.path.basename(options.k8s_account_credentials),
+        '--provider-version', 'v1'
     ])
     if options.k8s_account_context:
       account_params.extend(['--context', options.k8s_account_context])
