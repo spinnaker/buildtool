@@ -70,6 +70,7 @@ class BuildContainerCommand(GradleCommandProcessor):
                '--filter="%s"' % version,
                '--format=json']
     got = check_subprocess(' '.join(command))
+    logging.info("list-tags returned: %s", got)
     if got.strip() != '[]':
       return True
     return False
