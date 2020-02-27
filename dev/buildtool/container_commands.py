@@ -79,21 +79,6 @@ class BuildContainerCommand(GradleCommandProcessor):
     name = repository.name
     options = self.options
 
-    # Local .gradle dir stomps on GCB's .gradle directory when the gradle
-    # wrapper is installed, so we need to delete the local one.
-    # The .gradle dir is transient and will be recreated on the next gradle
-    # build, so this is OK.
-    #
-    # This can still be shared among components as long as the
-    # output directory remains around.
-    git_dir = repository.git_dir
-    # If we're going to delete existing ones, then keep each component
-    # separate so they dont stomp on one another
-    gradle_cache = os.path.abspath(os.path.join(git_dir, '.gradle'))
-
-    if os.path.isdir(gradle_cache):
-      shutil.rmtree(gradle_cache)
-
     cloudbuild_file_name = 'containers-tag-java8.yml'
     if os.path.exists(os.path.join(git_dir, 'Dockerfile.java8')):
       cloudbuild_file_name = 'containers-build-java8.yml'
