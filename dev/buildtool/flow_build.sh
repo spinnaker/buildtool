@@ -45,8 +45,7 @@ function run_build_flow() {
   start_command_unless NO_CONTAINERS "build_bom_containers" \
       $EXTRA_BOM_COMMAND_ARGS --git_branch $BOM_BRANCH
   start_command_unless NO_DEBIANS "build_debians" \
-      $EXTRA_BOM_COMMAND_ARGS \
-      "--max_local_builds=6"
+      $EXTRA_BOM_COMMAND_ARGS --git_branch $BOM_BRANCH
 
   start_command_unless NO_HALYARD "build_halyard" \
       $EXTRA_BUILD_HALYARD_ARGS --git_branch $HAL_BRANCH
