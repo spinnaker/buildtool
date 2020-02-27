@@ -18,6 +18,7 @@ import copy
 import logging
 import os
 import shutil
+import subprocess
 
 from buildtool import (
   SPINNAKER_HALYARD_REPOSITORY_NAME,
@@ -69,7 +70,7 @@ class BuildContainerCommand(GradleCommandProcessor):
                options.docker_registry + '/' + image_name,
                '--filter="%s"' % version,
                '--format=json']
-    got = check_subprocess(' '.join(command))
+    got = check_subprocess(' '.join(command), stderr=subprocess.PIPE)
     if got.strip() != '[]':
       return True
     return False
