@@ -80,7 +80,7 @@ class BuildContainerCommand(GradleCommandProcessor):
     options = self.options
 
     cloudbuild_file_name = 'containers-tag-java8.yml'
-    if os.path.exists(os.path.join(git_dir, 'Dockerfile.java8')):
+    if os.path.exists(os.path.join(repository.git_dir, 'Dockerfile.java8')):
       cloudbuild_file_name = 'containers-build-java8.yml'
 
     cloudbuild_config = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -105,7 +105,7 @@ class BuildContainerCommand(GradleCommandProcessor):
     self.metrics.time_call(
         'GcrBuild', labels, self.metrics.default_determine_outcome_labels,
         check_subprocesses_to_logfile,
-        name + ' container build', logfile, [command], cwd=git_dir)
+        name + ' container build', logfile, [command], cwd=repository.git_dir)
 
 class BuildContainerFactory(GradleCommandFactory):
   @staticmethod
