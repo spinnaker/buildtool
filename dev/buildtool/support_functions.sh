@@ -133,6 +133,52 @@ function start_command() {
   echo "$(timestamp): Started $command as pid=${COMMAND_TO_PID[$command]} to $logfile"
 }
 
+########################################################
+# Build the spinrel `jenkins-cli` tool
+########################################################
+function build_spinrel() {
+  rm -rf spinrel
+  source_owner=${GITHUB_REPO_OWNER:-default}
+  process_owner=${OVERRIDE_PROCESS_GITHUB_REPO_OWNER:-${source_owner}}
+  process_branch=${OVERRIDE_PROCESS_GITHUB_REPO_BRANCH:-$GITHUB_REPO_BRANCH}
+  if [[ "$process_owner" == "default" ]]; then
+    process_owner=spinnaker
+  fi
+  git clone https://github.com/$process_owner/spinrel.git -b $process_branch
+  ./spinrel/gradlew -p spinrel :jenkins-cli:installDist
+  export SPINREL=spinrel/jenkins-cli/build/install/jenkins-cli/bin/jenkins-cli
+}
+
+########################################################
+# Start a command in an asynchronous subshell.
+#   Args:
+#       command: The buildtool command name to run.
+#       extra_args: Additional command arguments.
+#
+#   Globals:
+#       This adds the command and pid into COMMAND_TO_PID
+########################################################
+function start_spinrel() {
+  local command=$1
+  shift
+  local extra_args=
+
+  if [[ $# -gt 0 ]]; then
+    extra_args="$@"
+  fi
+
+  local logfile=$(command_log_path $command)
+  mkdir -p $(dirname logfile)
+  echo "$(timestamp): Start $command"
+
+  echo "$(timestamp): $SPINREL $command ${extra_args[@]}" \
+      &> $logfile
+  $SPINREL $command ${extra_args[@]} \
+      &>> $logfile &
+  COMMAND_TO_PID[$command]=$!
+  echo "$(timestamp): Started $command as pid=${COMMAND_TO_PID[$command]} to $logfile"
+}
+
 
 ##############################################################
 # Figure out how long the longest outstanding command name is

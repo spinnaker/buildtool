@@ -59,22 +59,16 @@ function run_build_flow() {
   # Synchronize here so we have all the artifacts build before we continue.
   wait_for_commands_or_die "Build"
 
-  # Only publish the bom for this build if the build succeeded.
-  #
-  # NOTE(ewiseblatt): 20171220
-  # We probably want to publish if at least one implementation succeeded
-  # (e.g. if we have VMs but not containers or vice-versa)
-  # However for the time being, this is all or none. We dont want to publish
-  # if nothing succeeded.
-  start_command_unless NO_BOM_PUBLISH "publish_bom" \
-      $EXTRA_PUBLISH_BOM_ARGS \
-      $EXTRA_BOM_COMMAND_ARGS
-  wait_for_commands_or_die "PublishBom"
+  # Every buildtool command re-clones all the git repositories it needs. We'll
+  # just reuse the ones that build_changelog already checked out...
+  start_spinrel finish_flow_build \
+      --source-root ./build_input/build_changelog \
+      --bom "$UNBUILT_BOM_PATH" \
+      --additional-version "$UNVALIDATED_BOM_VERSION"
+  wait_for_commands_or_die "PublishVersion"
 
-  if [[ $NO_BOM_PUBLISH != "true" ]]; then
-    # Remove the unbuilt cache, but leave it behind as what we just built.
-    mv $UNBUILT_BOM_PATH ${UNVALIDATED_BOM_VERSION}.yml
-  fi
+  # Remove the unbuilt cache, but leave it behind as what we just built.
+  mv $UNBUILT_BOM_PATH ${UNVALIDATED_BOM_VERSION}.yml
 }
 
 
@@ -123,9 +117,6 @@ function process_args() {
           ;;
         --no_changelog)
           NO_CHANGELOG=true
-          ;;
-        --no_bom_publish)
-          NO_BOM_PUBLISH=true
           ;;
         --output|--output_dir)
           OUTPUT_DIR=$1
@@ -198,6 +189,7 @@ function process_args() {
 
 
 process_args "$@"
+build_spinrel
 run_build_flow
 
 echo "$(timestamp): FINISHED"
