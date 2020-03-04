@@ -108,7 +108,7 @@ class GoogleScenarioSupport(BaseScenarioPlatformSupport):
     builder.add_argument(
         '--test_gce_image_name',
         default=defaults.get('TEST_GCE_IMAGE_NAME',
-                             'citest-boot-image'),
+                             'apache-base-image'),
         help='Default Google Compute Engine image name to use when'
              ' creating test instances.')
 

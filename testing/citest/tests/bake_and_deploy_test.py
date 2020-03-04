@@ -371,8 +371,6 @@ class BakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         'zone': self.bindings['TEST_GCE_ZONE'],
         'network': 'default',
         'instanceMetadata': {
-          'startup-script':
-            'sudo apt-get update && sudo apt-get install apache2 -y',
           'load-balancer-names': self.__full_lb_name
         },
         'tags': [],
