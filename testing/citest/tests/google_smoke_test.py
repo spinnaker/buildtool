@@ -283,8 +283,6 @@ class GoogleSmokeTestScenario(sk.SpinnakerTestScenario):
                 bindings['TEST_GCE_REGION']: [bindings['TEST_GCE_ZONE']]
             },
             'instanceMetadata': {
-                'startup-script': ('sudo apt-get update'
-                                   ' && sudo apt-get install apache2 -y'),
                 'load-balancer-names': self.__lb_name
             },
             'account': bindings['SPINNAKER_GOOGLE_ACCOUNT'],
