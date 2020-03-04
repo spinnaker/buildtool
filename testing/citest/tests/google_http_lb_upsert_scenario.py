@@ -634,8 +634,6 @@ class GoogleHttpLoadBalancerTestScenario(sk.SpinnakerTestScenario):
           bindings['TEST_GCE_REGION']: [bindings['TEST_GCE_ZONE']]
         },
         'instanceMetadata': {
-          'startup-script': ('sudo apt-get update'
-                             ' && sudo apt-get install apache2 -y'),
           'global-load-balancer-names': self.__lb_name,
           'backend-service-names': 'bs-' + self.TEST_APP,
           'load-balancing-policy': json.dumps(policy)
