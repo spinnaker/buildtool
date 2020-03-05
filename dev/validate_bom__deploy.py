@@ -47,6 +47,7 @@ from buildtool import (
 
 
 SUPPORTED_DEPLOYMENT_TYPES = ['localdebian', 'distributed']
+# TODO(mneterval): remove 'kubernetes' (V1) support after Spinnaker release 1.21
 SUPPORTED_DISTRIBUTED_PLATFORMS = ['kubernetes', 'kubernetes_v2']
 HALYARD_SERVICES = ['halyard']
 SPINNAKER_SERVICES = [
@@ -449,17 +450,20 @@ class KubernetesValidateBomDeployer(BaseValidateBomDeployer):
     options = self.options
     flags = ' --namespace {namespace} --logtostderr=false'.format(
         namespace=k8s_namespace)
-    kubectl_command = 'kubectl {context} get pods {flags}'.format(
+    label_selector = '-l app.kubernetes.io/name={service}'.format(
+        service=service
+    )
+    kubectl_command = 'kubectl {context} get pods {flags} {label_selector}'.format(
         context=('--context {0}'.format(options.k8s_account_context)
                  if options.k8s_account_context
                  else ''),
-        flags=flags)
-
+        flags=flags,
+        label_selector=label_selector)
+    pod_name_parser = '-o jsonpath="{.items[0].metadata.name}"'
     retcode, stdout = run_subprocess(
-        '{command}'
-        ' | gawk -F "[[:space:]]+" "/{service}-v/ {{print \\$1}}"'
-        ' | tail -1'.format(
-            command=kubectl_command, service=service),
+        '{command} {pod_name_parser}'
+        .format(
+            command=kubectl_command, pod_name_parser=pod_name_parser),
         shell=True)
     pod = stdout.strip()
     if not pod:
@@ -1586,7 +1590,7 @@ def init_argument_parser(parser, defaults):
            ' This is used to scp and ssh from this machine.')
 
   add_parser_argument(
-      parser, 'deploy_distributed_platform', defaults, 'kubernetes',
+      parser, 'deploy_distributed_platform', defaults, 'kubernetes_v2',
       choices=SUPPORTED_DISTRIBUTED_PLATFORMS,
       help='The platform to deploy spinnaker to when'
            ' --deploy_spinnaker_type=distributed')
