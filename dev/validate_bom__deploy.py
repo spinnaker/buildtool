@@ -450,17 +450,20 @@ class KubernetesValidateBomDeployer(BaseValidateBomDeployer):
     options = self.options
     flags = ' --namespace {namespace} --logtostderr=false'.format(
         namespace=k8s_namespace)
-    kubectl_command = 'kubectl {context} get pods {flags}'.format(
+    label_selector = '-l app.kubernetes.io/name={service}'.format(
+        service=service
+    )
+    kubectl_command = 'kubectl {context} get pods {flags} {label_selector}'.format(
         context=('--context {0}'.format(options.k8s_account_context)
                  if options.k8s_account_context
                  else ''),
-        flags=flags)
-
+        flags=flags,
+        label_selector=label_selector)
+    pod_name_parser = '-o jsonpath="{.items[0].metadata.name}"'
     retcode, stdout = run_subprocess(
-        '{command}'
-        ' | gawk -F "[[:space:]]+" "/{service}-v/ {{print \\$1}}"'
-        ' | tail -1'.format(
-            command=kubectl_command, service=service),
+        '{command} {pod_name_parser}'
+        .format(
+            command=kubectl_command, pod_name_parser=pod_name_parser),
         shell=True)
     pod = stdout.strip()
     if not pod:
