@@ -445,25 +445,9 @@ class KubernetesValidateBomDeployer(BaseValidateBomDeployer):
                           .format(options.injected_deploy_spinnaker_account)))
     options.injected_deploy_spinnaker_account = options.k8s_account_name
 
-  def __wait_for_deployment(self, k8s_namespace, service):
-    options = self.options
-    kubectl_command = 'kubectl {context} wait deployment/spin-{service} --timeout=300s --for=condition=available  --namespace {namespace}'.format(
-        context=('--context {0}'.format(options.k8s_account_context)
-                 if options.k8s_account_context
-                 else ''),
-        service=service,
-        namespace=k8s_namespace)
-    retcode, stdout = run_subprocess(kubectl_command)
-    if retcode != 0:
-      message = 'Timed out waiting for deployment to be available for service "{service}".: {error}'.format(
-        service=service,
-        error=stdout.strip())
-      raise_and_log_error(ExecutionError(message, program='kubectl'))
-
   def __get_pod_name(self, k8s_namespace, service):
     """Determine the pod name for the deployed service."""
     options = self.options
-    self.__wait_for_deployment(k8s_namespace, service)
     flags = ' --namespace {namespace} --logtostderr=false'.format(
         namespace=k8s_namespace)
     label_selector = '-l app.kubernetes.io/name={service}'.format(
@@ -599,9 +583,27 @@ class KubernetesV2ValidateBomDeployer(BaseValidateBomDeployer):
                           .format(options.injected_deploy_spinnaker_account)))
     options.injected_deploy_spinnaker_account = options.k8s_v2_account_name
 
+  def __wait_for_deployment(self, k8s_namespace, service):
+    options = self.options
+    kubectl_command = 'kubectl {context} wait deployment/spin-{service} --timeout=300s --for=condition=available  --namespace {namespace}'.format(
+        context=('--context {0}'.format(options.k8s_account_context)
+                 if options.k8s_account_context
+                 else ''),
+        service=service,
+        namespace=k8s_namespace)
+    logging.info('Waiting for service %s to be up', service)
+    retcode, stdout = run_subprocess(kubectl_command)
+    if retcode != 0:
+      message = 'Timed out waiting for deployment to be available for service "{service}".: {error}'.format(
+          service=service,
+          error=stdout.strip())
+      raise_and_log_error(ExecutionError(message, program='kubectl'))
+    logging.info('Service %s is up', service)
+
   def __get_pod_name(self, k8s_v2_namespace, service):
     """Determine the pod name for the deployed service."""
     options = self.options
+    self.__wait_for_deployment(k8s_v2_namespace, service)
     flags = ' --namespace {namespace} --logtostderr=false'.format(
         namespace=k8s_v2_namespace)
     kubectl_command = 'kubectl {context} get pods {flags}'.format(
