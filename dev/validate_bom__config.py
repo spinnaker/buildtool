@@ -921,7 +921,7 @@ class KubernetesV2Configurator(Configurator):
     if options.k8s_v2_account_credentials:
       file_set.add(options.k8s_v2_account_credentials)
 
-
+# TODO(mneterval): remove after 1.20 release branches are cut
 class KubernetesConfigurator(Configurator):
   """Controls hal config provider kubernetes."""
 

@@ -195,6 +195,7 @@ tests:
     args:
       alias: [standard_google_provider_params]
 
+  # TODO(mneterval): remove after 1.20 release branches are cut
   kube_smoke_test:
     requires:
       configuration:

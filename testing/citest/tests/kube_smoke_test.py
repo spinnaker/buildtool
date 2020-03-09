@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# TODO(mneterval): remove after 1.20 release branches are cut
 """
 Integration test to see if the image promotion process is working for the
 Spinnaker Kubernetes integration.
