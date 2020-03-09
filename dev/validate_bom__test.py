@@ -332,11 +332,16 @@ class ValidateBomTestController(object):
       except Exception as ex:
         logging.error('Error terminating child: %s', ex)
 
-  def __collect_gce_quota(self, project, region,
+  def __collect_gce_quota(self, gcloud_account, project, region,
                           project_percent=100.0, region_percent=100.0):
-    project_info_json = check_subprocess('gcloud compute project-info describe'
-                                         ' --format yaml'
-                                         ' --project %s' % project)
+    project_info_json = check_subprocess(
+        'gcloud compute project-info describe'
+        ' --account {gcloud_account}'
+        ' --format yaml'
+        ' --project {project}'
+        .format(
+          project=project,
+          gcloud_account=gcloud_account))
     project_info = yaml.safe_load(project_info_json)
     # Sometimes gce returns entries and leaves out the a "metric" it was for.
     # We'll ignore those and stick them in 'UNKNOWN' for simplicity.
@@ -345,10 +350,16 @@ class ValidateBomTestController(object):
                               project_percent * (info['limit'] - info['usage']))))
                      for info in project_info['quotas']}
 
-    region_info_json = check_subprocess('gcloud compute regions describe'
-                                        ' --format yaml'
-                                        ' --project %s'
-                                        ' %s' % (project, region))
+    region_info_json = check_subprocess(
+        'gcloud compute regions describe'
+        ' --account {gcloud_account}'
+        ' --format yaml'
+        ' --project {project}'
+        ' {region}'
+        .format(
+            gcloud_account=gcloud_account,
+            project=project,
+            region=region))
     region_info = yaml.safe_load(region_info_json)
     region_quota = {
         'gce_region_%s' % info.get('metric', 'UNKNOWN'): int(max(
@@ -363,6 +374,7 @@ class ValidateBomTestController(object):
 
     if options.google_account_project:
       project_quota, region_quota = self.__collect_gce_quota(
+          options.deploy_hal_google_service_account,
           options.google_account_project, options.test_gce_quota_region,
           project_percent=options.test_gce_project_quota_factor,
           region_percent=options.test_gce_region_quota_factor)
