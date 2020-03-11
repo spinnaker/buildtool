@@ -1561,7 +1561,7 @@ hystrix:
     fake_ulid = ''.join(random.choice(string.ascii_uppercase + string.digits)
                         for _ in range(26))
     telemetry_config = '''\
-telemetry:
+stats:
   enabled: true
   endpoint: https://stats-staging.spinnaker.io
   instanceId: {}
