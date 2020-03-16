@@ -17,6 +17,7 @@
 import collections
 import copy
 import datetime
+import fileinput
 import logging
 import os
 import re
@@ -454,6 +455,17 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
     if repository.name != SPINNAKER_GITHUB_IO_REPOSITORY_NAME:
       raise_and_log_error(UnexpectedError('Got "%s"' % repository.name))
 
+    updated_files = []
+    new_version = self.write_new_version(repository)
+    updated_files.append(new_version)
+
+    old_version = self.deprecate_prior_version(repository)
+    if old_version is not None:
+      updated_files.append(old_version)
+
+    return updated_files
+
+  def write_new_version(self, repository):
     timestamp = '{:%Y-%m-%d %H:%M:%S +0000}'.format(datetime.datetime.utcnow())
     version = self.options.spinnaker_version
     changelog_filename = '{version}-changelog.md'.format(version=version)
@@ -478,9 +490,33 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
               major=major, minor=minor))
       f.write(header)
       f.write('<script src="%s.js"/>' % self.options.changelog_gist_url)
+      f.write('\n')
 
-    return [target_path]
+    return target_path
 
+  def get_prior_version(self, version):
+    major, minor, patch = version.split('.')
+    patch = int(patch)
+    if patch == 0:
+      return None
+    return '.'.join([major, minor, str(patch - 1)])
+
+  def deprecate_prior_version(self, repository):
+    priorVersion = self.get_prior_version(self.options.spinnaker_version)
+    if priorVersion is None:
+      return None
+
+    changelog_filename = '{version}-changelog.md'.format(version=priorVersion)
+    target_path = os.path.join(repository.git_dir,
+                               '_changelogs', changelog_filename)
+
+    logging.debug('Deprecating prior version %s', target_path)
+    for line in fileinput.input(target_path, inplace=True):
+      line = line.rstrip()
+      if line.startswith('tags: '):
+        line = line + ' deprecated'
+      print(line)
+    return target_path
 
 class PushChangelogFactory(CommandFactory):
   def __init__(self, **kwargs):
