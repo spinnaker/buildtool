@@ -196,29 +196,24 @@ class ChangelogBuilder(object):
     """Construct changelog."""
     report = []
 
-    sep = ''
     for entry in sorted(self.__entries):
       summary = entry.summary
       repository = entry.repository
       commit_messages = entry.normalized_messages
       name = repository.name
 
-      report.append('{sep}## [{title}](#{name}) {version}'.format(
-          sep=sep, title=name.capitalize(), name=name,
-          version=summary.version))
-
       if not commit_messages:
-        report.append('  No Changes')
-        report.append('\n\n')
         continue
+
+      report.append('## [{title}](#{name}) {version}'.format(
+          title=name.capitalize(), name=name,
+          version=summary.version))
+      report.append('')
 
       if self.__with_partition:
         report.extend(self.build_commits_by_type(entry))
-        report.append('\n')
       if self.__with_detail:
         report.extend(self.build_commits_by_sequence(entry))
-        report.append('\n')
-      sep = '\n\n'
 
     return '\n'.join(report)
 
@@ -245,6 +240,7 @@ class ChangelogBuilder(object):
     level_marker = '#' * 4
     for title, commit_messages in partitioned_commits.items():
       report.append('{level} {title}'.format(level=level_marker, title=title))
+      report.append('')
       for msg in commit_messages:
         first_line = msg.message.split('\n', 1)[0].strip()
         clean_text = self.clean_message(first_line)
