@@ -467,7 +467,8 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
     changelog_filename = '{version}-changelog.md'.format(version=version)
     target_path = os.path.join(repository.git_dir,
                                '_changelogs', changelog_filename)
-    major, minor, _ = version.split('.')
+    major, minor, patch = version.split('.')
+    patch = int(patch)
     logging.debug('Adding changelog file %s', target_path)
     with open(target_path, 'w') as f:
       # pylint: disable=trailing-whitespace
@@ -485,8 +486,12 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
               timestamp=timestamp,
               major=major, minor=minor))
       f.write(header)
-      f.write('<script src="%s.js"/>' % self.options.changelog_gist_url)
-      f.write('\n')
+      for i in reversed(range(patch + 1)):
+        patchVersion = '.'.join([major, minor, str(i)])
+        f.write('<script src="{gist_url}.js?file={version}.md"></script>'.format(
+            gist_url=self.options.changelog_gist_url,
+            version=patchVersion))
+        f.write('\n')
 
     return target_path
 
