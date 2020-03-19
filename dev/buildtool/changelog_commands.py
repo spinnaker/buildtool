@@ -547,6 +547,66 @@ class PushChangelogFactory(CommandFactory):
         parser, 'build_changelog_gist_url', defaults, None,
         help='The gist to push the changelog into.')
 
+class CreateReleaseChangelogFactory(CommandFactory):
+  def __init__(self, **kwargs):
+    super(CreateReleaseChangelogFactory, self).__init__(
+        'create_release_changelog', CreateReleaseChangelogCommand,
+        'Push a patch release changelog to the gist holding the changelogs for'
+        ' that minor version.\nThis will add (or overwrite) the changelog with'
+        ' the name 1.x.y.md in the supplied release changelog gist.', **kwargs)
+
+  def init_argparser(self, parser, defaults):
+    super(CreateReleaseChangelogFactory, self).init_argparser(
+        parser, defaults)
+    GitRunner.add_parser_args(parser, defaults)
+
+    self.add_argument(
+        parser, 'spinnaker_version', defaults, None,
+        help='The Spinnaker version for which we are creating a changelog.')
+    self.add_argument(
+        parser, 'build_changelog_gist_url', defaults, None,
+        help='The gist containing raw the raw changelog.')
+    self.add_argument(
+        parser, 'changelog_gist_url', defaults, None,
+        help='The gist to which to push the release changelog.')
+
+class CreateReleaseChangelogCommand(CommandProcessor):
+  def __init__(self, factory, options, **kwargs):
+    super(CreateReleaseChangelogCommand, self).__init__(factory, options, **kwargs)
+    check_options_set(
+        options, ['build_changelog_gist_url', 'changelog_gist_url', 'spinnaker_version'])
+    self.__git = GitRunner(options)
+
+  def _do_command(self):
+    options = self.options
+    version = options.spinnaker_version
+    raw_gist_path = ensure_gist_repo(self.__git, self.get_input_dir(), options.build_changelog_gist_url)
+    release_gist_path = ensure_gist_repo(self.__git, self.get_input_dir(), options.changelog_gist_url)
+
+    major, minor, patch = version.split('.')
+    if int(patch) == 0:
+      logging.debug('Not automatically creating release notes for non-patch release {version}'.format(version=version))
+      return
+
+    branch = 'release-{major}.{minor}.x'.format(major=major, minor=minor)
+
+    raw_changelog = os.path.join(
+        raw_gist_path, '{branch}-raw-changelog.md'.format(branch=branch))
+    release_changelog = os.path.join(
+        release_gist_path, '{version}.md'.format(version=version))
+
+    with open(release_changelog, 'w') as output:
+      output.write('# Spinnaker Release {version}\n\n'.format(version=version))
+      with open(raw_changelog, 'r') as input:
+        for line in input:
+          output.write(line)
+
+    git_run_with_retries(self.__git, release_gist_path, 'add ' + os.path.basename(release_changelog))
+    self.__git.check_commit_or_no_changes(
+        release_gist_path, '-a -m "Updated {file}"'.format(file=os.path.basename(release_changelog)))
+
+    logging.debug('Pushing back gist')
+    git_run_with_retries(self.__git, release_gist_path, 'push origin master')
 
 class PushChangelogCommand(CommandProcessor):
   """Implements push_changelog_to_gist."""
@@ -565,47 +625,49 @@ class PushChangelogCommand(CommandProcessor):
 
   def _do_command(self):
     options = self.options
-    gist_url = options.build_changelog_gist_url
-    index = gist_url.rfind('/')
-    if index < 0:
-      index = gist_url.rfind(':')  # ssh gist
-    gist_id = gist_url[index + 1:]
-
-    git_dir = os.path.join(self.get_input_dir(), gist_id)
-    if not os.path.exists(git_dir):
-      logging.debug('Cloning gist from %s', gist_url)
-      ensure_dir_exists(os.path.dirname(git_dir))
-      self.git_run_with_retries(os.path.dirname(git_dir), 'clone ' + gist_url)
-    else:
-      logging.debug('Updating gist in "%s"', git_dir)
-      self.git_run_with_retries(git_dir, 'fetch origin master')
-      self.git_run_with_retries(git_dir, 'checkout master')
-      self.git_run_with_retries(git_dir, 'reset --hard origin/master')
+    git_dir = ensure_gist_repo(self.__git, self.get_input_dir(), options.build_changelog_gist_url)
 
     dest_path = os.path.join(
         git_dir, '%s-raw-changelog.md' % options.git_branch)
     logging.debug('Copying "%s" to "%s"', options.changelog_path, dest_path)
     shutil.copyfile(options.changelog_path, dest_path)
 
-    self.git_run_with_retries(git_dir, 'add ' + os.path.basename(dest_path))
+    git_run_with_retries(self.__git, git_dir, 'add ' + os.path.basename(dest_path))
     self.__git.check_commit_or_no_changes(
         git_dir, '-a -m "Updated %s"' % os.path.basename(dest_path))
 
     logging.debug('Pushing back gist')
-    self.git_run_with_retries(git_dir, 'push origin master')
+    git_run_with_retries(self.__git, git_dir, 'push origin master')
 
+def ensure_gist_repo(git, input_dir, gist_url):
+  index = gist_url.rfind('/')
+  if index < 0:
+    index = gist_url.rfind(':')  # ssh gist
+  gist_id = gist_url[index + 1:]
 
-  # For some reason gist.github.com seems to have a lot of connection timeout
-  # errors, which we don't really see with normal github. I'm not sure why, but
-  # let's just retry and see if that helps.
-  # Retry every 2^n seconds (with a maximum of 16 seconds), giving up after 2 minutes.
-  @retry(stop_max_delay=120000, wait_exponential_multiplier=1000, wait_exponential_max=16000)
-  def git_run_with_retries(self, git_dir, command, **kwargs):
-    self.__git.check_run(git_dir, command, **kwargs)
+  git_dir = os.path.join(input_dir, gist_id)
+  if not os.path.exists(git_dir):
+    logging.debug('Cloning gist from %s', gist_url)
+    ensure_dir_exists(os.path.dirname(git_dir))
+    git_run_with_retries(git, os.path.dirname(git_dir), 'clone ' + gist_url)
+  else:
+    logging.debug('Updating gist in "%s"', git_dir)
+    git_run_with_retries(git, git_dir, 'fetch origin master')
+    git_run_with_retries(git, git_dir, 'checkout master')
+    git_run_with_retries(git, git_dir, 'reset --hard origin/master')
+  return git_dir
 
+# For some reason gist.github.com seems to have a lot of connection timeout
+# errors, which we don't really see with normal github. I'm not sure why, but
+# let's just retry and see if that helps.
+# Retry every 2^n seconds (with a maximum of 16 seconds), giving up after 2 minutes.
+@retry(stop_max_delay=120000, wait_exponential_multiplier=1000, wait_exponential_max=16000)
+def git_run_with_retries(git, git_dir, command, **kwargs):
+  git.check_run(git_dir, command, **kwargs)
 
 def register_commands(registry, subparsers, defaults):
   """Registers all the commands for this module."""
   BuildChangelogFactory().register(registry, subparsers, defaults)
   PushChangelogFactory().register(registry, subparsers, defaults)
   PublishChangelogFactory().register(registry, subparsers, defaults)
+  CreateReleaseChangelogFactory().register(registry, subparsers, defaults)
