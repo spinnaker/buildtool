@@ -580,6 +580,7 @@ class PushChangelogCommand(CommandProcessor):
       logging.debug('Updating gist in "%s"', git_dir)
       self.git_run_with_retries(git_dir, 'fetch origin master')
       self.git_run_with_retries(git_dir, 'checkout master')
+      self.git_run_with_retries(git_dir, 'reset --hard origin/master')
 
     dest_path = os.path.join(
         git_dir, '%s-raw-changelog.md' % options.git_branch)
@@ -591,7 +592,7 @@ class PushChangelogCommand(CommandProcessor):
         git_dir, '-a -m "Updated %s"' % os.path.basename(dest_path))
 
     logging.debug('Pushing back gist')
-    self.git_run_with_retries(git_dir, 'push -f origin master')
+    self.git_run_with_retries(git_dir, 'push origin master')
 
 
   # For some reason gist.github.com seems to have a lot of connection timeout
