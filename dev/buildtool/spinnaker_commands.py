@@ -300,8 +300,19 @@ class PublishSpinnakerCommand(CommandProcessor):
         spinnaker_version, options.spinnaker_release_alias, changelog_gist_url,
         options.min_halyard_version)
 
+    prior_version = get_prior_version(spinnaker_version)
+    if prior_version != None:
+      self.__hal.deprecate_spinnaker_release(prior_version)
+
     logging.info('Publishing changelog')
     publish_changelog_command()
+
+def get_prior_version(version):
+  major, minor, patch = version.split('.')
+  patch = int(patch)
+  if patch == 0:
+    return None
+  return '.'.join([major, minor, str(patch - 1)])
 
 
 def register_commands(registry, subparsers, defaults):
