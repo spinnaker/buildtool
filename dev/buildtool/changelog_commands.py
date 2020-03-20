@@ -565,7 +565,7 @@ class CreateReleaseChangelogFactory(CommandFactory):
         help='The Spinnaker version for which we are creating a changelog.')
     self.add_argument(
         parser, 'build_changelog_gist_url', defaults, None,
-        help='The gist containing raw the raw changelog.')
+        help='The gist containing the raw changelog.')
     self.add_argument(
         parser, 'changelog_gist_url', defaults, None,
         help='The gist to which to push the release changelog.')
