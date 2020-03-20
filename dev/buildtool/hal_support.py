@@ -132,6 +132,11 @@ class HalRunner(object):
     logging.info('Publishing latest halyard version "%s"', release_version)
     self.check_run('admin publish latest-halyard ' + release_version)
 
+  def deprecate_spinnaker_release(self, release_version):
+    """Deprecate release_version."""
+    logging.info('Deprecating Spinnaker version "%s"', release_version)
+    self.check_run('admin deprecate version --version ' + release_version)
+
   def publish_spinnaker_release(
       self, release_version, alias_name, changelog_uri, min_halyard_version,
       latest=True):
