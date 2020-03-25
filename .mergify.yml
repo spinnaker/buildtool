@@ -1,0 +1,23 @@
+pull_request_rules:
+  - name: Automatically merge on review
+    conditions:
+      - base=master
+      - "label=ready to merge"
+      - "approved-reviews-by=@oss-approvers"
+    actions:
+      merge:
+        method: squash
+        strict: smart
+      label:
+        add: ["auto merged"]
+  - name: Automatically merge release branch changes on release manager review
+    conditions:
+      - base~=^release-
+      - "label=ready to merge"
+      - "approved-reviews-by=@release-managers"
+    actions:
+      merge:
+        method: squash
+        strict: smart
+      label:
+        add: ["auto merged"]
