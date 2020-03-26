@@ -20,6 +20,7 @@ import logging
 import os
 import re
 import shutil
+import subprocess
 import textwrap
 import yaml
 
@@ -357,8 +358,16 @@ class PublishHalyardCommand(CommandProcessor):
         version_data = stream.read()
     else:
       logging.debug('Loading halyard version info from bucket %s', versions_url)
-      version_data = check_subprocess(
-          'gsutil cat {url}'.format(url=versions_url))
+      gsutil_output = check_subprocess(
+          'gsutil cat {url}'.format(url=versions_url), stderr=subprocess.PIPE)
+
+      # The latest version of gsutil prints a bunch of python warnings to stdout
+      # (see b/152449160). This file is a series of lines that look like...
+      #   0.41.0-180209172926: 05f1e832ab438e5a980d1102e84cdb348a0ab055
+      # ...so we'll just throw out any lines that don't start with digits.
+      valid_lines = [line for line in gsutil_output.splitlines()
+                     if line[0].isdigit()]
+      version_data = "\n".join(valid_lines)
 
     commit = yaml.safe_load(version_data).get(options.halyard_version)
     if commit is None:

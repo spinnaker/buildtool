@@ -93,7 +93,7 @@ def wait_subprocess(process, stream=None, echo=False, postprocess_hook=None):
     log_level = logging.INFO if echo else logging.DEBUG
     # stderr isn't going to another file handle; log it
     for raw_line in iter(process.stderr.readline, ''):
-      decoded_line = raw_line.decode(encoding='utf-8')
+      decoded_line = raw_line.decode(encoding='utf-8').rstrip('\n')
       logging.log(log_level, 'PID %s wrote to stderr: %s', process.pid, decoded_line)
 
    
