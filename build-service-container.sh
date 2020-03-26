@@ -15,6 +15,8 @@ if [[ ! -f Dockerfile.compile ]]; then
   exit 1
 fi
 
+set -e
+
 ./gradlew clean
 docker build -f Dockerfile.compile -t compile .
 docker run \
