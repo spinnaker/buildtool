@@ -14,7 +14,7 @@
 # that image. Otherwise, just create a new instance.
 #
 # Since logging.write is added by default, you might have created this
-# instance using an older C2D or spinnaker/dev/create_google_dev_vm.sh.
+# instance using an older C2D.
 # Each of these has been updated to add logging-write so you can use the
 # same procedure as before, but with the current versions.
 
