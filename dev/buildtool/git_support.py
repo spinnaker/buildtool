@@ -322,7 +322,7 @@ class CommitMessage(
       # Some tags indicate only a patch release.
       re.compile(r'^\s*'
                  r'(?:\*\s+)?'
-                 r'((?:fix|bug|chore|docs?|perf|refactor|test)[\(:].*)',
+                 r'((?:fix|bug|chore|docs?|perf|refactor|test)\s*[\(:].*)',
                  re.MULTILINE)
   ]
   DEFAULT_MINOR_REGEXS = [
@@ -331,7 +331,7 @@ class CommitMessage(
       # implementation changes that suggest a higher level of risk.
       re.compile(r'^\s*'
                  r'(?:\*\s+)?'
-                 r'((?:feat|feature|config)[\(:].*)',
+                 r'((?:feat|feature|config)\s*[\(:].*)',
                  re.MULTILINE)
   ]
   DEFAULT_MAJOR_REGEXS = [
