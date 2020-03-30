@@ -11,14 +11,6 @@ steps:
   - id: compile
     waitFor: ["buildCompileImage"]
     name: compile
-  - id: saveCache
-    waitFor: ["compile"]
-    name: gcr.io/$PROJECT_ID/save_cache:latest
-    args:
-      - "--bucket=gs://$_COMPILE_CACHE_BUCKET"
-      - "--key=$_IMAGE_NAME-$_BRANCH_NAME"
-      - "--path=.gradle/caches"
-      - "--path=.gradle/wrapper"
   - id: buildSlimImage
     waitFor: ["compile"]
     name: gcr.io/cloud-builders/docker
@@ -56,6 +48,14 @@ steps:
             "-f", "Dockerfile.ubuntu-java8",
             ".",
           ]
+  - id: saveCache
+    waitFor: ["buildSlimImage", "buildUbuntuImage", "buildJava8Image", "buildUbuntuJava8Image"]
+    name: gcr.io/$PROJECT_ID/save_cache:latest
+    args:
+      - "--bucket=gs://$_COMPILE_CACHE_BUCKET"
+      - "--key=$_IMAGE_NAME-$_BRANCH_NAME"
+      - "--path=.gradle/caches"
+      - "--path=.gradle/wrapper"
 images:
   - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME
   - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-slim
