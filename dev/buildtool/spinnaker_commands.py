@@ -17,6 +17,7 @@
 import copy
 import logging
 import os
+import subprocess
 import yaml
 
 try:
@@ -41,6 +42,7 @@ from buildtool import (
 
     exception_to_message,
     check_options_set,
+    check_subprocess,
     write_to_path,
     raise_and_log_error,
     ConfigError)
@@ -141,6 +143,62 @@ class PublishSpinnakerFactory(CommandFactory):
         parser, 'min_halyard_version', defaults, None,
         help='The minimum halyard version required.')
 
+class GetNextPatchParametersCommandFactory(CommandFactory):
+  """"Implements the get_next_patch_parameters command."""
+  def __init__(self):
+    super(GetNextPatchParametersCommandFactory, self).__init__(
+        'get_next_patch_parameters', GetNextPatchParametersCommand,
+        'Get the parameters for the next patch release.')
+
+  def init_argparser(self, parser, defaults):
+    super(GetNextPatchParametersCommandFactory, self).init_argparser(parser, defaults)
+
+    self.add_argument(
+        parser, 'major_minor_version', defaults, None,
+        help='The major/minor version of Spinnaker we are patching (ex: 1.18).')
+
+class GetNextPatchParametersCommand(CommandProcessor):
+  """"Implements the get_next_patch_parameters command."""
+
+  def __init__(self, factory, options, **kwargs):
+    super(GetNextPatchParametersCommand, self).__init__(factory, options, **kwargs)
+    check_options_set(options, [
+      'major_minor_version',
+    ])
+
+  def _do_command(self):
+    """Implements CommandProcessor interface."""
+    options = self.options
+
+    current_version_details = self._find_matching_version(options.major_minor_version)
+    result = {
+      'bom_version': 'release-{version}.x-latest-validated'.format(version=options.major_minor_version),
+      'spinnaker_version': get_next_version(current_version_details['version']),
+      'min_halyard_version': current_version_details['minimumHalyardVersion'],
+      'spinnaker_release_alias': current_version_details['alias'],
+      'changelog_gist_url': current_version_details['changelog']
+    }
+    self._output_as_property_file(result)
+
+  def _output_as_property_file(self, result):
+    for key, value in result.items():
+      print('{key}={value}'.format(key=key.upper(), value=value))
+
+  def _find_matching_version(self, major_minor_version):
+    versions = self._get_versions()
+    version_filter = lambda v : get_major_minor_version(v.get('version')) == major_minor_version
+    try:
+      return next(v for v in versions if version_filter(v))
+    except StopIteration:
+      raise_and_log_error(
+          ConfigError(
+              'There are no active Spinnaker versions for version {branch}.'.format(branch=major_minor_version),
+              cause='IncorrectVersion'))
+
+  def _get_versions(self):
+   version_data = check_subprocess('gsutil cat gs://halconfig/versions.yml', stderr=subprocess.PIPE)
+   versions = yaml.safe_load(version_data).get('versions')
+   return versions
 
 class PublishSpinnakerCommand(CommandProcessor):
   """"Implements the publish_spinnaker command."""
@@ -314,7 +372,16 @@ def get_prior_version(version):
     return None
   return '.'.join([major, minor, str(patch - 1)])
 
+def get_next_version(version):
+  major, minor, patch = version.split('.')
+  patch = int(patch)
+  return '.'.join([major, minor, str(patch + 1)])
+
+def get_major_minor_version(version):
+  major, minor, _ = version.split('.')
+  return '{major}.{minor}'.format(major=major, minor=minor)
 
 def register_commands(registry, subparsers, defaults):
   InitiateReleaseBranchFactory().register(registry, subparsers, defaults)
   PublishSpinnakerFactory().register(registry, subparsers, defaults)
+  GetNextPatchParametersCommandFactory().register(registry, subparsers, defaults)
