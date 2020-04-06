@@ -508,10 +508,8 @@ class ValidateBomTestController(object):
       def run(self):
         while True:
           try:
-            logging.info('KeepAlive %s polling', service_name)
-            got = urlopen('http://localhost:{port}/health'
+            urlopen('http://localhost:{port}/health'
                           .format(port=local_port))
-            logging.info('KeepAlive %s -> %s', service_name, got.getcode())
           except Exception as ex:
             logging.info('KeepAlive %s -> %s', service_name, ex)
 
