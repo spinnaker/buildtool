@@ -79,13 +79,9 @@ class BuildContainerCommand(GradleCommandProcessor):
     name = repository.name
     options = self.options
 
-    cloudbuild_file_name = 'containers-tag-java8.yml'
-    if os.path.exists(os.path.join(repository.git_dir, 'Dockerfile.java8')):
-      cloudbuild_file_name = 'containers-build-java8.yml'
-
     cloudbuild_config = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                      'cloudbuild',
-                                     cloudbuild_file_name)
+                                     'containers.yml')
     service_name = self.scm.repository_name_to_service_name(repository.name)
     # Note this command assumes a cwd of git_dir
     command = ('gcloud builds submit '

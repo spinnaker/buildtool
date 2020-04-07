@@ -18,7 +18,6 @@ steps:
             "build",
             "-t", "$_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME",
             "-t", "$_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-slim",
-            "-t", "$_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-java8",
             "-f", "Dockerfile.slim",
             ".",
           ]
@@ -28,7 +27,6 @@ steps:
     args: [
             "build",
             "-t", "$_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-ubuntu",
-            "-t", "$_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-ubuntu-java8",
             "-f", "Dockerfile.ubuntu",
             ".",
           ]
@@ -43,9 +41,7 @@ steps:
 images:
   - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME
   - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-slim
-  - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-java8
   - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-ubuntu
-  - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-ubuntu-java8
 timeout: 3600s
 options:
   machineType: N1_HIGHCPU_8
