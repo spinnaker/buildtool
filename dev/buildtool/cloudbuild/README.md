@@ -1,9 +1,9 @@
 ## Google Cloud Build files
 
-The `containers-build-java8.yml` and `containers-tag-java8.yml` files are
+The `containers.yml` and `debs.yml` files are
 [Google Cloud Build build configurations](https://cloud.google.com/cloud-build/docs/build-config)
-for building the Spinnaker microservices. Similarly, `debs.yml` is for building
-(and publishing) the Debian packages.
+for building and publishing the Spinnaker microservice containers and Debian
+packages.
 
 In order to use them, there must be a `save_cache` and `restore_cache` image in
 the Google Container Registry of the project in which the configurations are

@@ -46,7 +46,7 @@ class BuildContainerCommand(GradleCommandProcessor):
     image_name = self.scm.repository_name_to_service_name(repository.name)
     version = self.scm.get_repository_service_build_version(repository)
 
-    for variant in ('slim', 'ubuntu', 'java8', 'ubuntu-java8'):
+    for variant in ('slim', 'ubuntu'):
       tag = "{version}-{variant}".format(version=version, variant=variant)
       if not self.__gcb_image_exists(image_name, tag):
         return False
