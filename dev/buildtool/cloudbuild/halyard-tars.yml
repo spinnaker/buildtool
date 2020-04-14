@@ -28,10 +28,6 @@ steps:
   waitFor: ["createDebianTar"]
   name: gcr.io/cloud-builders/gsutil
   args: [ "cp", "halyard-debian.tar.gz", "gs://$_HALYARD_BUCKET/halyard/$TAG_NAME/debian/halyard.tar.gz" ]
-- id: aclDebianTar
-  waitFor: ["uploadDebianTar"]
-  name: gcr.io/cloud-builders/gsutil
-  args: [ "acl", "ch", "-u", "AllUsers:R", "gs://$_HALYARD_BUCKET/halyard/$TAG_NAME/debian/halyard.tar.gz" ]
 - id: createMacOsTar
   waitFor: ["compile"]
   name: ubuntu
@@ -45,10 +41,6 @@ steps:
   waitFor: ["createMacOsTar"]
   name: gcr.io/cloud-builders/gsutil
   args: [ "cp", "halyard-macos.tar.gz", "gs://$_HALYARD_BUCKET/halyard/$TAG_NAME/macos/halyard.tar.gz" ]
-- id: aclMacOsTar
-  waitFor: ["uploadMacOsTar"]
-  name: gcr.io/cloud-builders/gsutil
-  args: [ "acl", "ch", "-u", "AllUsers:R", "gs://$_HALYARD_BUCKET/halyard/$TAG_NAME/macos/halyard.tar.gz" ]
 - id: saveCache
   waitFor: ["compile"]
   name: gcr.io/$PROJECT_ID/save_cache:latest
