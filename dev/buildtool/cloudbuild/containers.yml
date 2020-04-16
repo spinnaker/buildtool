@@ -17,7 +17,9 @@ steps:
     args: [
             "build",
             "-t", "$_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME",
+            "-t", "gcr.io/spinnaker-community/$_IMAGE_NAME:$TAG_NAME",
             "-t", "$_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-slim",
+            "-t", "gcr.io/spinnaker-community/$_IMAGE_NAME:$TAG_NAME-slim",
             "-f", "Dockerfile.slim",
             ".",
           ]
@@ -27,6 +29,7 @@ steps:
     args: [
             "build",
             "-t", "$_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-ubuntu",
+            "-t", "gcr.io/spinnaker-community/$_IMAGE_NAME:$TAG_NAME-ubuntu",
             "-f", "Dockerfile.ubuntu",
             ".",
           ]
@@ -42,6 +45,9 @@ images:
   - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME
   - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-slim
   - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-ubuntu
+  - gcr.io/spinnaker-community/$_IMAGE_NAME:$TAG_NAME
+  - gcr.io/spinnaker-community/$_IMAGE_NAME:$TAG_NAME-slim
+  - gcr.io/spinnaker-community/$_IMAGE_NAME:$TAG_NAME-ubuntu
 timeout: 3600s
 options:
   machineType: N1_HIGHCPU_8
