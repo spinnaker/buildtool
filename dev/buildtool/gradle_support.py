@@ -355,6 +355,7 @@ class GradleRunner(object):
     if self.__is_plugin_version_6(repository):
       args.extend(['-PenablePublishing=true',
                    '-Prelease.disableGitChecks=true',
+                   '-Pversion=%s-%s' % (version, build_number),
                    '-Prelease.version=%s-%s' % (version, build_number)])
     else:
       args.append('-Prelease.useLastTag=true')
