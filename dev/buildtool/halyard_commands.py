@@ -495,7 +495,7 @@ class PublishHalyardCommand(CommandProcessor):
         'trusty-stable,xenial-stable,bionic-stable'))
     build_number = self.options.build_number
     self.__gradle.check_run(
-        args, self, repository, 'candidate', 'build-release',
+        args, self, repository, 'publish', 'build-release',
         version=self.__release_version, build_number=build_number,
         gradle_dir=git_dir)
 

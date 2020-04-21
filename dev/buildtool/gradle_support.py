@@ -353,10 +353,7 @@ class GradleRunner(object):
       args.extend(['-I', self.__GRADLE_PUBLISH_FILE])
 
     if self.__is_plugin_version_6(repository):
-      args.extend(['-PenablePublishing=true',
-                   '-Prelease.disableGitChecks=true',
-                   '-Pversion=%s-%s' % (version, build_number),
-                   '-Prelease.version=%s-%s' % (version, build_number)])
+      args.extend(['-Pversion=%s-%s' % (version, build_number)])
     else:
       args.append('-Prelease.useLastTag=true')
       build_number = self.prepare_local_git_for_nebula(

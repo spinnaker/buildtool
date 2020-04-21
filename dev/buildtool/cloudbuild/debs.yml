@@ -22,9 +22,6 @@ steps:
   - "-PbintrayUser=cloud-build@spinnaker-releases"
   - "-PbintrayPackageDebDistribution=trusty,xenial,bionic"
   - "-PbintrayPublishWaitForSecs=-1"
-  - "-PenablePublishing=true"
-  - "-Prelease.disableGitChecks=true"
-  - "-Prelease.version=$_VERSION-$_BUILD_NUMBER"
   - "-Pversion=$_VERSION-$_BUILD_NUMBER"
   - "-PbintrayPackageBuildNumber=$_BUILD_NUMBER"
   - "-Dorg.gradle.internal.http.socketTimeout=120000"
@@ -34,7 +31,7 @@ steps:
   - "test"
   - "-x"
   - "javadoc"
-  - "candidate"
+  - "publish"
   env:
   - 'ORG_GRADLE_PROJECT_org.gradle.jvmargs=-Xmx4g'
   secretEnv: ['ORG_GRADLE_PROJECT_bintrayKey']
