@@ -180,10 +180,12 @@ class BuildHalyardCommand(GradleCommandProcessor):
 
   def gcloud_command(self, name, config_filename, git_dir, substitutions):
     options = self.options
+    branch = options.git_branch
     config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                'cloudbuild', config_filename)
-    standard_substitutions = {'_IMAGE_NAME': 'halyard',
-                              '_BRANCH_NAME': options.git_branch}
+    standard_substitutions = {'_BRANCH_NAME': branch,
+                              '_BRANCH_TAG': re.sub(r'\W', '_', branch),
+                              '_IMAGE_NAME': 'halyard'}
     full_substitutions = dict(standard_substitutions, **substitutions)
     # Convert it to the format expected by gcloud: "_FOO=bar,_BAZ=qux"
     substitutions_arg = ','.join('='.join((str(k), str(v))) for k, v in
