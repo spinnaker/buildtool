@@ -21,7 +21,7 @@ steps:
   - "-PbintrayJarRepo=$_BINTRAY_JAR_REPO"
   - "-PbintrayUser=cloud-build@spinnaker-releases"
   - "-PbintrayPackageDebDistribution=trusty,xenial,bionic"
-  - "-PbintrayPublishWaitForSecs=-1"
+  - "-PbintrayPublishWaitForSecs=0"
   - "-Pversion=$_VERSION-$_BUILD_NUMBER"
   - "-PbintrayPackageBuildNumber=$_BUILD_NUMBER"
   - "-Dorg.gradle.internal.http.socketTimeout=120000"
