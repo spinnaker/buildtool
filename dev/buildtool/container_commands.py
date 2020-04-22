@@ -87,7 +87,7 @@ class BuildContainerCommand(GradleCommandProcessor):
                      '_BRANCH_TAG': re.sub(r'\W', '_', options.git_branch),
                      '_DOCKER_REGISTRY': options.docker_registry,
                      '_IMAGE_NAME': service_name,
-                     '_TAG_NAME': build_version}
+                     'TAG_NAME': build_version}
     # Convert it to the format expected by gcloud: "_FOO=bar,_BAZ=qux"
     substitutions_arg = ','.join('='.join((str(k), str(v))) for k, v in
                                  substitutions.items())
