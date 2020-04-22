@@ -29,8 +29,6 @@ steps:
   - "-Dorg.gradle.jvmargs=-Xmx4g"
   - "-x"
   - "test"
-  - "-x"
-  - "javadoc"
   - "publish"
   env:
   - 'ORG_GRADLE_PROJECT_org.gradle.jvmargs=-Xmx4g'
