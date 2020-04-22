@@ -42,8 +42,10 @@ images:
   - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME
   - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-slim
   - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-ubuntu
+tags: ["type_containers", "repo_$_IMAGE_NAME", "branch_$_BRANCH_TAG"]
 timeout: 3600s
 options:
   machineType: N1_HIGHCPU_8
 substitutions:
   _COMPILE_CACHE_BUCKET: spinnaker-build-cache
+  _BRANCH_TAG: unknown

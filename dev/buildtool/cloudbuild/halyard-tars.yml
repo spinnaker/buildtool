@@ -49,9 +49,11 @@ steps:
   - "--key=$_IMAGE_NAME-$_BRANCH_NAME"
   - "--path=.gradle/caches"
   - "--path=.gradle/wrapper"
+tags: ["type_tars", "repo_$_IMAGE_NAME", "branch_$_BRANCH_TAG"]
 timeout: 3600s
 options:
   machineType: N1_HIGHCPU_8
 substitutions:
   _HALYARD_BUCKET: spinnaker-artifacts
   _COMPILE_CACHE_BUCKET: spinnaker-build-cache
+  _BRANCH_TAG: unknown

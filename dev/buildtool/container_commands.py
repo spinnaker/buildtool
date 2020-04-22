@@ -17,7 +17,7 @@
 import copy
 import logging
 import os
-import shutil
+import re
 import subprocess
 
 from buildtool import (
@@ -83,17 +83,23 @@ class BuildContainerCommand(GradleCommandProcessor):
                                      'cloudbuild',
                                      'containers.yml')
     service_name = self.scm.repository_name_to_service_name(repository.name)
+    substitutions = {'_BRANCH_NAME': options.git_branch,
+                     '_BRANCH_TAG': re.sub(r'\W', '_', options.git_branch),
+                     '_DOCKER_REGISTRY': options.docker_registry,
+                     '_IMAGE_NAME': service_name,
+                     '_TAG_NAME': build_version}
+    # Convert it to the format expected by gcloud: "_FOO=bar,_BAZ=qux"
+    substitutions_arg = ','.join('='.join((str(k), str(v))) for k, v in
+                                 substitutions.items())
     # Note this command assumes a cwd of git_dir
     command = ('gcloud builds submit '
-               ' --account={account} --project={project}'
-               ' --substitutions=TAG_NAME={tag_name},_IMAGE_NAME={image_name},_DOCKER_REGISTRY={docker_registry},_BRANCH_NAME={branch_name},'
+               ' --account={account} '
+               ' --project={project}'
+               ' --substitutions={substitutions_arg},'
                ' --config={cloudbuild_config} .'
                .format(account=options.gcb_service_account,
                        project=options.gcb_project,
-                       docker_registry=options.docker_registry,
-                       tag_name=build_version,
-                       image_name=service_name,
-                       branch_name=options.git_branch,
+                       substitutions_arg=substitutions_arg,
                        cloudbuild_config=cloudbuild_config))
 
     logfile = self.get_logfile_path(name + '-gcb-build')

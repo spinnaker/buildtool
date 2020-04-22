@@ -50,6 +50,7 @@ secrets:
       CiQAyyijOXkj3ydSGmPDpXMNOdA4XF9fWVP6yDmyVKB0E9XPGcESUQAZ27TDp+VMDm/CvmTNu55W
       ffjjgHSh9T3eqPQ9RmnQDOpuUtOxjnpc0RSXxqfvuaqeG7F6fmrX5oLxXIyichHuKyhEE3RMsuxY
       1kwEo+HO6A==
+tags: ["type_debs", "repo_$_IMAGE_NAME", "branch_$_BRANCH_TAG"]
 timeout: 3600s
 options:
   machineType: N1_HIGHCPU_8
@@ -57,3 +58,4 @@ substitutions:
   _COMPILE_CACHE_BUCKET: spinnaker-build-cache
   _BINTRAY_PACKAGE_REPO: debians
   _BINTRAY_JAR_REPO: jars
+  _BRANCH_TAG: unknown

@@ -15,6 +15,7 @@
 """Implements debian support commands for buildtool."""
 
 import os
+import re
 from threading import Semaphore
 
 from buildtool import (
@@ -62,20 +63,22 @@ class BuildDebianCommand(GradleCommandProcessor):
         os.path.dirname(os.path.abspath(__file__)), 'cloudbuild', 'debs.yml')
     service_name = self.scm.repository_name_to_service_name(repository.name)
     source_info = self.scm.lookup_source_info(repository)
+    substitutions = {'_BRANCH_NAME': options.git_branch,
+                     '_BRANCH_TAG': re.sub(r'\W', '_', options.git_branch),
+                     '_IMAGE_NAME': service_name,
+                     '_BUILD_NUMBER': source_info.build_number,
+                     '_VERSION': source_info.summary.version}
+    # Convert it to the format expected by gcloud: "_FOO=bar,_BAZ=qux"
+    substitutions_arg = ','.join('='.join((str(k), str(v))) for k, v in
+                                 substitutions.items())
     command = ('gcloud builds submit '
-               ' --account={account} --project={project}'
-               ' --substitutions='
-               '_IMAGE_NAME={image_name},'
-               '_BRANCH_NAME={branch_name},'
-               '_VERSION={version},'
-               '_BUILD_NUMBER={build_number}'
+               ' --account={account}'
+               ' --project={project}'
+               ' --substitutions={substitutions_arg}'
                ' --config={cloudbuild_config} .'
                .format(account=options.gcb_service_account,
                        project=options.gcb_project,
-                       image_name=service_name,
-                       branch_name=options.git_branch,
-                       version = source_info.summary.version,
-                       build_number = source_info.build_number,
+                       substitutions_arg=substitutions_arg,
                        cloudbuild_config=cloudbuild_config))
 
     logfile = self.get_logfile_path(repository.name + '-gcb-build')
