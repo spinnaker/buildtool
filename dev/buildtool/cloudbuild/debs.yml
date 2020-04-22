@@ -51,6 +51,8 @@ secrets:
       ffjjgHSh9T3eqPQ9RmnQDOpuUtOxjnpc0RSXxqfvuaqeG7F6fmrX5oLxXIyichHuKyhEE3RMsuxY
       1kwEo+HO6A==
 timeout: 3600s
+tags:
+- $_IMAGE_NAME-$_BRANCH_NAME
 options:
   machineType: N1_HIGHCPU_8
 substitutions:

@@ -43,6 +43,8 @@ images:
   - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-slim
   - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-ubuntu
 timeout: 3600s
+tags:
+- $_IMAGE_NAME-$_BRANCH_NAME
 options:
   machineType: N1_HIGHCPU_8
 substitutions:

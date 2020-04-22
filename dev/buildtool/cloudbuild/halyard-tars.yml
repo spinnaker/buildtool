@@ -50,6 +50,8 @@ steps:
   - "--path=.gradle/caches"
   - "--path=.gradle/wrapper"
 timeout: 3600s
+tags:
+- $_IMAGE_NAME-$_BRANCH_NAME
 options:
   machineType: N1_HIGHCPU_8
 substitutions:
