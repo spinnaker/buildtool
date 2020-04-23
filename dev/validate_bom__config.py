@@ -1645,6 +1645,67 @@ class HaConfigurator(Configurator):
     """Implements interface."""
     pass
 
+class PluginStageConfigurator(Configurator):
+  """Controls hal plugins."""
+
+  def init_argument_parser(self, parser, defaults):
+    """Implements interface."""
+    add_parser_argument(
+        parser, 'plugin_repo', defaults, None,
+        help='The address of the plugin repository to pull metadata from.')
+
+    add_parser_argument(
+        parser, 'plugin_name', defaults, None,
+        help='The name of the plugin to deploy.')
+
+    add_parser_argument(
+        parser, 'plugin_extension', defaults, None,
+        help='The name of the plugin extension to deploy.')
+
+    add_parser_argument(
+        parser, 'plugin_version', defaults, None,
+        help='The plugin version to deploy.')
+
+  def add_config(self, options, script):
+    """Implements interface."""
+    if options.plugin_repo is None:
+      return
+
+    script.append(
+        'hal -q --log=info plugins repository add spin-test-repo'
+        ' --url={repo}'.format(repo=options.plugin_repo))
+
+    script.append(
+        'hal -q --log=info plugins add {name}'
+        ' --enabled=true'
+        ' --extensions={extension}'
+        ' --version={version}'.format(
+                name=options.plugin_name,
+                extension=options.plugin_extension,
+                version=options.plugin_version,
+            ))
+
+  def validate_options(self, options):
+    """Implements interface."""
+    if options.plugin_repo is None:
+      return
+
+    if options.plugin_name is None:
+      raise ValueError('--plugin_name is required if --plugin_repo is'
+              ' supplied.')
+
+    if options.plugin_extension is None:
+      raise ValueError('--plugin_extension is required if --plugin_repo is'
+              ' supplied.')
+
+    if options.plugin_version is None:
+      raise ValueError('--plugin_version is required if --plugin_repo is'
+              ' supplied.')
+
+  def add_files_to_upload(self, options, file_set):
+    """Implements interface."""
+    pass
+
 
 CONFIGURATOR_LIST = [
     MonitoringConfigurator(),
@@ -1666,7 +1727,8 @@ CONFIGURATOR_LIST = [
     CanaryConfigurator(),
     GcsPubsubNotficationConfigurator(),
     GooglePubsubConfigurator(),
-    HaConfigurator()
+    HaConfigurator(),
+    PluginStageConfigurator(),
 ]
 
 
