@@ -425,7 +425,7 @@ class BakeAndDeployTestScenario(sk.SpinnakerTestScenario):
     name = 'BakeDocker'
     self.docker_pipeline_id = name
     bake_stage = self.make_bake_stage(
-        package='vim', providerType='docker', region='global')
+        package='libatm1', providerType='docker', region='global')
 
     pipeline_spec = dict(
       name=name,
@@ -455,7 +455,7 @@ class BakeAndDeployTestScenario(sk.SpinnakerTestScenario):
     name = 'BakeAndDeployGoogle'
     self.google_bake_pipeline_id = name
     bake_stage = self.make_bake_stage(
-        package='vim', providerType='gce', region='global')
+        package='libatm1', providerType='gce', region='global')
     deploy_stage = self.make_deploy_google_stage(requisiteStages=['BAKE'])
 
     pipeline_spec = dict(
@@ -520,7 +520,7 @@ class BakeAndDeployTestScenario(sk.SpinnakerTestScenario):
     name = 'BakeAndDeployAws'
     self.aws_bake_pipeline_id = name
     bake_stage = self.make_bake_stage(
-        package='vim',
+        package='libatm1',
         providerType='aws',
         regions=[self.bindings['TEST_AWS_REGION']],
         vmType='hvm', storeType='ebs')
