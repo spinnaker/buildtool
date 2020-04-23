@@ -359,6 +359,16 @@ class PublishHalyardCommandFactory(CommandFactory):
         parser, 'delete_existing', defaults, None, type=bool,
         help='Delete pre-existing desired versions if from bintray.')
 
+    self.add_argument(
+        parser, 'gcb_project', defaults, None,
+        help='The GCP project ID when using the GCP Container Builder.')
+    self.add_argument(
+        parser, 'gcb_service_account', defaults, None,
+        help='Google Service Account when using the GCP Container Builder.')
+    self.add_argument(
+        parser, 'docker_registry', defaults, None,
+        help='Docker registry to push the container images to.')
+
 
 class PublishHalyardCommand(CommandProcessor):
   """Publish halyard version to the public repository."""
@@ -489,21 +499,34 @@ class PublishHalyardCommand(CommandProcessor):
     # however I dont see how to get at the existing debian metadata and
     # dont want to ommit something
 
+    options = self.options
     git_dir = repository.git_dir
     summary = self.__scm.git.collect_repository_summary(git_dir)
-    args = self.__gradle.get_common_args()
 
-    args.extend(self.__gradle.get_debian_args(
-        'trusty-stable,xenial-stable,bionic-stable'))
-    build_number = self.options.build_number
-    self.__gradle.check_run(
-        args, self, repository, 'publish', 'build-release',
-        version=self.__release_version, build_number=build_number,
-        gradle_dir=git_dir)
 
-    info_path = os.path.join(self.get_output_dir(), 'halyard_info.yml')
-    logging.debug('Writing build information to %s', info_path)
-    write_to_path(summary.to_yaml(), info_path)
+    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               'cloudbuild', 'debs.yml')
+    substitutions = {'_BRANCH_NAME': options.git_branch,
+                     '_BRANCH_TAG': re.sub(r'\W', '_', options.git_branch),
+                     '_BUILD_NUMBER': options.build_number,
+                     '_IMAGE_NAME': 'halyard',
+                     '_VERSION': summary.version}
+    # Convert it to the format expected by gcloud: "_FOO=bar,_BAZ=qux"
+    substitutions_arg = ','.join('='.join((str(k), str(v))) for k, v in
+                                 substitutions.items())
+    command = ('gcloud builds submit '
+               ' --account={account} --project={project}'
+               ' --substitutions={substitutions_arg},'
+               ' --config={config} .'
+               .format(account=options.gcb_service_account,
+                       project=options.gcb_project,
+                       substitutions_arg=substitutions_arg,
+                       config=config_path))
+    logfile = self.get_logfile_path('build-deb')
+    check_subprocesses_to_logfile('building deb with published version',
+                                  logfile,
+                                  [command],
+                                  cwd=git_dir)
 
   def write_target_docs(self, source_repository, target_repository):
     source_path = os.path.join(source_repository.git_dir,
