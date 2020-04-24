@@ -46,6 +46,11 @@ function run_build_flow() {
       $EXTRA_BOM_COMMAND_ARGS --git_branch $BOM_BRANCH
   start_command_unless NO_DEBIANS "build_debians" \
       $EXTRA_BOM_COMMAND_ARGS --git_branch $BOM_BRANCH
+  # Every buildtool command re-clones all the git repositories it needs. We'll
+  # just reuse the ones that build_bom already checked out...
+  start_spinrel publish_profiles \
+      --bom "$UNBUILT_BOM_PATH" \
+      --source-root ./build_input/build_bom
 
   start_command_unless NO_HALYARD "build_halyard" \
       $EXTRA_BUILD_HALYARD_ARGS --git_branch $HAL_BRANCH
@@ -59,13 +64,10 @@ function run_build_flow() {
   # Synchronize here so we have all the artifacts build before we continue.
   wait_for_commands_or_die "Build"
 
-  # Every buildtool command re-clones all the git repositories it needs. We'll
-  # just reuse the ones that build_changelog already checked out...
-  start_spinrel finish_flow_build \
-      --source-root ./build_input/build_changelog \
+  start_spinrel publish_bom \
       --bom "$UNBUILT_BOM_PATH" \
       --additional-version "$UNVALIDATED_BOM_VERSION"
-  wait_for_commands_or_die "PublishVersion"
+  wait_for_commands_or_die "PublishBom"
 
   # Remove the unbuilt cache, but leave it behind as what we just built.
   mv $UNBUILT_BOM_PATH ${UNVALIDATED_BOM_VERSION}.yml
