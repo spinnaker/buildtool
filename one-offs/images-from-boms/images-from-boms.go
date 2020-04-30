@@ -25,7 +25,7 @@ var (
 	fromRepo = flag.String("from-project", "gcr.io/spinnaker-marketplace", "")
 	toRepo   = flag.String("to-project", "us-docker.pkg.dev/spinnaker-community/releases", "")
 
-	outPath = flag.String("out", "one-offs/migrate-containers.sh", "")
+	outPath = flag.String("out", "one-offs/images-from-boms/migrate-containers.sh", "")
 
 	releaseRegexp = regexp.MustCompile(`1\.[0-9]{1,2}\.[0-9]{1,2}\.yml`)
 )
