@@ -65,9 +65,11 @@ class BuildContainerCommand(GradleCommandProcessor):
   def __gcb_image_exists(self, image_name, version):
     """Determine if gcb image already exists."""
     options = self.options
-    command = ['gcloud', '--account', options.gcb_service_account,
-               'container', 'images', 'list-tags',
-               options.docker_registry + '/' + image_name,
+    command = ['gcloud', 'beta',
+               '--account', options.gcb_service_account,
+               'artifacts', 'docker', 'images', 'list',
+               options.artifact_registry + '/' + image_name,
+               '--include-tags',
                '--filter="%s"' % version,
                '--format=json']
     got = check_subprocess(' '.join(command), stderr=subprocess.PIPE)
@@ -86,7 +88,9 @@ class BuildContainerCommand(GradleCommandProcessor):
     substitutions = {'_BRANCH_NAME': options.git_branch,
                      '_BRANCH_TAG': re.sub(r'\W', '_', options.git_branch),
                      '_DOCKER_REGISTRY': options.docker_registry,
+                     '_ARTIFACT_REGISTRY': options.artifact_registry,
                      '_IMAGE_NAME': service_name,
+                     '_COMPILE_CACHE_BUCKET': options.gcb_cache_bucket,
                      'TAG_NAME': build_version}
     # Convert it to the format expected by gcloud: "_FOO=bar,_BAZ=qux"
     substitutions_arg = ','.join('='.join((str(k), str(v))) for k, v in
@@ -121,6 +125,9 @@ class BuildContainerFactory(GradleCommandFactory):
     BuildContainerFactory.add_argument(
         parser, 'docker_registry', defaults, None,
         help='Docker registry to push the container images to.')
+    BuildContainerFactory.add_argument(
+        parser, 'artifact_registry', defaults, None,
+        help='Artifact registry to push the container images to.')
 
   def init_argparser(self, parser, defaults):
     super(BuildContainerFactory, self).init_argparser(parser, defaults)
@@ -134,6 +141,9 @@ class BuildContainerFactory(GradleCommandFactory):
     self.add_argument(
         parser, 'gcb_service_account', defaults, None,
         help='Google Service Account when using the GCP Container Builder.')
+    self.add_argument(
+        parser, 'gcb_cache_bucket', defaults, "spinnaker-build-cache",
+        help='Google Storage Bucket for build caches when using the GCP Container Builder.')
 
 
 def add_bom_parser_args(parser, defaults):

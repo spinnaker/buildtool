@@ -175,7 +175,7 @@ class BomBuilder(object):
         name: source
         for name, source in [
             ('debianRepository', debian_repository),
-            ('dockerRegistry', options.docker_registry),
+            ('dockerRegistry', options.artifact_registry),
             ('googleImageProject', options.publish_gce_image_project)
         ]
         if source
