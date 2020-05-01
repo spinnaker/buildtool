@@ -73,6 +73,7 @@ class BuildContainerCommand(GradleCommandProcessor):
                '--filter="%s"' % version,
                '--format=json']
     got = check_subprocess(' '.join(command), stderr=subprocess.PIPE)
+    logging.info('Got this from artifact list for %s: %s', image_name, got)
     if got.strip() != '[]':
       return True
     return False
