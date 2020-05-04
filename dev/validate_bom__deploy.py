@@ -440,12 +440,10 @@ class KubernetesV2ValidateBomDeployer(BaseValidateBomDeployer):
                           .format(options.injected_deploy_spinnaker_account)))
     options.injected_deploy_spinnaker_account = options.k8s_v2_account_name
 
-  def __wait_for_deployment(self, k8s_namespace, service):
+  def __wait_for_deployment(self, k8s_namespace, service, context):
     options = self.options
-    kubectl_command = 'kubectl {context} wait deployment/spin-{service} --timeout=300s --for=condition=available  --namespace {namespace}'.format(
-        context=('--context {0}'.format(options.k8s_account_context)
-                 if options.k8s_account_context
-                 else ''),
+    kubectl_command = 'kubectl --context {context} wait deployment/spin-{service} --timeout=300s --for=condition=available  --namespace {namespace}'.format(
+        context=context,
         service=service,
         namespace=k8s_namespace)
     logging.info('Waiting for service %s to be up', service)
@@ -460,7 +458,7 @@ class KubernetesV2ValidateBomDeployer(BaseValidateBomDeployer):
   def __get_pod_name(self, k8s_v2_namespace, service):
     """Determine the pod name for the deployed service."""
     options = self.options
-    self.__wait_for_deployment(k8s_v2_namespace, service)
+    self.__wait_for_deployment(k8s_v2_namespace, service, options.k8s_v2_account_context)
     flags = ' --namespace {namespace} --logtostderr=false'.format(
         namespace=k8s_v2_namespace)
     kubectl_command = 'kubectl {context} get pods {flags}'.format(

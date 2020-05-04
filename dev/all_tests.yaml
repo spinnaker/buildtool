@@ -195,17 +195,6 @@ tests:
     args:
       alias: [standard_google_provider_params]
 
-  # TODO(mneterval): remove after 1.20 release branches are cut
-  kube_smoke_test:
-    requires:
-      configuration:
-        k8s_account_enabled: true
-      services: [clouddriver, front50, gate, orca]
-    api: gate
-    args:
-      spinnaker_kubernetes_account: $k8s_account_name
-      test_namespace: $k8s_account_namespaces
-
   kube_v2_smoke_test:
     requires:
       configuration:

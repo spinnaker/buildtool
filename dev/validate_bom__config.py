@@ -921,65 +921,6 @@ class KubernetesV2Configurator(Configurator):
     if options.k8s_v2_account_credentials:
       file_set.add(options.k8s_v2_account_credentials)
 
-# TODO(mneterval): remove after 1.20 release branches are cut
-class KubernetesConfigurator(Configurator):
-  """Controls hal config provider kubernetes."""
-
-  def init_argument_parser(self, parser, defaults):
-    """Implements interface."""
-    add_parser_argument(
-        parser, 'k8s_account_credentials', defaults, None,
-        help='Path to k8s credentials file.')
-    add_parser_argument(
-        parser, 'k8s_account_name', defaults, 'my-kubernetes-account',
-        help='The name of the primary Kubernetes account to configure.')
-    add_parser_argument(
-        parser, 'k8s_account_context', defaults, None,
-        help='The kubernetes context for the primary Kubernetes account.')
-    add_parser_argument(
-        parser, 'k8s_account_namespaces', defaults, 'validate-bom',
-        help='The kubernetes namespaces for the primary Kubernetes account.')
-    add_parser_argument(
-        parser, 'k8s_account_docker_account', defaults, None,
-        help='The docker registry account to use with the --k8s_account')
-
-  def validate_options(self, options):
-    """Implements interface."""
-    options.k8s_account_enabled = options.k8s_account_credentials is not None
-    if options.k8s_account_credentials:
-      if not options.k8s_account_docker_account:
-        raise ValueError('--k8s_account_docker_account was not specified.')
-
-  def add_config(self, options, script):
-    """Implements interface."""
-    if not options.k8s_account_credentials:
-      return
-    if not options.k8s_account_docker_account:
-      raise ValueError(
-          '--k8s_account_credentials without --k8s_account_docker_account')
-
-    account_params = [options.k8s_account_name]
-    account_params.extend([
-        '--docker-registries', options.k8s_account_docker_account,
-        '--kubeconfig-file', os.path.basename(options.k8s_account_credentials),
-        '--provider-version', 'v1'
-    ])
-    if options.k8s_account_context:
-      account_params.extend(['--context', options.k8s_account_context])
-    if options.k8s_account_namespaces:
-      account_params.extend(['--namespaces', options.k8s_account_namespaces])
-
-    script.append('hal -q --log=info config provider kubernetes enable')
-    script.append('hal -q --log=info config provider kubernetes account'
-                  ' add {params}'
-                  .format(params=' '.join(account_params)))
-
-  def add_files_to_upload(self, options, file_set):
-    """Implements interface."""
-    if options.k8s_account_credentials:
-      file_set.add(options.k8s_account_credentials)
-
-
 class DockerConfigurator(Configurator):
   """Controls hal config provider docker."""
 
@@ -1658,7 +1599,6 @@ CONFIGURATOR_LIST = [
     DockerConfigurator(),
     DcosConfigurator(),  # Hal requires docker config first.
     GoogleConfigurator(),
-    KubernetesConfigurator(),
     KubernetesV2Configurator(),
     JenkinsConfigurator(),
     NotificationConfigurator(),
