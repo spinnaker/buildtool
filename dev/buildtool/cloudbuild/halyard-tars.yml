@@ -1,0 +1,65 @@
+steps:
+- id: restoreCache
+  name: gcr.io/$PROJECT_ID/restore_cache:latest
+  args:
+  - "--bucket=gs://$_COMPILE_CACHE_BUCKET"
+  - "--key=$_IMAGE_NAME-$_BRANCH_NAME"
+- id: buildCompileImage
+  waitFor: ["restoreCache"]
+  name: gcr.io/cloud-builders/docker
+  args: ["build", "-t", "compile", "-f", "Dockerfile.compile", "."]
+- id: compile
+  waitFor: ["buildCompileImage"]
+  name: compile
+- id: createDebianTar
+  waitFor: ["compile"]
+  # We can't use Alpine because busybox's tar doesn't seem to support multiple
+  # -C options
+  name: ubuntu
+  args: [
+    "tar",
+    # Just like many other places in Halyard, this .tar.gz file isn't actually
+    # gzipped
+    "cvf", "halyard-debian.tar.gz",
+    "-C", "halyard-web/build/install", "halyard",
+    "-C", "../../../startup/debian", "hal", "update-halyard",
+  ]
+- id: uploadDebianTar
+  waitFor: ["createDebianTar"]
+  name: gcr.io/cloud-builders/gsutil
+  args: [ "cp", "halyard-debian.tar.gz", "gs://$_HALYARD_BUCKET/halyard/$TAG_NAME/debian/halyard.tar.gz" ]
+- id: aclDebianTar
+  waitFor: ["uploadDebianTar"]
+  name: gcr.io/cloud-builders/gsutil
+  args: [ "acl", "ch", "-u", "AllUsers:R", "gs://$_HALYARD_BUCKET/halyard/$TAG_NAME/debian/halyard.tar.gz" ]
+- id: createMacOsTar
+  waitFor: ["compile"]
+  name: ubuntu
+  args: [
+    "tar",
+    "cvf", "halyard-macos.tar.gz",
+    "-C", "halyard-web/build/install", "halyard",
+    "-C", "../../../startup/macos", "hal", "update-halyard",
+  ]
+- id: uploadMacOsTar
+  waitFor: ["createMacOsTar"]
+  name: gcr.io/cloud-builders/gsutil
+  args: [ "cp", "halyard-macos.tar.gz", "gs://$_HALYARD_BUCKET/halyard/$TAG_NAME/macos/halyard.tar.gz" ]
+- id: aclMacOsTar
+  waitFor: ["uploadMacOsTar"]
+  name: gcr.io/cloud-builders/gsutil
+  args: [ "acl", "ch", "-u", "AllUsers:R", "gs://$_HALYARD_BUCKET/halyard/$TAG_NAME/macos/halyard.tar.gz" ]
+- id: saveCache
+  waitFor: ["compile"]
+  name: gcr.io/$PROJECT_ID/save_cache:latest
+  args:
+  - "--bucket=gs://$_COMPILE_CACHE_BUCKET"
+  - "--key=$_IMAGE_NAME-$_BRANCH_NAME"
+  - "--path=.gradle/caches"
+  - "--path=.gradle/wrapper"
+timeout: 3600s
+options:
+  machineType: N1_HIGHCPU_8
+substitutions:
+  _HALYARD_BUCKET: spinnaker-artifacts
+  _COMPILE_CACHE_BUCKET: spinnaker-build-cache
