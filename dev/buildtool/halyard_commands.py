@@ -14,6 +14,8 @@
 
 """Implements build command for buildtool."""
 
+from multiprocessing.pool import ThreadPool
+
 import copy
 import datetime
 import logging
@@ -124,15 +126,9 @@ class BuildHalyardCommand(GradleCommandProcessor):
         self.get_output_dir(), 'last_version_commit.yml')
     write_to_path(entry, last_version_commit_path)
 
-  def build_all_halyard_deployments(self, repository):
-    """Helper function for building halyard."""
+  def publish_to_nightly(self, repository):
     options = self.options
-
-    git_dir = repository.git_dir
-    summary = self.source_code_manager.git.collect_repository_summary(git_dir)
-    self.__build_version = '%s-%s' % (summary.version, options.build_number)
-
-    cmd = './release/all.sh {version} nightly'.format(
+    cmd = './release/promote-all.sh {version} nightly'.format(
         version=self.__build_version)
     env = dict(os.environ)
     env.update({
@@ -146,10 +142,68 @@ class BuildHalyardCommand(GradleCommandProcessor):
         options.halyard_docker_image_base,
         options.halyard_bucket_base_url)
 
-    logfile = self.get_logfile_path('jar-build')
+    logfile = self.get_logfile_path('halyard-publish-to-nightly')
     check_subprocesses_to_logfile(
-        '{name} build'.format(name='halyard'), logfile,
-        [cmd], cwd=git_dir, env=env)
+        'halyard publish to nightly', logfile,
+        [cmd], cwd=repository.git_dir, env=env)
+
+  def build_all_halyard_deployments(self, repository):
+    """Helper function for building halyard."""
+    options = self.options
+
+    git_dir = repository.git_dir
+    summary = self.source_code_manager.git.collect_repository_summary(git_dir)
+    self.__build_version = '%s-%s' % (summary.version, options.build_number)
+
+    commands = [
+        self.gcloud_command(name='halyard-container-build',
+                            config_filename='containers.yml',
+                            git_dir=git_dir,
+                            substitutions={'TAG_NAME': self.__build_version,
+                                           '_DOCKER_REGISTRY': options.docker_registry}),
+        self.gcloud_command(name='halyard-deb-build',
+                            config_filename='debs.yml',
+                            git_dir=git_dir,
+                            substitutions={'_VERSION': summary.version,
+                                           '_BUILD_NUMBER': options.build_number}),
+        self.gcloud_command(name='halyard-tar-build',
+                            config_filename='halyard-tars.yml',
+                            git_dir=git_dir,
+                            substitutions={'TAG_NAME': self.__build_version}),
+    ]
+
+    pool = ThreadPool(len(commands))
+    pool.map(self.run_gcloud_build, commands)
+    pool.close()
+    pool.join()
+
+  def gcloud_command(self, name, config_filename, git_dir, substitutions):
+    options = self.options
+    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               'cloudbuild', config_filename)
+    standard_substitutions = {'_IMAGE_NAME': 'halyard',
+                              '_BRANCH_NAME': options.git_branch}
+    full_substitutions = dict(standard_substitutions, **substitutions)
+    # Convert it to the format expected by gcloud: "_FOO=bar,_BAZ=qux"
+    substitutions_arg = ','.join('='.join((str(k), str(v))) for k, v in
+                                 full_substitutions.items())
+    command = ('gcloud builds submit '
+               ' --account={account} --project={project}'
+               ' --substitutions={substitutions_arg},'
+               ' --config={config} .'
+               .format(account=options.gcb_service_account,
+                       project=options.gcb_project,
+                       substitutions_arg=substitutions_arg,
+                       config=config_path))
+    return {'name': name, 'git_dir': git_dir, 'command': command}
+
+  def run_gcloud_build(self, command):
+    logfile = self.get_logfile_path(command['name'])
+    self.metrics.time_call(
+        'GcrBuild', {}, self.metrics.default_determine_outcome_labels,
+        check_subprocesses_to_logfile,
+        command['name'], logfile, [command['command']],
+        cwd=command['git_dir'])
 
   def load_halyard_version_commits(self):
     logging.debug('Fetching existing halyard build versions')
@@ -199,23 +253,12 @@ class BuildHalyardCommand(GradleCommandProcessor):
     source_info = self.source_code_manager.refresh_source_info(
         repository, self.options.build_number)
 
-    if self.gradle.consider_debian_on_bintray(
-        repository, source_info.to_build_version()):
-      return
-
-    args = self.gradle.get_common_args()
-    if not self.options.run_unit_tests:
-      args.append('-x test')
-
-    args.extend(self.gradle.get_debian_args(
-        'trusty-nightly,xenial-nightly,bionic-nightly'))
-    build_number = source_info.build_number
-    version = source_info.summary.version
-    self.gradle.check_run(args, self, repository, 'candidate', 'debian-build',
-                          version=version, build_number=build_number)
-
+    # I guess we build the docs just as a test? We never put them anywhere...
+    # PublishHalyardCommand _does_ actually publish them after building, so I
+    # suppose we're just making sure we don't die at publish time
     build_halyard_docs(self, repository)
     self.build_all_halyard_deployments(repository)
+    self.publish_to_nightly(repository)
     self.publish_halyard_version_commits(repository)
 
 
@@ -251,6 +294,15 @@ class BuildHalyardFactory(GradleCommandFactory):
         parser, 'halyard_docker_image_base',
         defaults, None,
         help='Base Docker image name for writing halyard builds.')
+    self.add_argument(
+        parser, 'gcb_project', defaults, None,
+        help='The GCP project ID when using the GCP Container Builder.')
+    self.add_argument(
+        parser, 'gcb_service_account', defaults, None,
+        help='Google Service Account when using the GCP Container Builder.')
+    self.add_argument(
+        parser, 'docker_registry', defaults, None,
+        help='Docker registry to push the container images to.')
 
 
 class PublishHalyardCommandFactory(CommandFactory):
