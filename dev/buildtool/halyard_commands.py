@@ -134,13 +134,19 @@ class BuildHalyardCommand(GradleCommandProcessor):
     env = dict(os.environ)
     env.update({
         'PUBLISH_HALYARD_BUCKET_BASE_URL': options.halyard_bucket_base_url,
-        'PUBLISH_HALYARD_DOCKER_IMAGE_BASE': options.halyard_docker_image_base
+        'PUBLISH_HALYARD_DOCKER_IMAGE_BASE': options.halyard_docker_image_base,
+        'PUBLISH_HALYARD_ARTIFACT_DOCKER_IMAGE_SRC_BASE': options.halyard_artifacts_docker_image_nightly_base,
+        'PUBLISH_HALYARD_ARTIFACT_DOCKER_IMAGE_TARGET_BASE': options.halyard_artifacts_docker_image_nightly_base,
     })
     logging.info(
-        'Preparing the environment variables for release/all.sh:\n'
+        'Preparing the environment variables for release/promote-all.sh:\n'
         '    PUBLISH_HALYARD_DOCKER_IMAGE_BASE=%s\n'
+        '    PUBLISH_HALYARD_ARTIFACT_DOCKER_IMAGE_SRC_BASE=%s\n'
+        '    PUBLISH_HALYARD_ARTIFACT_DOCKER_IMAGE_TARGET_BASE=%s\n'
         '    PUBLISH_HALYARD_BUCKET_BASE_URL=%s',
         options.halyard_docker_image_base,
+        options.halyard_artifacts_docker_image_nightly_base,
+        options.halyard_artifacts_docker_image_nightly_base,
         options.halyard_bucket_base_url)
 
     logfile = self.get_logfile_path('halyard-publish-to-nightly')
@@ -301,6 +307,14 @@ class BuildHalyardFactory(GradleCommandFactory):
         parser, 'halyard_docker_image_base',
         defaults, None,
         help='Base Docker image name for writing halyard builds.')
+    self.add_argument(
+        parser, 'halyard_artifacts_docker_image_nightly_base',
+        defaults, None,
+        help='Base Artifact Registry Docker image name for writing halyard nightly builds.')
+    self.add_argument(
+        parser, 'halyard_artifacts_docker_image_releases_base',
+        defaults, None,
+        help='Base Artifact Registry Docker image name for writing halyard release builds.')
     self.add_argument(
         parser, 'gcb_project', defaults, None,
         help='The GCP project ID when using the GCP Container Builder.')
@@ -476,7 +490,9 @@ class PublishHalyardCommand(CommandProcessor):
     env = dict(os.environ)
     env.update({
         'PUBLISH_HALYARD_BUCKET_BASE_URL': options.halyard_bucket_base_url,
-        'PUBLISH_HALYARD_DOCKER_IMAGE_BASE': options.halyard_docker_image_base
+        'PUBLISH_HALYARD_DOCKER_IMAGE_BASE': options.halyard_docker_image_base,
+        'PUBLISH_HALYARD_ARTIFACT_DOCKER_IMAGE_SRC_BASE': options.halyard_artifacts_docker_image_nightly_base,
+        'PUBLISH_HALYARD_ARTIFACT_DOCKER_IMAGE_TARGET_BASE': options.halyard_artifacts_docker_image_releases_base,
     })
     check_subprocesses_to_logfile(
         'Promote Halyard', logfile,
