@@ -17,7 +17,6 @@
 import datetime
 import logging
 import os
-import shutil
 import yaml
 
 import buildtool.container_commands
@@ -28,17 +27,14 @@ from buildtool import (
 
     SPINNAKER_BOM_REPOSITORY_NAMES,
 
-    BomSourceCodeManager,
     BranchSourceCodeManager,
     RepositoryCommandFactory,
     RepositoryCommandProcessor,
 
     HalRunner,
     GitRunner,
-    check_subprocess,
 
     check_path_exists,
-    ensure_dir_exists,
     raise_and_log_error,
     write_to_path,
     ConfigError)
@@ -322,129 +318,5 @@ class BuildBomCommandFactory(RepositoryCommandFactory):
              ' to come from a release branch.')
 
 
-class PublishBomCommand(RepositoryCommandProcessor):
-  """Implements publish_bom"""
-
-  def __init__(self, factory, options, **kwargs):
-    options.github_disable_upstream_push = True
-    super(PublishBomCommand, self).__init__(factory, options, **kwargs)
-    self.__hal_runner = HalRunner(options)
-    logging.debug('Verifying halyard server is consistent')
-
-    # Halyard is configured with fixed endpoints, however when we
-    # pubish we want to be explicit about where we are publishing to.
-    # There isnt a way to control this in halyard on a per-request basis
-    # so make sure halyard was configured consistent with where we want
-    # these BOMs to go.
-    self.__hal_runner.check_property(
-        'spinnaker.config.input.bucket', options.halyard_bom_bucket)
-
-  def _do_repository(self, repository):
-    """Implements RepositoryCommandProcessor interface."""
-    self.source_code_manager.ensure_local_repository(repository)
-    self.__collect_halconfig_files(repository)
-
-  def _do_postprocess(self, _):
-    """Implements RepositoryCommandProcessor interface."""
-    options = self.options
-    bom_path = _determine_bom_path(self)
-    self.__hal_runner.publish_bom_path(bom_path)
-    self.__publish_configs(bom_path)
-
-    if options.bom_alias:
-      alias = options.bom_alias
-      logging.info('Publishing bom alias %s = %s',
-                   alias, os.path.basename(bom_path))
-      with open(bom_path, 'r') as stream:
-        bom = yaml.safe_load(stream)
-
-      alias_path = os.path.join(os.path.dirname(bom_path), alias + '.yml')
-      with open(alias_path, 'w') as stream:
-        bom['version'] = options.bom_alias
-        yaml.safe_dump(bom, stream, default_flow_style=False)
-      self.__hal_runner.publish_bom_path(alias_path)
-
-  def __publish_configs(self, bom_path):
-    """Publish each of the halconfigs for the bom at the given path."""
-    def publish_repo_config(repository):
-      """Helper function to publish individual repository."""
-      name = self.scm.repository_name_to_service_name(repository.name)
-      config_dir = os.path.join(self.get_output_dir(), 'halconfig', name)
-      if not os.path.exists(config_dir):
-        logging.warning('No profiles for %s', name)
-        return
-
-      logging.debug('Publishing profiles for %s', name)
-      for profile in os.listdir(config_dir):
-        profile_path = os.path.join(config_dir, profile)
-        self.__hal_runner.publish_profile(name, profile_path, bom_path)
-
-    logging.info('Publishing halyard configs...')
-    self.source_code_manager.foreach_source_repository(
-        self.source_repositories, publish_repo_config)
-
-  def __collect_halconfig_files(self, repository):
-    """Gets the component config files and writes them into the output_dir."""
-    name = repository.name
-    if (name not in SPINNAKER_BOM_REPOSITORY_NAMES
-        or name in ['spin']):
-      logging.debug('%s does not use config files -- skipping', name)
-      return
-
-    if name == 'spinnaker-monitoring':
-      config_root = os.path.join(
-          repository.git_dir, 'spinnaker-monitoring-daemon')
-    else:
-      config_root = repository.git_dir
-
-    service_name = self.scm.repository_name_to_service_name(repository.name)
-    target_dir = os.path.join(self.get_output_dir(), 'halconfig', service_name)
-    ensure_dir_exists(target_dir)
-
-    config_path = os.path.join(config_root, 'halconfig')
-    logging.info('Copying configs from %s...', config_path)
-    for profile in os.listdir(config_path):
-      profile_path = os.path.join(config_path, profile)
-      if os.path.isfile(profile_path):
-        target_path = os.path.join(target_dir, profile)
-        shutil.copyfile(profile_path, target_path)
-        logging.debug('Copied profile to %s', target_path)
-      elif not os.path.isdir(profile_path):
-        logging.warning('%s is neither file nor directory -- ignoring',
-                        profile_path)
-        continue
-      else:
-        tar_path = os.path.join(
-            target_dir, '{profile}.tar.gz'.format(profile=profile))
-        file_list = ' '.join(os.listdir(profile_path))
-
-        # NOTE: For historic reasons this is not actually compressed
-        # even though the tar_path says ".tar.gz"
-        check_subprocess(
-            'tar cf {path} -C {profile} {file_list}'.format(
-                path=tar_path, profile=profile_path, file_list=file_list))
-        logging.debug('Copied profile to %s', tar_path)
-
-
-class PublishBomCommandFactory(RepositoryCommandFactory):
-  def __init__(self, **kwargs):
-    super(PublishBomCommandFactory, self).__init__(
-        'publish_bom', PublishBomCommand, 'Publish a BOM file to Halyard.',
-        BomSourceCodeManager,
-        **kwargs)
-
-  def init_argparser(self, parser, defaults):
-    super(PublishBomCommandFactory, self).init_argparser(parser, defaults)
-    HalRunner.add_parser_args(parser, defaults)
-
-    self.add_argument(
-        parser, 'halyard_bom_bucket', defaults, 'halconfig',
-        help='The bucket manaing halyard BOMs and config profiles.')
-    self.add_argument(
-        parser, 'bom_alias', defaults, None,
-        help='Also publish the BOM using this alias name.')
-
-
 def register_commands(registry, subparsers, defaults):
   BuildBomCommandFactory().register(registry, subparsers, defaults)
-  PublishBomCommandFactory().register(registry, subparsers, defaults)
