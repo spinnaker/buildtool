@@ -226,14 +226,6 @@
 # monitoring_prometheus_gateway:
 # monitoring_install_which:  # one of : prometheus, datadog, stackdriver
 
-##########################
-# Plugins
-##########################
-# plugin_repo: https://raw.githubusercontent.com/spinnaker-plugin-examples/examplePluginRepository/master/repositories.json
-# plugin_name: Armory.RandomWaitPlugin
-# plugin_extension: armory.randomWaitStage
-# plugin_version: 1.1.4
-
 #############################################
 #  Testing Module Configuration Parameters
 #############################################
