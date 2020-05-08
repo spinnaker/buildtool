@@ -333,3 +333,14 @@ tests:
     api: gate
     args:
       alias: [standard_dcos_provider_params]
+
+  plugin_stage_test:
+    requires:
+      services: [gate, orca]
+    api: gate
+    args:
+      stage_name: randomWait
+      stage_params: | 
+        {
+          "maxWaitTime": 5 
+        }
