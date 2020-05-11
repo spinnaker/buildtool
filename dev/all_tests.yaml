@@ -340,4 +340,4 @@ tests:
     api: gate
     args:
       stage_name: randomWait
-      stage_params: '{ "maxWaitTime": 5 }'
+      stage_params: "'{ \"maxWaitTime\": 5 }'"
