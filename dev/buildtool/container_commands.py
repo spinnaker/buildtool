@@ -65,13 +65,14 @@ class BuildContainerCommand(GradleCommandProcessor):
   def __gcb_image_exists(self, image_name, version):
     """Determine if gcb image already exists."""
     options = self.options
-    command = ['gcloud', '--account', options.gcb_service_account,
-               'container', 'images', 'list-tags',
-               options.docker_registry + '/' + image_name,
-               '--filter="%s"' % version,
+    command = ['gcloud', 'beta',
+               '--account', options.gcb_service_account,
+               'artifacts', 'docker', 'images', 'list',
+               options.artifact_registry + '/' + image_name,
+               '--include-tags',
+               '--filter="tags=%s"' % version,
                '--format=json']
     got = check_subprocess(' '.join(command), stderr=subprocess.PIPE)
-    logging.info('Got this from artifact list for %s: %s', image_name, got)
     if got.strip() != '[]':
       return True
     return False
