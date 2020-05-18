@@ -272,20 +272,6 @@ class PublishSpinnakerCommand(CommandProcessor):
           self.__push_branch_and_maybe_tag_repository(
               repository, self.__branch, version, name in names_to_push)
 
-    additional_repositories = list(SPINNAKER_PROCESS_REPOSITORY_NAMES)
-    for name in additional_repositories:
-      if self.__only_repositories and name not in self.__only_repositories:
-        logging.debug('Skipping %s because of --only_repositories', name)
-        continue
-      repository = branch_scm.make_repository_spec(name)
-      branch_scm.ensure_local_repository(repository)
-      git_summary = self.__git.collect_repository_summary(repository.git_dir)
-      version = git_summary.version
-      if self.__branch_and_tag_repository(
-          repository, self.__branch, version):
-        self.__push_branch_and_maybe_tag_repository(
-            repository, self.__branch, version, True)
-
   def __already_have_tag(self, repository, tag):
     """Determine if we already have the tag in the repository."""
     git_dir = repository.git_dir
