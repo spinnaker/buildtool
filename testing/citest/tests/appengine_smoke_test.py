@@ -453,7 +453,7 @@ class AppengineSmokeTest(st.AgentTestCase):
 def main():
   defaults = {
       'TEST_STACK': AppengineSmokeTestScenario.DEFAULT_TEST_ID,
-      'TEST_APP': 'gaesmoketest' + AppengineSmokeTestScenario.DEFAULT_TEST_ID,
+      'TEST_APP': 'gae1' + AppengineSmokeTestScenario.DEFAULT_TEST_ID,
   }
 
   return citest.base.TestRunner.main(
