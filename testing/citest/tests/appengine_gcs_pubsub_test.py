@@ -454,8 +454,8 @@ class AppengineGcsPubsubTest(st.AgentTestCase):
 
 def main():
   defaults = {
-    'TEST_STACK': 'appenginegcspubsubtest' + AppengineGcsPubsubTestScenario.DEFAULT_TEST_ID,
-    'TEST_APP': 'appenginegcspubsubgaetest' + AppengineGcsPubsubTestScenario.DEFAULT_TEST_ID
+    'TEST_STACK': AppengineGcsPubsubTestScenario.DEFAULT_TEST_ID,
+    'TEST_APP': 'gae2' + AppengineGcsPubsubTestScenario.DEFAULT_TEST_ID
   }
 
   return citest.base.TestRunner.main(
