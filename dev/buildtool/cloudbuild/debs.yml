@@ -7,7 +7,13 @@ steps:
 - id: buildCompileImage
   waitFor: ["restoreCache"]
   name: gcr.io/cloud-builders/docker
-  args: ["build", "-t", "compile", "-f", "Dockerfile.compile", "."]
+  args: [
+    "build",
+    "-t", "compile",
+    "-f", "Dockerfile.compile",
+    "--build-arg", "VERSION=$_VERSION-$_BUILD_NUMBER",
+    "."
+  ]
 - id: publishDeb
   waitFor: ["buildCompileImage"]
   name: compile
