@@ -134,19 +134,13 @@ class BuildHalyardCommand(GradleCommandProcessor):
     env = dict(os.environ)
     env.update({
         'PUBLISH_HALYARD_BUCKET_BASE_URL': options.halyard_bucket_base_url,
-        'PUBLISH_HALYARD_DOCKER_IMAGE_BASE': options.halyard_docker_image_base,
-        'PUBLISH_HALYARD_ARTIFACT_DOCKER_IMAGE_SRC_BASE': options.halyard_artifacts_docker_image_nightly_base,
-        'PUBLISH_HALYARD_ARTIFACT_DOCKER_IMAGE_TARGET_BASE': options.halyard_artifacts_docker_image_nightly_base,
+        'PUBLISH_HALYARD_DOCKER_IMAGE_BASE': options.halyard_docker_image_base
     })
     logging.info(
-        'Preparing the environment variables for release/promote-all.sh:\n'
+        'Preparing the environment variables for release/all.sh:\n'
         '    PUBLISH_HALYARD_DOCKER_IMAGE_BASE=%s\n'
-        '    PUBLISH_HALYARD_ARTIFACT_DOCKER_IMAGE_SRC_BASE=%s\n'
-        '    PUBLISH_HALYARD_ARTIFACT_DOCKER_IMAGE_TARGET_BASE=%s\n'
         '    PUBLISH_HALYARD_BUCKET_BASE_URL=%s',
         options.halyard_docker_image_base,
-        options.halyard_artifacts_docker_image_nightly_base,
-        options.halyard_artifacts_docker_image_nightly_base,
         options.halyard_bucket_base_url)
 
     logfile = self.get_logfile_path('halyard-publish-to-nightly')
@@ -167,20 +161,16 @@ class BuildHalyardCommand(GradleCommandProcessor):
                             config_filename='containers.yml',
                             git_dir=git_dir,
                             substitutions={'TAG_NAME': self.__build_version,
-                                           '_DOCKER_REGISTRY': options.docker_registry,
-                                           '_ARTIFACT_REGISTRY': options.artifact_registry,
-                                           '_COMPILE_CACHE_BUCKET': options.gcb_cache_bucket}),
+                                           '_DOCKER_REGISTRY': options.docker_registry}),
         self.gcloud_command(name='halyard-deb-build',
                             config_filename='debs.yml',
                             git_dir=git_dir,
                             substitutions={'_VERSION': summary.version,
-                                           '_BUILD_NUMBER': options.build_number,
-                                           '_COMPILE_CACHE_BUCKET': options.gcb_cache_bucket}),
+                                           '_BUILD_NUMBER': options.build_number}),
         self.gcloud_command(name='halyard-tar-build',
                             config_filename='halyard-tars.yml',
                             git_dir=git_dir,
-                            substitutions={'TAG_NAME': self.__build_version,
-                                           '_COMPILE_CACHE_BUCKET': options.gcb_cache_bucket}),
+                            substitutions={'TAG_NAME': self.__build_version}),
     ]
 
     pool = ThreadPool(len(commands))
@@ -308,14 +298,6 @@ class BuildHalyardFactory(GradleCommandFactory):
         defaults, None,
         help='Base Docker image name for writing halyard builds.')
     self.add_argument(
-        parser, 'halyard_artifacts_docker_image_nightly_base',
-        defaults, None,
-        help='Base Artifact Registry Docker image name for writing halyard nightly builds.')
-    self.add_argument(
-        parser, 'halyard_artifacts_docker_image_releases_base',
-        defaults, None,
-        help='Base Artifact Registry Docker image name for writing halyard release builds.')
-    self.add_argument(
         parser, 'gcb_project', defaults, None,
         help='The GCP project ID when using the GCP Container Builder.')
     self.add_argument(
@@ -324,12 +306,6 @@ class BuildHalyardFactory(GradleCommandFactory):
     self.add_argument(
         parser, 'docker_registry', defaults, None,
         help='Docker registry to push the container images to.')
-    self.add_argument(
-        parser, 'artifact_registry', defaults, None,
-        help='Artifact registry to push the container images to.')
-    self.add_argument(
-        parser, 'gcb_cache_bucket', defaults, "spinnaker-build-cache",
-        help='Google Storage Bucket for build caches when using the GCP Container Builder.')
 
 
 class PublishHalyardCommandFactory(CommandFactory):
@@ -390,8 +366,8 @@ class PublishHalyardCommandFactory(CommandFactory):
         parser, 'gcb_service_account', defaults, None,
         help='Google Service Account when using the GCP Container Builder.')
     self.add_argument(
-        parser, 'artifact_registry', defaults, None,
-        help='Artifact registry to push the container images to.')
+        parser, 'docker_registry', defaults, None,
+        help='Docker registry to push the container images to.')
 
 
 class PublishHalyardCommand(CommandProcessor):
@@ -490,9 +466,7 @@ class PublishHalyardCommand(CommandProcessor):
     env = dict(os.environ)
     env.update({
         'PUBLISH_HALYARD_BUCKET_BASE_URL': options.halyard_bucket_base_url,
-        'PUBLISH_HALYARD_DOCKER_IMAGE_BASE': options.halyard_docker_image_base,
-        'PUBLISH_HALYARD_ARTIFACT_DOCKER_IMAGE_SRC_BASE': options.halyard_artifacts_docker_image_nightly_base,
-        'PUBLISH_HALYARD_ARTIFACT_DOCKER_IMAGE_TARGET_BASE': options.halyard_artifacts_docker_image_releases_base,
+        'PUBLISH_HALYARD_DOCKER_IMAGE_BASE': options.halyard_docker_image_base
     })
     check_subprocesses_to_logfile(
         'Promote Halyard', logfile,
