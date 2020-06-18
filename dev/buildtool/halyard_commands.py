@@ -161,20 +161,16 @@ class BuildHalyardCommand(GradleCommandProcessor):
                             config_filename='containers.yml',
                             git_dir=git_dir,
                             substitutions={'TAG_NAME': self.__build_version,
-                                           '_DOCKER_REGISTRY': options.docker_registry,
-                                           '_ARTIFACT_REGISTRY': options.artifact_registry,
-                                           '_COMPILE_CACHE_BUCKET': options.gcb_cache_bucket}),
+                                           '_DOCKER_REGISTRY': options.docker_registry}),
         self.gcloud_command(name='halyard-deb-build',
                             config_filename='debs.yml',
                             git_dir=git_dir,
                             substitutions={'_VERSION': summary.version,
-                                           '_BUILD_NUMBER': options.build_number,
-                                           '_COMPILE_CACHE_BUCKET': options.gcb_cache_bucket}),
+                                           '_BUILD_NUMBER': options.build_number}),
         self.gcloud_command(name='halyard-tar-build',
                             config_filename='halyard-tars.yml',
                             git_dir=git_dir,
-                            substitutions={'TAG_NAME': self.__build_version,
-                                           '_COMPILE_CACHE_BUCKET': options.gcb_cache_bucket}),
+                            substitutions={'TAG_NAME': self.__build_version}),
     ]
 
     pool = ThreadPool(len(commands))
@@ -310,12 +306,6 @@ class BuildHalyardFactory(GradleCommandFactory):
     self.add_argument(
         parser, 'docker_registry', defaults, None,
         help='Docker registry to push the container images to.')
-    self.add_argument(
-        parser, 'artifact_registry', defaults, None,
-        help='Artifact registry to push the container images to.')
-    self.add_argument(
-        parser, 'gcb_cache_bucket', defaults, "spinnaker-build-cache",
-        help='Google Storage Bucket for build caches when using the GCP Container Builder.')
 
 
 class PublishHalyardCommandFactory(CommandFactory):
@@ -376,8 +366,8 @@ class PublishHalyardCommandFactory(CommandFactory):
         parser, 'gcb_service_account', defaults, None,
         help='Google Service Account when using the GCP Container Builder.')
     self.add_argument(
-        parser, 'artifact_registry', defaults, None,
-        help='Artifact registry to push the container images to.')
+        parser, 'docker_registry', defaults, None,
+        help='Docker registry to push the container images to.')
 
 
 class PublishHalyardCommand(CommandProcessor):
