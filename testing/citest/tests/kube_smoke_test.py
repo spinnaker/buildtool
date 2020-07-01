@@ -882,31 +882,6 @@ class KubeSmokeTest(st.AgentTestCase):
   def test_e_run_find_image_pipeline(self):
     self.run_test_case(self.scenario.run_find_image_pipeline())
 
-  def test_e_1_save_statefulset_pipeline(self):
-    self.run_test_case(self.scenario.save_statefulset_pipeline())
-
-  def test_e_2_create_statefulset_pipeline(self):
-    self.run_test_case(self.scenario.create_statefulset_pipeline())
-
-  def test_f_1_save_daemonset_pipeline(self):
-    self.run_test_case(self.scenario.save_daemonset_pipeline())
-
-  def test_f_2_create_daemonset_pipeline(self):
-    self.run_test_case(self.scenario.create_daemonset_pipeline())
-
-  def test_g_1_save_delete_daemonset_pipeline(self):
-    self.run_test_case(self.scenario.save_delete_daemonset_pipeline())
-
-  def test_g_2_execute_delete_daemonset_pipeline(self):
-    self.run_test_case(self.scenario.execute_delete_daemonset_pipeline())
-
-  def test_g_1_save_delete_statefulset_pipeline(self):
-    self.run_test_case(self.scenario.save_delete_statefulset_pipeline())
-
-  def test_g_2_execute_delete_statefulset_pipeline(self):
-    self.run_test_case(self.scenario.execute_delete_statefulset_pipeline())
-
-
   def test_x1_delete_server_group(self):
     self.run_test_case(self.scenario.delete_server_group('v000'), max_retries=2)
 
