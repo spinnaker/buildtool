@@ -540,6 +540,7 @@ class KubeSmokeTestScenario(sk.SpinnakerTestScenario):
                           }}
                   ],
                   'kind': 'DaemonSet',
+                  'apiVersion': 'apps/v1',
                   'volumeSources': [],
                   'provider': 'kubernetes',
                   'regions': [self.TEST_NAMESPACE],
@@ -580,6 +581,7 @@ class KubeSmokeTestScenario(sk.SpinnakerTestScenario):
                           }}
                   ],
                   'kind': 'StatefulSet',
+                  'apiVersion': 'apps/v1',
                   'volumeSources': [],
                   'provider': 'kubernetes',
                   'regions': [self.TEST_NAMESPACE],
