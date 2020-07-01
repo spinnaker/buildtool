@@ -52,7 +52,7 @@ class KubernetesManifestFactory(object):
 
   def deployment(self, name, image):
     return {
-        'apiVersion': 'apps/v1beta2',
+        'apiVersion': 'apps/v1',
         'kind': 'Deployment',
         'metadata': {
             'name': name,
