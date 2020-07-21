@@ -345,6 +345,7 @@ class BaseValidateBomDeployer(object):
   def add_install_hal_script_statements(self, script):
     """Adds the sequence of Bash statements to fetch and install halyard."""
     options = self.options
+    script.append('sudo apt-get update && sudo apt-get install -y openjdk-11-jre-headless')
     script.append('curl -s -O {url}'.format(url=options.halyard_install_script))
     install_params = ['-y']
     if options.halyard_config_bucket:
