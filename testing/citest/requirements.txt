@@ -3,7 +3,7 @@
 # citest is not currently published through pip
 # You'll need to clone the https://github.com/google/citest repository
 # and run pip install -r requirements.txt on its requirements file
-citest
+../../../citest
 
 # This is to make gsutil compatible with virtualenv
 # it isnt directly used by any tests, only tests that
