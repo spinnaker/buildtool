@@ -266,6 +266,16 @@ class KubeV2CacheTestScenario(sk.SpinnakerTestScenario):
         NoOpOperation('Has recorded a load balancer'),
         contract=builder.build())
 
+  def check_load_balancers_endpoint_empty(self):
+    builder = HttpContractBuilder(self.agent)
+    (builder.new_clause_builder('Has no load balancer')
+      .get_url_path('/applications/{}/loadBalancers'.format(self.TEST_APP))
+      .EXPECT(ov_factory.value_list_matches([])))
+
+    return st.OperationContract(
+        NoOpOperation('Has no load balancer'),
+        contract=builder.build())
+
   def check_clusters_endpoint(self, kind):
     name = kind + ' ' + self.TEST_APP + '-' + kind
     account = self.bindings['SPINNAKER_KUBERNETES_V2_ACCOUNT']
@@ -392,8 +402,8 @@ class KubeV2CacheTest(st.AgentTestCase):
   def test_b3_delete_service(self):
     self.run_test_case(self.scenario.delete_kind('service'), max_retries=2)
 
-  def test_b4_check_server_groups_endpoint_no_load_balancer(self):
-    self.run_test_case(self.scenario.check_server_groups_endpoint('deployment', 'library/nginx', has_lb=False))
+  def test_b4_check_load_balancers_endpoint_no_load_balancer(self):
+    self.run_test_case(self.scenario.check_load_balancers_endpoint_empty())
 
   def test_b9_delete_deployment(self):
     self.run_test_case(self.scenario.delete_kind('deployment'), max_retries=2)
