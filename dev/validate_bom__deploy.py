@@ -831,8 +831,8 @@ class AwsValidateBomDeployer(GenericVmValidateBomDeployer):
       retcode, stdout = run_subprocess(
           'aws ec2 describe-instances'
           ' --profile {region}'
-          ' --filters "Name=tag:Name,Values={name}'
-          ',Name=instance-state-name,Values=running"'
+          ' --filters "Name=tag:Name,Values={name}"'
+          ' "Name=instance-state-name,Values=running"'
           .format(region=options.deploy_aws_region,
                   name=options.deploy_aws_name))
       if retcode != 0:
@@ -882,8 +882,8 @@ class AwsValidateBomDeployer(GenericVmValidateBomDeployer):
         'aws ec2 describe-instances'
         ' --profile {region}'
         ' --output json'
-        ' --filters "Name=tag:Name,Values={name}'
-        ',Name=instance-state-name,Values=running"'
+        ' --filters "Name=tag:Name,Values={name}"'
+        ' "Name=instance-state-name,Values=running"'
         .format(region=options.deploy_aws_region,
                 name=options.deploy_aws_name))
     if retcode != 0:
@@ -1022,8 +1022,8 @@ class AwsValidateBomDeployer(GenericVmValidateBomDeployer):
       lookup_response = check_subprocess(
           'aws ec2 describe-instances'
           ' --profile {region}'
-          ' --filters "Name=tag:Name,Values={name}'
-          ',Name=instance-state-name,Values=running"'
+          ' --filters "Name=tag:Name,Values={name}"'
+          ' "Name=instance-state-name,Values=running"'
           .format(region=options.deploy_aws_region,
                   name=options.deploy_aws_name))
       exists = decode_json(lookup_response).get('Reservations')
