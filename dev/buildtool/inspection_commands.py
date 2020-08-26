@@ -1046,22 +1046,6 @@ class AuditArtifactVersions(CommandProcessor):
     maybe_write_log('invalid_releases', invalid_releases)
     maybe_write_log('unchecked_releases', unchecked_releases)
 
-  def most_recent_version(self, name, versions):
-    """Find the most recent version built."""
-    if not versions:
-      return None
-    raw_versions = set([version.split('-')[0] for version in versions])
-    sem_vers = []
-    for text in raw_versions:
-      try:
-        sem_vers.append(SemanticVersion.make('version-' + text))
-      except Exception as ex:
-        bad_list = self.__invalid_versions.get(name, [])
-        bad_list.append(text)
-        self.__invalid_versions[name] = bad_list
-        logging.error('Ignoring invalid %s version "%s": %s', name, text, ex)
-    return sorted(sem_vers)[-1].to_version()
-
   def test_buildnum(self, buildver):
     dash = buildver.rfind('-')
     if dash < 0 or not self.options.prune_min_buildnum_prefix:
@@ -1085,19 +1069,13 @@ class AuditArtifactVersions(CommandProcessor):
     return candidates
 
   def determine_prunings(self):
-    def filter_from_candidates(newest_version, candidate_version_list):
-      if self.options.prune_keep_latest_version:
-        prune_version = lambda ver: not ver.startswith(newest_version)
-      else:
-        prune_version = lambda ver: True
-
+    def filter_from_candidates(candidate_version_list):
       if self.options.prune_min_buildnum_prefix:
         prune_buildnum = self.test_buildnum
       else:
         prune_buildnum = lambda ver: True
 
-      return [candidate for candidate in candidate_version_list
-              if prune_version(candidate) and prune_buildnum(candidate)]
+      return [candidate for candidate in candidate_version_list if prune_buildnum(candidate)]
 
     self.__prune_boms = [name for name in self.determine_bom_candidates()
                          if self.test_buildnum(name)]
@@ -1121,8 +1099,7 @@ class AuditArtifactVersions(CommandProcessor):
             if unused_list:
               name = 'spinnaker-monitoring'
 
-        newest_version = self.most_recent_version(name, unused_list)
-        candidates = filter_from_candidates(newest_version, unused_list)
+        candidates = filter_from_candidates(unused_list)
 
         # We're going to keep malformed versions. These are rare so
         # we'll leave it to manual cleanup.
@@ -1415,10 +1392,6 @@ class AuditArtifactVersionsFactory(CommandFactory):
         parser, 'prune_min_buildnum_prefix', defaults, None,
         help='Only suggest pruning artifacts with a smaller build number.'
         ' This is actually just a string, not a number so is a string compare.')
-    self.add_argument(
-        parser, 'prune_keep_latest_version', defaults, False, type=bool,
-        help='If true, suggest only artifacts whose version is not the most'
-             ' recent version among the boms surveyed.')
 
 def register_commands(registry, subparsers, defaults):
   CollectBomVersionsFactory().register(registry, subparsers, defaults)
