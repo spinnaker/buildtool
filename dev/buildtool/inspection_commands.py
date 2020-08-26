@@ -1289,8 +1289,9 @@ class AuditArtifactVersions(CommandProcessor):
     if commit_map is None:
       return False
     for _, buildnums in commit_map.items():
-      if buildnum in buildnums:
-        return True
+      for bom_build_num in buildnums:
+        if bom_build_num.startswith(buildnum):
+          return True
     return False
 
   def audit_package_helper(self, package, version, buildnum, which):
