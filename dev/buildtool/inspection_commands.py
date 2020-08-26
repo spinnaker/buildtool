@@ -296,7 +296,7 @@ class CollectBomVersions(CommandProcessor):
 
   def ingest_bom_list(self, bom_list):
     """Ingest each of the boms."""
-    max_threads = 1 if self.options.one_at_a_time else 64
+    max_threads = 1 if self.options.one_at_a_time else 2
     pool = ThreadPool(min(max_threads, len(bom_list)))
     pool.map(self.ingest_bom, bom_list)
     pool.close()
