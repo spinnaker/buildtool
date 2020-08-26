@@ -1356,7 +1356,7 @@ class AuditArtifactVersions(CommandProcessor):
         for _, buildnums in commits.items():
           for buildnum, info_list in buildnums.items():
             version_buildnum = '%s-%s' % (version, buildnum)
-            if service in ['monitoring-daemon', 'monitoring-third-party']:
+            if service in ['monitoring-daemon', 'monitoring-third-party', 'deck']:
               # Uses debians, but not jars so missing jars is ok.
               jar_ok = True
             else:
