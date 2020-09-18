@@ -385,25 +385,43 @@ class KubeV2CacheTest(st.AgentTestCase):
     self.run_test_case(self.scenario.check_manifest_endpoint_exists('deployment'))
 
   def test_b2_check_applications_endpoint(self):
-    self.run_test_case(self.scenario.check_applications_endpoint())
+    # Give a total of 2 minutes because it might also need
+    # an internal cache update
+    self.run_test_case(self.scenario.check_applications_endpoint(),
+                       retry_interval_secs=8, max_retries=15)
 
   def test_b2_check_clusters_endpoint(self):
-    self.run_test_case(self.scenario.check_clusters_endpoint('deployment'))
+    # Give a total of 2 minutes because it might also need
+    # an internal cache update
+    self.run_test_case(self.scenario.check_clusters_endpoint('deployment'),
+                       retry_interval_secs=8, max_retries=15)
 
   def test_b2_check_detailed_clusters_endpoint(self):
-    self.run_test_case(self.scenario.check_detailed_clusters_endpoint('deployment'))
+    # Give a total of 2 minutes because it might also need
+    # an internal cache update
+    self.run_test_case(self.scenario.check_detailed_clusters_endpoint('deployment'),
+                       retry_interval_secs=8, max_retries=15)
 
   def test_b2_check_server_groups_endpoint(self):
-    self.run_test_case(self.scenario.check_server_groups_endpoint('deployment', 'library/nginx'))
+    # Give a total of 2 minutes because it might also need
+    # an internal cache update
+    self.run_test_case(self.scenario.check_server_groups_endpoint('deployment', 'library/nginx'),
+                       retry_interval_secs=8, max_retries=15)
 
   def test_b2_check_load_balancers_endpoint(self):
-    self.run_test_case(self.scenario.check_load_balancers_endpoint('service'))
+    # Give a total of 2 minutes because it might also need
+    # an internal cache update
+    self.run_test_case(self.scenario.check_load_balancers_endpoint('service'),
+                       retry_interval_secs=8, max_retries=15)
 
   def test_b3_delete_service(self):
     self.run_test_case(self.scenario.delete_kind('service'), max_retries=2)
 
   def test_b4_check_load_balancers_endpoint_no_load_balancer(self):
-    self.run_test_case(self.scenario.check_load_balancers_endpoint_empty())
+    # Give a total of 2 minutes because it might also need
+    # an internal cache update
+    self.run_test_case(self.scenario.check_load_balancers_endpoint_empty(),
+                       retry_interval_secs=8, max_retries=15)
 
   def test_b9_delete_deployment(self):
     self.run_test_case(self.scenario.delete_kind('deployment'), max_retries=2)
