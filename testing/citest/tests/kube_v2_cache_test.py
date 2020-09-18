@@ -201,7 +201,8 @@ class KubeV2CacheTestScenario(sk.SpinnakerTestScenario):
   def check_applications_endpoint(self):
     account = self.bindings['SPINNAKER_KUBERNETES_V2_ACCOUNT']
     builder = HttpContractBuilder(self.agent)
-    (builder.new_clause_builder('Has recorded an app for the deployed manifest')
+    (builder.new_clause_builder('Has recorded an app for the deployed manifest',
+                                retryable_for_secs=120)
        .get_url_path('/applications')
        .EXPECT(
            ov_factory.value_list_contains(jp.DICT_MATCHES({
@@ -222,8 +223,9 @@ class KubeV2CacheTestScenario(sk.SpinnakerTestScenario):
         jp.LIST_MATCHES([jp.STR_EQ('service {}-service'.format(self.TEST_APP))])
         if has_lb else jp.LIST_EQ([])
     )
-    (builder.new_clause_builder('Has recorded a server group for the deployed manifest')
-       .get_url_path('/applications/{}/serverGroups'.format(self.TEST_APP))
+    (builder.new_clause_builder('Has recorded a server group for the deployed manifest',
+                                retryable_for_secs=120)
+      .get_url_path('/applications/{}/serverGroups'.format(self.TEST_APP))
        .EXPECT(
            ov_factory.value_list_contains(jp.DICT_MATCHES({
                'name': jp.STR_SUBSTR(name),
@@ -245,7 +247,8 @@ class KubeV2CacheTestScenario(sk.SpinnakerTestScenario):
     name = kind + ' ' + self.TEST_APP + '-' + kind
     account = self.bindings['SPINNAKER_KUBERNETES_V2_ACCOUNT']
     builder = HttpContractBuilder(self.agent)
-    (builder.new_clause_builder('Has recorded a load balancer')
+    (builder.new_clause_builder('Has recorded a load balancer',
+                                retryable_for_secs=120)
        .get_url_path('/applications/{}/loadBalancers'.format(self.TEST_APP))
        .EXPECT(
            ov_factory.value_list_contains(jp.DICT_MATCHES({
@@ -268,7 +271,8 @@ class KubeV2CacheTestScenario(sk.SpinnakerTestScenario):
 
   def check_load_balancers_endpoint_empty(self):
     builder = HttpContractBuilder(self.agent)
-    (builder.new_clause_builder('Has no load balancer')
+    (builder.new_clause_builder('Has no load balancer',
+                                retryable_for_secs=120)
       .get_url_path('/applications/{}/loadBalancers'.format(self.TEST_APP))
       .EXPECT(ov_factory.value_list_matches([])))
 
@@ -280,7 +284,8 @@ class KubeV2CacheTestScenario(sk.SpinnakerTestScenario):
     name = kind + ' ' + self.TEST_APP + '-' + kind
     account = self.bindings['SPINNAKER_KUBERNETES_V2_ACCOUNT']
     builder = HttpContractBuilder(self.agent)
-    (builder.new_clause_builder('Has recorded a cluster for the deployed manifest')
+    (builder.new_clause_builder('Has recorded a cluster for the deployed manifest',
+                                retryable_for_secs=120)
        .get_url_path('/applications/{}/clusters'.format(self.TEST_APP))
        .EXPECT(
            ov_factory.value_list_contains(jp.DICT_MATCHES({
@@ -297,7 +302,8 @@ class KubeV2CacheTestScenario(sk.SpinnakerTestScenario):
     url_name = name.replace(' ', '%20')
     account = self.bindings['SPINNAKER_KUBERNETES_V2_ACCOUNT']
     builder = HttpContractBuilder(self.agent)
-    (builder.new_clause_builder('Has recorded a cluster for the deployed manifest')
+    (builder.new_clause_builder('Has recorded a cluster for the deployed manifest',
+                                retryable_for_secs=120)
        .get_url_path('/applications/{app}/clusters/{account}/{name}'.format(
          app=self.TEST_APP, account=account, name=url_name))
        .EXPECT(
@@ -385,43 +391,25 @@ class KubeV2CacheTest(st.AgentTestCase):
     self.run_test_case(self.scenario.check_manifest_endpoint_exists('deployment'))
 
   def test_b2_check_applications_endpoint(self):
-    # Give a total of 2 minutes because it might also need
-    # an internal cache update
-    self.run_test_case(self.scenario.check_applications_endpoint(),
-                       retry_interval_secs=8, max_retries=15)
+    self.run_test_case(self.scenario.check_applications_endpoint())
 
   def test_b2_check_clusters_endpoint(self):
-    # Give a total of 2 minutes because it might also need
-    # an internal cache update
-    self.run_test_case(self.scenario.check_clusters_endpoint('deployment'),
-                       retry_interval_secs=8, max_retries=15)
+    self.run_test_case(self.scenario.check_clusters_endpoint('deployment'))
 
   def test_b2_check_detailed_clusters_endpoint(self):
-    # Give a total of 2 minutes because it might also need
-    # an internal cache update
-    self.run_test_case(self.scenario.check_detailed_clusters_endpoint('deployment'),
-                       retry_interval_secs=8, max_retries=15)
+    self.run_test_case(self.scenario.check_detailed_clusters_endpoint('deployment'))
 
   def test_b2_check_server_groups_endpoint(self):
-    # Give a total of 2 minutes because it might also need
-    # an internal cache update
-    self.run_test_case(self.scenario.check_server_groups_endpoint('deployment', 'library/nginx'),
-                       retry_interval_secs=8, max_retries=15)
+    self.run_test_case(self.scenario.check_server_groups_endpoint('deployment', 'library/nginx'))
 
   def test_b2_check_load_balancers_endpoint(self):
-    # Give a total of 2 minutes because it might also need
-    # an internal cache update
-    self.run_test_case(self.scenario.check_load_balancers_endpoint('service'),
-                       retry_interval_secs=8, max_retries=15)
+    self.run_test_case(self.scenario.check_load_balancers_endpoint('service'))
 
   def test_b3_delete_service(self):
     self.run_test_case(self.scenario.delete_kind('service'), max_retries=2)
 
   def test_b4_check_load_balancers_endpoint_no_load_balancer(self):
-    # Give a total of 2 minutes because it might also need
-    # an internal cache update
-    self.run_test_case(self.scenario.check_load_balancers_endpoint_empty(),
-                       retry_interval_secs=8, max_retries=15)
+    self.run_test_case(self.scenario.check_load_balancers_endpoint_empty())
 
   def test_b9_delete_deployment(self):
     self.run_test_case(self.scenario.delete_kind('deployment'), max_retries=2)
