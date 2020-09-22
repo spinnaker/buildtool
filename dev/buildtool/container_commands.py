@@ -65,10 +65,12 @@ class BuildContainerCommand(GradleCommandProcessor):
   def __gcb_image_exists(self, image_name, version):
     """Determine if gcb image already exists."""
     options = self.options
-    command = ['gcloud', '--account', options.gcb_service_account,
-               'container', 'images', 'list-tags',
-               options.docker_registry + '/' + image_name,
-               '--filter="%s"' % version,
+    command = ['gcloud', 'beta',
+               '--account', options.gcb_service_account,
+               'artifacts', 'docker', 'images', 'list',
+               options.artifact_registry + '/' + image_name,
+               '--include-tags',
+               '--filter="tags:%s"' % version,
                '--format=json']
     got = check_subprocess(' '.join(command), stderr=subprocess.PIPE)
     if got.strip() != '[]':
@@ -83,7 +85,8 @@ class BuildContainerCommand(GradleCommandProcessor):
                                      'cloudbuild',
                                      'containers.yml')
     service_name = self.scm.repository_name_to_service_name(repository.name)
-    substitutions = {'_BRANCH_NAME': options.git_branch,
+    substitutions = {'_ARTIFACT_REGISTRY': options.artifact_registry,
+                     '_BRANCH_NAME': options.git_branch,
                      '_BRANCH_TAG': re.sub(r'\W', '_', options.git_branch),
                      '_DOCKER_REGISTRY': options.docker_registry,
                      '_IMAGE_NAME': service_name,
@@ -121,6 +124,9 @@ class BuildContainerFactory(GradleCommandFactory):
     BuildContainerFactory.add_argument(
         parser, 'docker_registry', defaults, None,
         help='Docker registry to push the container images to.')
+    BuildContainerFactory.add_argument(
+        parser, 'artifact_registry', defaults, None,
+        help='Artifact registry to push the container images to.')
 
   def init_argparser(self, parser, defaults):
     super(BuildContainerFactory, self).init_argparser(parser, defaults)
