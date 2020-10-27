@@ -27,7 +27,7 @@ from build_release import run_shell_and_log, BuildFailure
 
 
 SUBSYSTEM_LIST = ['clouddriver', 'deck', 'echo', 'fiat', 'front50', 'gate',
-                  'igor', 'orca', 'rosco', 'consul', 'redis', 'vault']
+                  'igor', 'orca', 'rosco', 'consul', 'redis', 'vault', 'keel']
 
 
 class ComponentVmBuilder(object):
