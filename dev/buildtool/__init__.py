@@ -7,8 +7,7 @@ SPINNAKER_RUNNABLE_REPOSITORY_NAMES = [
     'clouddriver',
     'deck',
     'echo', 'fiat', 'front50',
-    'gate', 'igor', 'kayenta',
-    'orca', 'rosco', 'keel']
+    'gate', 'igor', 'kayenta', 'orca', 'rosco']
 
 # For building and validating a release
 SPINNAKER_PROCESS_REPOSITORY_NAMES = ['buildtool', 'spinrel']
