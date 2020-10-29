@@ -46,7 +46,6 @@ type Services struct {
 	Gate             Service `yaml:"gate"`
 	Igor             Service `yaml:"igor"`
 	Kayenta          Service `yaml:"kayenta"`
-	Keel             Service `yaml:"keel"`
 	MonitoringDaemon Service `yaml:"monitoring-daemon"`
 	Orca             Service `yaml:"orca"`
 	Rosco            Service `yaml:"rosco"`
@@ -62,7 +61,6 @@ func (s *Services) List() *list.List {
 	l.PushBack(s.Gate.WithName("gate"))
 	l.PushBack(s.Igor.WithName("igor"))
 	l.PushBack(s.Kayenta.WithName("kayenta"))
-	l.PushBack(s.Keel.WithName("keel"))
 	l.PushBack(s.MonitoringDaemon.WithName("monitoring-daemon"))
 	l.PushBack(s.Orca.WithName("orca"))
 	l.PushBack(s.Rosco.WithName("rosco"))
