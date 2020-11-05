@@ -24,6 +24,8 @@ steps:
             "build",
             "-t", "$_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME",
             "-t", "$_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-slim",
+            "-t", "$_ARTIFACT_REGISTRY/$_IMAGE_NAME:$TAG_NAME",
+            "-t", "$_ARTIFACT_REGISTRY/$_IMAGE_NAME:$TAG_NAME-slim",
             "-f", "Dockerfile.slim",
             ".",
           ]
@@ -33,6 +35,7 @@ steps:
     args: [
             "build",
             "-t", "$_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-ubuntu",
+            "-t", "$_ARTIFACT_REGISTRY/$_IMAGE_NAME:$TAG_NAME-ubuntu",
             "-f", "Dockerfile.ubuntu",
             ".",
           ]
@@ -48,6 +51,9 @@ images:
   - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME
   - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-slim
   - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-ubuntu
+  - $_ARTIFACT_REGISTRY/$_IMAGE_NAME:$TAG_NAME
+  - $_ARTIFACT_REGISTRY/$_IMAGE_NAME:$TAG_NAME-slim
+  - $_ARTIFACT_REGISTRY/$_IMAGE_NAME:$TAG_NAME-ubuntu
 tags: ["type_containers", "repo_$_IMAGE_NAME", "branch_$_BRANCH_TAG"]
 timeout: 3600s
 options:
@@ -55,3 +61,4 @@ options:
 substitutions:
   _COMPILE_CACHE_BUCKET: spinnaker-build-cache
   _BRANCH_TAG: unknown
+  _ARTIFACT_REGISTRY: us-docker.pkg.dev/spinnaker-community/docker
