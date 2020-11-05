@@ -355,6 +355,10 @@ class PublishHalyardCommandFactory(CommandFactory):
         defaults, None,
         help='Base Docker image name for writing halyard builds.')
     self.add_argument(
+        parser, 'halyard_artifact_registry_image_base',
+        defaults, None,
+        help='Base Artifact Registry image name for writing halyard builds.')
+    self.add_argument(
         parser, 'halyard_bucket_base_url',
         defaults, None,
         help='Base Google Cloud Storage URL for writing halyard builds.')
