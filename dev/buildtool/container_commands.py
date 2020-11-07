@@ -88,7 +88,6 @@ class BuildContainerCommand(GradleCommandProcessor):
     substitutions = {'_ARTIFACT_REGISTRY': options.artifact_registry,
                      '_BRANCH_NAME': options.git_branch,
                      '_BRANCH_TAG': re.sub(r'\W', '_', options.git_branch),
-                     '_DOCKER_REGISTRY': options.docker_registry,
                      '_IMAGE_NAME': service_name,
                      'TAG_NAME': build_version}
     # Convert it to the format expected by gcloud: "_FOO=bar,_BAZ=qux"
@@ -121,9 +120,6 @@ class BuildContainerFactory(GradleCommandFactory):
     parser.added_container = True
     GradleCommandFactory.add_bom_parser_args(parser, defaults)
 
-    BuildContainerFactory.add_argument(
-        parser, 'docker_registry', defaults, None,
-        help='Docker registry to push the container images to.')
     BuildContainerFactory.add_argument(
         parser, 'artifact_registry', defaults, None,
         help='Artifact registry to push the container images to.')
