@@ -594,7 +594,7 @@ class CollectArtifactVersions(CommandProcessor):
                      image, '--limit 10000']
     if options.gcb_service_account:
       command_parts.extend(['--account', options.gcb_service_account])
-    response = check_subprocess(' '.join(command_parts))
+    response = check_subprocess(' '.join(command_parts), stderr=open(os.devnull, 'w'))
     result = []
     for version in json.JSONDecoder().decode(response):
       result.extend(version['tags'])
@@ -611,7 +611,7 @@ class CollectArtifactVersions(CommandProcessor):
       logging.debug('Using account %s', options.gcb_service_account)
       command_parts.extend(['--account', options.gcb_service_account])
 
-    response = check_subprocess(' '.join(command_parts))
+    response = check_subprocess(' '.join(command_parts), stderr=open(os.devnull, 'w'))
     images = [entry['name']
               for entry in json.JSONDecoder().decode(response)]
     image_versions = pool.map(self.query_gcr_image_versions, images)
@@ -640,7 +640,7 @@ class CollectArtifactVersions(CommandProcessor):
       logging.debug('Using account %s', options.build_gce_service_account)
       command_parts.extend(['--account', options.build_gce_service_account])
 
-    response = check_subprocess(' '.join(command_parts))
+    response = check_subprocess(' '.join(command_parts), stderr=open(os.devnull, 'w'))
     images = [entry['name']
               for entry in json.JSONDecoder().decode(response)]
     image_map = {}
