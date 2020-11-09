@@ -22,8 +22,6 @@ steps:
     name: gcr.io/cloud-builders/docker
     args: [
             "build",
-            "-t", "$_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME",
-            "-t", "$_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-slim",
             "-t", "$_ARTIFACT_REGISTRY/$_IMAGE_NAME:$TAG_NAME",
             "-t", "$_ARTIFACT_REGISTRY/$_IMAGE_NAME:$TAG_NAME-slim",
             "-f", "Dockerfile.slim",
@@ -34,7 +32,6 @@ steps:
     name: gcr.io/cloud-builders/docker
     args: [
             "build",
-            "-t", "$_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-ubuntu",
             "-t", "$_ARTIFACT_REGISTRY/$_IMAGE_NAME:$TAG_NAME-ubuntu",
             "-f", "Dockerfile.ubuntu",
             ".",
@@ -48,9 +45,6 @@ steps:
       - "--path=.gradle/caches"
       - "--path=.gradle/wrapper"
 images:
-  - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME
-  - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-slim
-  - $_DOCKER_REGISTRY/$_IMAGE_NAME:$TAG_NAME-ubuntu
   - $_ARTIFACT_REGISTRY/$_IMAGE_NAME:$TAG_NAME
   - $_ARTIFACT_REGISTRY/$_IMAGE_NAME:$TAG_NAME-slim
   - $_ARTIFACT_REGISTRY/$_IMAGE_NAME:$TAG_NAME-ubuntu

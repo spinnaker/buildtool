@@ -164,8 +164,7 @@ class BuildHalyardCommand(GradleCommandProcessor):
                             config_filename='containers.yml',
                             git_dir=git_dir,
                             substitutions={'TAG_NAME': self.__build_version,
-                                           '_ARTIFACT_REGISTRY': options.artifact_registry,
-                                           '_DOCKER_REGISTRY': options.docker_registry}),
+                                           '_ARTIFACT_REGISTRY': options.artifact_registry}),
         self.gcloud_command(name='halyard-deb-build',
                             config_filename='debs.yml',
                             git_dir=git_dir,
@@ -314,9 +313,6 @@ class BuildHalyardFactory(GradleCommandFactory):
     self.add_argument(
         parser, 'artifact_registry', defaults, None,
         help='Artifact registry to push the container images to.')
-    self.add_argument(
-          parser, 'docker_registry', defaults, None,
-          help='Docker registry to push the container images to.')
 
 
 class PublishHalyardCommandFactory(CommandFactory):
