@@ -27,8 +27,8 @@ from buildtool import (
   GradleCommandFactory,
   GradleCommandProcessor,
 
-  check_subprocess,
-  check_subprocesses_to_logfile
+  check_subprocesses_to_logfile,
+  run_subprocess
 )
 
 
@@ -67,15 +67,11 @@ class BuildContainerCommand(GradleCommandProcessor):
     options = self.options
     command = ['gcloud', 'beta',
                '--account', options.gcb_service_account,
-               'artifacts', 'docker', 'images', 'list',
-               options.artifact_registry + '/' + image_name,
-               '--include-tags',
-               '--filter="tags:%s"' % version,
-               '--format=json']
-    got = check_subprocess(' '.join(command), stderr=subprocess.PIPE)
-    if got.strip() != '[]':
-      return True
-    return False
+               'artifacts', 'docker', 'images', 'describe',
+               '%s/%s:%s' % (options.artifact_registry, image_name, version)]
+    exit_code = run_subprocess(' '.join(command), stderr=subprocess.PIPE)[0]
+
+    return exit_code == 0
 
   def __build_with_gcb(self, repository, build_version):
     name = repository.name
