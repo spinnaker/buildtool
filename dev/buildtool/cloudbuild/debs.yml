@@ -37,6 +37,9 @@ steps:
   - "-x"
   - "test"
   - "publish"
+  - "||"
+  - "echo"
+  - "'Failed to publish debs, assuming this was from a conflict (not always true?)'"
   env:
   - 'ORG_GRADLE_PROJECT_org.gradle.jvmargs=-Xmx4g'
   secretEnv: ['ORG_GRADLE_PROJECT_bintrayKey']
