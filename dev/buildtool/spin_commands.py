@@ -277,7 +277,7 @@ class PublishSpinCommand(CommandProcessor):
 
     release_branch = 'origin/release-{maj}.{min}.x'.format(
         maj=semver_parts[0], min=semver_parts[1])
-    release_tag = 'version-' + self.__stable_version
+    release_tag = 'v' + self.__stable_version
     logging.info('Pushing branch=%s and tag=%s to %s',
                  release_branch, release_tag, repository.origin)
     git.check_run_sequence(
