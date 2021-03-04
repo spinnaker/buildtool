@@ -28,7 +28,7 @@ bintray_publish_wait_secs: -1
 # Halyard Commands
 ################################
 halyard_bucket_base_url: gs://spinnaker-artifacts/halyard
-halyard_docker_image_base: gcr.io/spinnaker-marketplace/halyard
+halyard_docker_image_base: gcr.io/spinnaker-community/halyard
 docs_repo_owner: spinnaker
 halyard_bom_bucket: halconfig
 
@@ -43,5 +43,5 @@ spin_build_credentials_path:
 ################################
 # Container Commands
 ################################
-docker_registry: gcr.io/spinnaker-marketplace
-gcb_project: spinnaker-marketplace
+docker_registry: gcr.io/spinnaker-community
+gcb_project: spinnaker-community

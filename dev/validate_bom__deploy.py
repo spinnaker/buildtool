@@ -1442,7 +1442,7 @@ def init_argument_parser(parser, defaults):
       help='The location of the spinnaker debian repository.')
 
   add_parser_argument(
-      parser, 'spinnaker_registry', defaults, 'gcr.io/spinnaker-marketplace',
+      parser, 'spinnaker_registry', defaults, 'gcr.io/spinnaker-community',
       help='The location of the spinnaker container registry.')
 
   add_parser_argument(
