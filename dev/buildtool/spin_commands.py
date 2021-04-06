@@ -436,7 +436,7 @@ def bump_spin_patch(git, git_dir, gate_version):
     patch = '0'
 
   # SemanticVersion.make() expects a tag, so formulate the input gate version as a tag.
-  spin_semver = SemanticVersion.make('version-{major}.{minor}.{patch}'
+  spin_semver = SemanticVersion.make('v{major}.{minor}.{patch}'
                                      .format(major=gate_semver.major,
                                              minor=gate_semver.minor,
                                              patch=patch))
