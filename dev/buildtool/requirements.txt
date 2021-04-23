@@ -2,7 +2,7 @@ PyYAML
 
 # This is for testing
 python-dateutil
-mock
+mock==3.0.5
 
 # This is to satisfy gsutil
 google_compute_engine
