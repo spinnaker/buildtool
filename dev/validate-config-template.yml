@@ -72,7 +72,7 @@
 # halyard_config_bucket:    # only set to override
 # halyard_config_bucket_credentials:  # only set if needed by halyard_config_bucket
 # spinnaker_repository: https://dl.bintray.com/spinnaker-releases/debians
-# spinnaker_registry: gcr.io/spinnaker-community
+# spinnaker_registry: us-docker.pkg.dev/spinnaker-community/docker
 # deploy_spinnaker_type: # localdebian or distributed
 # deploy_hal_platform:   # one of gce, ec2, azure
 # deploy_haly_user:      # LOGNAME environment variable
