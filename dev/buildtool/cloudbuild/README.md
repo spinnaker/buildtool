@@ -1,9 +1,8 @@
 ## Google Cloud Build files
 
-The `containers.yml` and `debs.yml` files are
-[Google Cloud Build build configurations](https://cloud.google.com/cloud-build/docs/build-config)
-for building and publishing the Spinnaker microservice containers and Debian
-packages.
+The `containers.yml` file is a
+[Google Cloud Build build configuration](https://cloud.google.com/cloud-build/docs/build-config)
+for building and publishing the Spinnaker microservice containers.
 
 In order to use them, there must be a `save_cache` and `restore_cache` image in
 the Google Container Registry of the project in which the configurations are

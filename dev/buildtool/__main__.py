@@ -236,7 +236,6 @@ def main():
           'bom',
           'changelog',
           'container',
-          'debian',
           'halyard',
           'image',
           'rpm',

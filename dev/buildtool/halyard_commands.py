@@ -491,55 +491,6 @@ class PublishHalyardCommand(CommandProcessor):
         env=env,
         cwd=repository.git_dir)
 
-  def _build_release(self, repository):
-    """Rebuild the actual release debian package.
-
-    We dont necessarily need to rebuild here. We just need to push as
-    debian to the "-stable". However there isnt an easy way to do this.
-
-    Note that this is not the promoted version. For safety[*] and simplicity
-    we'll promote the candidate whose version was used to build this.
-    Ideally this function can go away.
-
-    [*] Safety because the candidate was tested whereas this build was not.
-    """
-    # Ideally we would just modify the existing bintray version to add
-    # *-stable to the distributions, however it does not appear possible
-    # to patch the debian attributes of a bintray version, only the
-    # version metadata. Therefore, we'll rebuild it.
-    # Alternatively we could download the existing and push a new one,
-    # however I dont see how to get at the existing debian metadata and
-    # dont want to ommit something
-
-    options = self.options
-    git_dir = repository.git_dir
-    summary = self.__scm.git.collect_repository_summary(git_dir)
-
-
-    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                               'cloudbuild', 'debs.yml')
-    substitutions = {'_BRANCH_NAME': options.git_branch,
-                     '_BRANCH_TAG': re.sub(r'\W', '_', options.git_branch),
-                     '_BUILD_NUMBER': options.build_number,
-                     '_IMAGE_NAME': 'halyard',
-                     '_VERSION': summary.version}
-    # Convert it to the format expected by gcloud: "_FOO=bar,_BAZ=qux"
-    substitutions_arg = ','.join('='.join((str(k), str(v))) for k, v in
-                                 substitutions.items())
-    command = ('gcloud builds submit '
-               ' --account={account} --project={project}'
-               ' --substitutions={substitutions_arg},'
-               ' --config={config} .'
-               .format(account=options.gcb_service_account,
-                       project=options.gcb_project,
-                       substitutions_arg=substitutions_arg,
-                       config=config_path))
-    logfile = self.get_logfile_path('build-deb')
-    check_subprocesses_to_logfile('building deb with published version',
-                                  logfile,
-                                  [command],
-                                  cwd=git_dir)
-
   def write_target_docs(self, source_repository, target_repository):
     source_path = os.path.join(source_repository.git_dir,
                                self.__halyard_repo_md_path)
@@ -608,7 +559,6 @@ class PublishHalyardCommand(CommandProcessor):
   def _do_command(self):
     """Implements CommandProcessor interface."""
     repository = self._prepare_repository()
-    self._build_release(repository)
     self._promote_halyard(repository)
     build_halyard_docs(self, repository)
     self.push_docs(repository)

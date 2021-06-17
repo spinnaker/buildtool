@@ -44,8 +44,6 @@ function run_build_flow() {
 
   start_command_unless NO_CONTAINERS "build_bom_containers" \
       $EXTRA_BOM_COMMAND_ARGS --git_branch $BOM_BRANCH
-  start_command_unless NO_DEBIANS "build_debians" \
-      $EXTRA_BOM_COMMAND_ARGS --git_branch $BOM_BRANCH
   # Every buildtool command re-clones all the git repositories it needs. We'll
   # just reuse the ones that build_bom already checked out...
   start_spinrel publish_profiles \
@@ -107,9 +105,6 @@ function process_args() {
           ;;
         --no_containers)
           NO_CONTAINERS=true
-          ;;
-        --no_debians)
-          NO_DEBIANS=true
           ;;
         --no_halyard)
           NO_HALYARD=true
