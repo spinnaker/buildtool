@@ -608,7 +608,8 @@ class PublishHalyardCommand(CommandProcessor):
   def _do_command(self):
     """Implements CommandProcessor interface."""
     repository = self._prepare_repository()
-    self._build_release(repository)
+    # Removing debian publishing, until we have a new place to push them to.
+    #self._build_release(repository)
     self._promote_halyard(repository)
     build_halyard_docs(self, repository)
     self.push_docs(repository)
