@@ -234,7 +234,7 @@ class HalyardPublisher(object):
                         help='Make a patch release.')
     parser.add_argument('--stable_version', default='', required=True,
                         help='The stable version we are publishing the chosen nightly Halyard version as.')
-    parser.add_argument('--docs_repo_name', default='spinnaker.github.io', required=True,
+    parser.add_argument('--docs_repo_name', default='spinnaker.io', required=True,
                         help="The name of the Spinnaker docs repository")
     parser.add_argument('--docs_repo_owner', default='spinnaker', required=True,
                         help="The owner of the Spinnaker docs repository")

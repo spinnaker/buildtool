@@ -178,7 +178,7 @@ class SpinnakerSourceCodeManager(object):
 
     Normally one would use ensure_repository which also ensures the metadata
     is cached. However repositories that are not version controlled in the
-    normal way (e.g. spinnaker.github.io) dont use the metadata so the
+    normal way (e.g. spinnaker.io) dont use the metadata so the
     assumptions in ensure_repository are not applicable.
 
     Returns: The build number to use

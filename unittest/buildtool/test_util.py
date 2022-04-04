@@ -49,7 +49,7 @@ NORMAL_SERVICE = 'gate'
 NORMAL_REPO = NORMAL_SERVICE
 OUTLIER_SERVICE = 'monitoring-daemon'
 OUTLIER_REPO = 'spinnaker-monitoring'
-EXTRA_REPO = 'spinnaker.github.io'
+EXTRA_REPO = 'spinnaker.io'
 EXTRA_SERVICE = EXTRA_REPO
 
 STANDARD_GIT_HOST = 'test-gitserver'
