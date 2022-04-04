@@ -37,11 +37,11 @@ from buildtool import (
 from test_util import init_runtime
 
 
-TAG_VERSION_PATTERN = r'^version-[0-9]+\.[0-9]+\.[0-9]+$'
+TAG_VERSION_PATTERN = r'^v[0-9]+\.[0-9]+\.[0-9]+$'
 
-VERSION_BASE = 'version-0.1.0'
-VERSION_A = 'version-0.4.0'
-VERSION_B = 'version-0.5.0'
+VERSION_BASE = 'v0.1.0'
+VERSION_A = 'v0.4.0'
+VERSION_B = 'v0.5.0'
 BRANCH_A = 'release-a'
 BRANCH_B = 'release-b'
 BRANCH_C = 'release-c'
@@ -106,7 +106,7 @@ class TestGitRunner(unittest.TestCase):
         'touch "{dir}/extra_file"'.format(dir=git_dir),
         gitify('add "{dir}/extra_file"'.format(dir=git_dir)),
         gitify('commit -a -m "feat(test): added extra_file"'),
-        gitify('tag version-9.9.9 HEAD')])
+        gitify('tag v9.9.9 HEAD')])
 
   @classmethod
   def tearDownClass(cls):
@@ -380,20 +380,20 @@ class TestGitRunner(unittest.TestCase):
       self.assertEqual(self.git.query_local_repository_commit_id(self.git_dir),
                        summary.commit_id)
       self.assertEqual(tag, summary.tag)
-      self.assertEqual(tag.split('-')[1], summary.version)
-      self.assertEqual(tag.split('-')[1], summary.prev_version)
+      self.assertEqual(tag.split('v')[1], summary.version)
+      self.assertEqual(tag.split('v')[1], summary.prev_version)
       self.assertEqual([], summary.commit_messages)
 
 
 class TestSemanticVersion(unittest.TestCase):
   def test_semver_make_valid(self):
-    tests = [('simple-1.0.0', SemanticVersion('simple', 1, 0, 0)),
-             ('another-10.11.12', SemanticVersion('another', 10, 11, 12))]
+    tests = [('simplez1.0.0', SemanticVersion('simplez', 1, 0, 0)),
+             ('anotherz10.11.12', SemanticVersion('anotherz', 10, 11, 12))]
     for tag, expect in tests:
       semver = SemanticVersion.make(tag)
       self.assertEqual(semver, expect)
       self.assertEqual(tag, semver.to_tag())
-      self.assertEqual(tag[tag.rfind('-') + 1:], semver.to_version())
+      self.assertEqual(tag[tag.rfind('z') + 1:], semver.to_version())
 
   def test_semver_next(self):
     semver = SemanticVersion('A', 1, 2, 3)
@@ -421,26 +421,26 @@ class TestSemanticVersion(unittest.TestCase):
 
   def test_semver_sort(self):
     versions = [
-        SemanticVersion.make('version-1.9.7'),
-        SemanticVersion.make('version-9.8.7'),
-        SemanticVersion.make('version-11.0.0'),
-        SemanticVersion.make('version-3.10.2'),
-        SemanticVersion.make('version-3.0.4'),
-        SemanticVersion.make('version-3.2.2'),
-        SemanticVersion.make('version-3.2.0'),
-        SemanticVersion.make('version-3.2.1'),
+        SemanticVersion.make('v1.9.7'),
+        SemanticVersion.make('v9.8.7'),
+        SemanticVersion.make('v11.0.0'),
+        SemanticVersion.make('v3.10.2'),
+        SemanticVersion.make('v3.0.4'),
+        SemanticVersion.make('v3.2.2'),
+        SemanticVersion.make('v3.2.0'),
+        SemanticVersion.make('v3.2.1'),
     ]
 
     got = sorted(versions)
     expect = [
-        SemanticVersion.make('version-1.9.7'),
-        SemanticVersion.make('version-3.0.4'),
-        SemanticVersion.make('version-3.2.0'),
-        SemanticVersion.make('version-3.2.1'),
-        SemanticVersion.make('version-3.2.2'),
-        SemanticVersion.make('version-3.10.2'),
-        SemanticVersion.make('version-9.8.7'),
-        SemanticVersion.make('version-11.0.0'),
+        SemanticVersion.make('v1.9.7'),
+        SemanticVersion.make('v3.0.4'),
+        SemanticVersion.make('v3.2.0'),
+        SemanticVersion.make('v3.2.1'),
+        SemanticVersion.make('v3.2.2'),
+        SemanticVersion.make('v3.10.2'),
+        SemanticVersion.make('v9.8.7'),
+        SemanticVersion.make('v11.0.0'),
     ]
     self.assertEqual(expect, got)
 
@@ -546,7 +546,7 @@ class TestCommitMessage(unittest.TestCase):
       # CommitMessage fixture for more interesting cases.
       self.run_git('checkout ' + branch)
       summary = self.git.collect_repository_summary(self.git_dir)
-      self.assertEqual('version-' + version, summary.tag)
+      self.assertEqual('v' + version, summary.tag)
       self.assertEqual(version, summary.version)
       self.assertEqual('0.1.0', summary.prev_version)
       clean_messages = ['\n'.join([line.strip() for line in lines])

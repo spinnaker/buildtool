@@ -37,7 +37,7 @@ from test_util import init_runtime
 SCM_USER = 'scm_user'
 TEST_USER = 'test_user'
 
-BASE_VERSION = 'version-7.8.9'
+BASE_VERSION = 'v7.8.9'
 UNTAGGED_BRANCH = 'untagged-branch'
 
 
@@ -191,7 +191,7 @@ class TestSourceCodeManager(unittest.TestCase):
 
   def test_check_repository_branch(self):
     self.options.git_branch = UNTAGGED_BRANCH
-    
+
     test_root = os.path.join(self.base_temp_dir, 'check_branch_test')
     scm = BranchSourceCodeManager(self.options, test_root)
     repository_name = 'RepoOne'
@@ -203,10 +203,10 @@ class TestSourceCodeManager(unittest.TestCase):
 
     scm.git.check_run(repository.git_dir, 'checkout master')
     self.assertRaises(UnexpectedError, scm.check_repository_is_current, repository)
-    
+
   def test_check_repository_commit(self):
     self.options.git_branch = UNTAGGED_BRANCH
-    
+
     test_root = os.path.join(self.base_temp_dir, 'check_commit_test')
     scm = BranchSourceCodeManager(self.options, test_root)
     repository_name = 'RepoOne'
@@ -235,7 +235,7 @@ class TestSourceCodeManager(unittest.TestCase):
     scm.check_repository_is_current(repository)
     self.assertRaises(UnexpectedError, scm.check_repository_is_current,
                       repository_at_commit)
-    
+
 
 if __name__ == '__main__':
   init_runtime()
