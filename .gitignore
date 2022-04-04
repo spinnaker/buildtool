@@ -1,6 +1,6 @@
 # buildtool retrieved and generated files
-dev/source_code
-dev/output
+source_code
+output
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
