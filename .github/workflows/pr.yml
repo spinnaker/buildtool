@@ -1,0 +1,22 @@
+name: PR Build
+
+on: [ pull_request ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.8'
+          cache: 'pip'
+      - name: Display Python version
+        run: python --version
+      - run: |
+          pip install -r dev/requirements.txt
+          pip install -r dev/buildtool/requirements.txt
+      - run: ./unittest/run_tests.sh
