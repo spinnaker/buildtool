@@ -62,7 +62,7 @@ def make_default_options(options):
   options.build_number = 'OptionBuildNumber'
   options.bintray_org = 'test-bintray-org'
   options.bintray_debian_repository = 'test-debian-repo'
-  options.docker_registry = 'test-docker-registry'
+  options.artifact_registry = 'test-docker-registry'
   options.publish_gce_image_project = 'test-image-project-name'
   options.github_upstream_owner = 'spinnaker'
   return options
@@ -114,7 +114,7 @@ class TestBuildBomCommand(BaseGitRepoTestFixture):
                      'input_dir': 'TestInputRoot'})
     defaults.update({'bintray_org': 'TestBintrayOrg',
                      'bintray_debian_repository': 'TestDebianRepo',
-                     'docker_registry': 'TestDockerRegistry',
+                     'artifact_registry': 'TestDockerRegistry',
                      'publish_gce_image_project': 'TestGceProject'})
     del defaults['github_repository_root']
     parser = argparse.ArgumentParser()
@@ -274,11 +274,11 @@ class TestBomBuilder(BaseGitRepoTestFixture):
         PATCH_VERSION_NUMBER + '-SourceInfoBuildNumber')
     golden_bom['services']['monitoring-third-party']['version'] = (
         PATCH_VERSION_NUMBER + '-SourceInfoBuildNumber')
-    
+
     golden_bom['artifactSources'] = {
       'debianRepository': 'https://dl.bintray.com/%s/%s' % (
           options.bintray_org, options.bintray_debian_repository),
-      'dockerRegistry': options.docker_registry,
+      'dockerRegistry': options.artifact_registry,
       'googleImageProject': options.publish_gce_image_project,
       'gitPrefix': os.path.dirname(self.repo_commit_map[NORMAL_REPO]['ORIGIN'])
     }
@@ -327,7 +327,7 @@ class TestBomBuilder(BaseGitRepoTestFixture):
     updated_bom['artifactSources'] = {
         'debianRepository': 'https://dl.bintray.com/%s/%s' % (
             options.bintray_org, options.bintray_debian_repository),
-        'dockerRegistry': options.docker_registry,
+        'dockerRegistry': options.artifact_registry,
         'googleImageProject': options.publish_gce_image_project,
         'gitPrefix': self.golden_bom['artifactSources']['gitPrefix']
     }
