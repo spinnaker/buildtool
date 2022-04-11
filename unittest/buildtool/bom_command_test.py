@@ -82,7 +82,6 @@ class TestBuildBomCommand(BaseGitRepoTestFixture):
     registry = {}
     buildtool.bom_commands.register_commands(registry, self.subparsers, {})
     self.assertTrue('build_bom' in registry)
-    self.assertTrue('publish_bom' in registry)
 
     options = self.parser.parse_args(['build_bom'])
     option_dict = vars(options)
