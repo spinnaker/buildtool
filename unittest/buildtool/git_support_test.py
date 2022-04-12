@@ -442,8 +442,8 @@ class TestSemanticVersion(unittest.TestCase):
         SemanticVersion.make('version-9.8.7'),
         SemanticVersion.make('version-11.0.0'),
     ]
-    self.assertEquals(expect, got)
-    
+    self.assertEqual(expect, got)
+
 
 class TestCommitMessage(unittest.TestCase):
   PATCH_BRANCH = 'patch_branch'
