@@ -830,7 +830,7 @@ class GitRunner(object):
     # Get the master commit so we can use it in the merge-base call below.
     # If we checked out some branch other than master, we might not have
     # the actual branch so cannot use the symbolic name.
-    master_commit = self.check_run(git_dir, 'show-ref origin/master').split(' ')[0]
+    master_commit = self.check_run(git_dir, 'show-ref master').split(' ')[0]
     logging.debug('  master_commit=%s may be used to locate the branch.', master_commit)
 
     # Find branch our commit is on. There could be multiple branches.
