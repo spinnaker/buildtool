@@ -159,7 +159,8 @@ class SemanticVersion(
                            ['series_name', 'major', 'minor', 'patch'])):
   """Helper class for interacting with semantic version tags."""
 
-  SEMVER_MATCHER = re.compile(r'(.+)-(\d+)\.(\d+)\.(\d+)')
+  # TODO: remove '-' HACK from `[a-z-]` when 'version-*' tags not required
+  SEMVER_MATCHER = re.compile(r'([a-z-]+)(\d+)\.(\d+)\.(\d+)')
   TAG_INDEX = 0
   MAJOR_INDEX = 1
   MINOR_INDEX = 2
@@ -170,7 +171,7 @@ class SemanticVersion(
     """Create a new SemanticVersion from the given tag instance.
 
     Args:
-      tag: [string] in the form <series_name>-<major>.<minor>.<patch>
+      tag: [string] in the form <series_name><major>.<minor>.<patch>
     """
     match = SemanticVersion.SEMVER_MATCHER.match(tag)
     if match is None:
@@ -220,7 +221,7 @@ class SemanticVersion(
 
   def to_tag(self):
     """Return string encoding of SemanticVersion tag."""
-    return '{series}-{major}.{minor}.{patch}'.format(
+    return '{series}{major}.{minor}.{patch}'.format(
         series=self.series_name,
         major=self.major, minor=self.minor, patch=self.patch)
 
@@ -812,9 +813,9 @@ class GitRunner(object):
     # Find the starting commit, which is most recent tag in our direct history.
     # For the example in the function docs, this would be tag 0.1.0
     retcode, most_recent_ancestor_tag = self.run_git(
-        git_dir, 'describe --abbrev=0 --tags --match version-* ' + commit_id)
+        git_dir, 'describe --abbrev=0 --tags --match v* ' + commit_id)
     if retcode != 0:
-      start_tag = 'version-0.0.0'
+      start_tag = 'v0.0.0'
       logging.warning('No baseline tag for "%s", assuming this is first one.',
                       git_dir)
       start_commit = self.check_run(git_dir, 'rev-list --max-parents=0 HEAD')
@@ -1048,7 +1049,7 @@ class GitRunner(object):
     but the OSS build has different policies and different tags to avoid
     conflicts with Netflix internal usage.
     """
-    tag_matcher = re.compile(r'^version-[0-9]+\.[0-9]+\.[0-9]+$')
+    tag_matcher = re.compile(r'^v[0-9]+\.[0-9]+\.[0-9]+$')
     git_dir = git_dir or repository.git_dir
 
     logging.debug('Clearing all non-version tags from %s', git_dir)
@@ -1172,13 +1173,13 @@ class GitRunner(object):
     start_time = time.time()
     logging.debug('Begin analyzing %s', git_dir)
     all_tags = self.query_tag_commits(
-        git_dir, r'^version-[0-9]+\.[0-9]+\.[0-9]+$')
+        git_dir, r'^v[0-9]+\.[0-9]+\.[0-9]+$')
     current_id = self.query_local_repository_commit_id(git_dir)
     tag, msgs = self.query_local_repository_commits_to_existing_tag_from_id(
         git_dir, current_id, all_tags, base_commit_id=base_commit_id)
 
     if not tag:
-      current_semver = SemanticVersion.make('version-0.0.0')
+      current_semver = SemanticVersion.make('v0.0.0')
     else:
       current_semver = SemanticVersion.make(tag)
 
