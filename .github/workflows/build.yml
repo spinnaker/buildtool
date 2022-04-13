@@ -26,6 +26,6 @@ jobs:
           pip install -r dev/buildtool/requirements.txt
       - name: Setup for tests
         run: |
-          git config --global user.email "dummy_email@spinnaker.io"
+          git config --global user.email "sig-platform@spinnaker.io"
           git config --global user.name "Spinnaker GHA"
       - run: ./unittest/run_tests.sh

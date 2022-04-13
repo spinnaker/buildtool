@@ -159,6 +159,7 @@ git_branch=release-1.27.x
   --git_branch "${git_branch}" \
 ```
 
-Create a [gist](https://gist.github.com/spinnaker-release) called `M.m.p.md`.
+Create a [gist](https://gist.github.com/spinnaker-release) following the format
+`M.m.p.md`, for example: `1.27.0.md`.
 
 Follow the steps in [Release Manager Runbook](https://spinnaker.io/docs/releases/release-manager-runbook/#one-week-after-branches-are-cut-monday) to curate the changelog.
