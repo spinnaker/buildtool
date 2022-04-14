@@ -190,9 +190,9 @@ class TestBuildBomCommand(BaseGitRepoTestFixture):
         services:
           clouddriver:
             commit: CommitA
-            version: 9.8.7-MyBuildNumber
+            version: 9.8.7
         timestamp: '2018-01-02 03:04:05'
-        version: OptionBranch-OptionBuildNumber
+        version: OptionBuildNumber
     """)
     golden_bom = yaml.safe_load(golden_text)
     golden_bom['dependencies'] = load_default_bom_dependencies()
@@ -266,14 +266,14 @@ class TestBomBuilder(BaseGitRepoTestFixture):
       mock_now.return_value = datetime.datetime(2018, 1, 2, 3, 4, 5)
       bom = builder.build()
 
-    golden_bom['version'] = 'patch-OptionBuildNumber'
+    golden_bom['version'] = 'OptionBuildNumber'
     golden_bom['timestamp'] = '2018-01-02 03:04:05'
     golden_bom['services'][NORMAL_SERVICE]['version'] = (
-        PATCH_VERSION_NUMBER + '-SourceInfoBuildNumber')
+        PATCH_VERSION_NUMBER)
     golden_bom['services'][OUTLIER_SERVICE]['version'] = (
-        PATCH_VERSION_NUMBER + '-SourceInfoBuildNumber')
+        PATCH_VERSION_NUMBER)
     golden_bom['services']['monitoring-third-party']['version'] = (
-        PATCH_VERSION_NUMBER + '-SourceInfoBuildNumber')
+        PATCH_VERSION_NUMBER)
 
     golden_bom['artifactSources'] = {
       'debianRepository': 'https://dl.bintray.com/%s/%s' % (
@@ -315,14 +315,14 @@ class TestBomBuilder(BaseGitRepoTestFixture):
     updated_service = bom['services'][OUTLIER_SERVICE]
     self.assertEqual(updated_service, {
         'commit': self.repo_commit_map[OUTLIER_REPO][PATCH_BRANCH],
-        'version': PATCH_VERSION_NUMBER + '-SourceInfoBuildNumber'
+        'version': PATCH_VERSION_NUMBER
         })
 
     # The bom should be the same as before, but with new timestamp/version
     # and our service updated. And the artifactSources to our configs.
     updated_bom = dict(self.golden_bom)
     updated_bom['timestamp'] = '2018-01-02 03:04:05'
-    updated_bom['version'] = 'master-UpdatedBuildNumber'
+    updated_bom['version'] = 'UpdatedBuildNumber'
     updated_bom['services'][OUTLIER_SERVICE] = updated_service
     updated_bom['artifactSources'] = {
         'debianRepository': 'https://dl.bintray.com/%s/%s' % (
