@@ -156,7 +156,6 @@ class BomBuilder(object):
       if source_prefix != default_source_prefix:
         version_info['gitPrefix'] = source_prefix
 
-    branch = options.git_branch or 'master'
     artifact_sources = {
         'gitPrefix': default_source_prefix,
     }
@@ -216,7 +215,7 @@ class BomBuilder(object):
         'artifactSources': artifact_sources,
         'dependencies': dependencies,
         'services': services,
-        'version': '%s-%s' % (branch, options.build_number),
+        'version': options.build_number,
         'timestamp': '{:%Y-%m-%d %H:%M:%S}'.format(now())
     }
 

@@ -59,10 +59,12 @@ Build BOM:
 
 ```
 git_branch=release-1.27.x
+version=1.27.0
 
 ./dev/buildtool.sh build_bom \
   --github_owner spinnaker \
-  --git_branch "${git_branch}"
+  --git_branch "${git_branch}" \
+  --build_number "${version}"
 W 14:08:19.436 [MainThread.12300] Monitoring is disabled
 I 14:08:19.445 [MainThread.12300] Mapping 11/['clouddriver', 'deck', 'echo', 'fiat', 'front50', 'gate', 'igor', 'kayenta', 'orca', 'rosco', 'spinnaker-monitoring']
 I 14:08:19.445 [Thread-1.12300] build_bom processing clouddriver
@@ -76,13 +78,14 @@ When troubleshooting try targeting a single service:
   --log_level debug \
   --github_owner spinnaker \
   --git_branch "${git_branch}" \
+  --build_number "${version}" \
   --only_repositories rosco
 ```
 
 Check BOM:
 
 ```
-cat output/build_bom/release-1.27.x-20220404020819.yml
+cat output/build_bom/release-1.27.x-1.27.0.yml
 
 artifactSources:
   gitPrefix: https://github.com/spinnaker
@@ -95,43 +98,43 @@ dependencies:
     version: 0.7.0
 services:
   clouddriver:
-    commit: b4e1db9641b68dad506e9b9a10a49d7c17c58b51
-    version: 8.1.0-20220404020819
+    commit: 854d708bc8e46f6c3eb5f80582ead9ed4d3f30eb
+    version: 5.74.3
   deck:
     commit: f96435e0a6b0567d749f15e951ee286c6eb16ea9
-    version: 3.8.0-20220404020819
+    version: 3.8.1
   echo:
     commit: c73d9b8164b67c14df74bbec56504cb889587358
-    version: 2.18.0-20220404020819
+    version: 2.32.2
   fiat:
     commit: 9f4120cf43d4d5ebd47f48f8c845d1b97a073b40
-    version: 1.17.0-20220404020819
+    version: 1.28.3
   front50:
     commit: 7fbae17b319979b06221789e34f9c354ad782695
-    version: 0.28.0-20220404020819
+    version: 2.23.3
   gate:
     commit: b621ff317dc0d4049b1a1bc2267e61a8e0b1ce7d
-    version: 1.23.0-20220404020819
+    version: 6.54.1
   igor:
     commit: d17a4467233b85255db8929387f155f1615b74b7
-    version: 1.18.1-20220404020819
+    version: 4.6.3
   kayenta:
     commit: e946058ae6b36036e5bada984c58cd3624245071
-    version: 0.22.0-20220404020819
+    version: 2.31.1
   monitoring-daemon:
     commit: ede1d75c0595e172924e7b985b189e48598aa581
-    version: 0.19.4-20220404020819
+    version: 0.19.4
   monitoring-third-party:
     commit: ede1d75c0595e172924e7b985b189e48598aa581
-    version: 0.19.4-20220404020819
+    version: 0.19.4
   orca:
     commit: cbd9f141ffbd4c9cb1dc5b57c908376a7cbac8da
-    version: 2.21.0-20220404020819
+    version: 8.18.3
   rosco:
     commit: b539e13644b390df5b63dff30be32d2cdd1dc5f5
-    version: 0.26.0-20220404020819
-timestamp: '2022-04-04 02:09:08'
-version: release-1.27.x-20220404020819
+    version: 1.7.3
+timestamp: '2022-04-18 23:42:48'
+version: 1.27.0
 ```
 
 ### Changelog Generation
@@ -156,7 +159,7 @@ git_branch=release-1.27.x
 ./dev/buildtool.sh push_changelog_to_gist \
   --build_changelog_gist_url "${changelog_gist_url}"
   --changelog_path output/build_changelog/changelog.md \
-  --git_branch "${git_branch}" \
+  --git_branch "${git_branch}"
 ```
 
 Create a [gist](https://gist.github.com/spinnaker-release) following the format

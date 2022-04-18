@@ -43,8 +43,8 @@ class SourceInfo(
   """Basic things about the state of a source repository."""
 
   def to_build_version(self):
-    """Return the build-number specific version name."""
-    return '%s-%s' % (self.summary.version, self.build_number)
+    """Return the version name which is a git tag on the repository."""
+    return self.summary.version
 
 
 class RepositoryWorker(object):
