@@ -88,7 +88,10 @@ Check BOM:
 cat output/build_bom/release-1.27.x-1.27.0.yml
 
 artifactSources:
+  debianRepository: https://us-apt.pkg.dev/projects/spinnaker-community
+  dockerRegistry: us-docker.pkg.dev/spinnaker-community/docker
   gitPrefix: https://github.com/spinnaker
+  googleImageProject: marketplace-spinnaker-release
 dependencies:
   consul:
     version: 0.7.5
@@ -133,7 +136,7 @@ services:
   rosco:
     commit: b539e13644b390df5b63dff30be32d2cdd1dc5f5
     version: 1.7.3
-timestamp: '2022-04-18 23:42:48'
+timestamp: '2022-04-19 00:18:59'
 version: 1.27.0
 ```
 

@@ -158,9 +158,11 @@ class BomBuilder(object):
 
     artifact_sources = {
         'gitPrefix': default_source_prefix,
+        'dockerRegistry': "us-docker.pkg.dev/spinnaker-community/docker",
+        'googleImageProject': "marketplace-spinnaker-release",
     }
     debian_repository = (
-        None
+        'https://us-apt.pkg.dev/projects/spinnaker-community'
         if options.bintray_debian_repository is None
         else 'https://dl.bintray.com/{org}/{repo}'.format(
             org=options.bintray_org,
