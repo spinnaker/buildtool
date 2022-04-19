@@ -1,0 +1,14 @@
+dependencies:
+  consul:
+    version: 0.7.5
+  redis:
+    version: 2:2.8.4-2
+  vault:
+    version: 0.7.0
+services:
+  monitoring-daemon:
+    commit: 91e7116c9abdf9d47acc8f25dbc349b6b9aa99f8
+    version: 1.3.0
+  monitoring-third-party:
+    commit: 91e7116c9abdf9d47acc8f25dbc349b6b9aa99f8
+    version: 1.3.0

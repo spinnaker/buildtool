@@ -55,7 +55,8 @@ FAILED (errors=4)
 
 ### BOM Generation
 
-Build BOM:
+Build BOM, supplying a base BOM with archived project `spinnaker-monitoring`
+already defined:
 
 ```
 git_branch=release-1.27.x
@@ -64,7 +65,9 @@ version=1.27.0
 ./dev/buildtool.sh build_bom \
   --github_owner spinnaker \
   --git_branch "${git_branch}" \
-  --build_number "${version}"
+  --build_number "${version}" \
+  --refresh_from_bom_path dev/buildtool/bom_base.yml \
+  --exclude_repositories spinnaker-monitoring
 W 14:08:19.436 [MainThread.12300] Monitoring is disabled
 I 14:08:19.445 [MainThread.12300] Mapping 11/['clouddriver', 'deck', 'echo', 'fiat', 'front50', 'gate', 'igor', 'kayenta', 'orca', 'rosco', 'spinnaker-monitoring']
 I 14:08:19.445 [Thread-1.12300] build_bom processing clouddriver
@@ -75,10 +78,11 @@ When troubleshooting try targeting a single service:
 
 ```
 ./dev/buildtool.sh build_bom \
-  --log_level debug \
   --github_owner spinnaker \
   --git_branch "${git_branch}" \
   --build_number "${version}" \
+  --refresh_from_bom_path dev/buildtool/bom_base.yml \
+  --exclude_repositories spinnaker-monitoring \
   --only_repositories rosco
 ```
 
@@ -125,18 +129,18 @@ services:
     commit: e946058ae6b36036e5bada984c58cd3624245071
     version: 2.31.1
   monitoring-daemon:
-    commit: ede1d75c0595e172924e7b985b189e48598aa581
-    version: 0.19.4
+    commit: 91e7116c9abdf9d47acc8f25dbc349b6b9aa99f8
+    version: 1.3.0
   monitoring-third-party:
-    commit: ede1d75c0595e172924e7b985b189e48598aa581
-    version: 0.19.4
+    commit: 91e7116c9abdf9d47acc8f25dbc349b6b9aa99f8
+    version: 1.3.0
   orca:
     commit: cbd9f141ffbd4c9cb1dc5b57c908376a7cbac8da
     version: 8.18.3
   rosco:
     commit: b539e13644b390df5b63dff30be32d2cdd1dc5f5
     version: 1.7.3
-timestamp: '2022-04-19 00:18:59'
+timestamp: '2022-04-19 04:18:35'
 version: 1.27.0
 ```
 
