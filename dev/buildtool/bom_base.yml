@@ -7,8 +7,8 @@ dependencies:
     version: 0.7.0
 services:
   monitoring-daemon:
-    commit: 91e7116c9abdf9d47acc8f25dbc349b6b9aa99f8
-    version: 1.3.0
+    commit: 96d510cb22f65dcf788324ed8b68447c31de255a
+    version: 1.4.0
   monitoring-third-party:
-    commit: 91e7116c9abdf9d47acc8f25dbc349b6b9aa99f8
-    version: 1.3.0
+    commit: 96d510cb22f65dcf788324ed8b68447c31de255a
+    version: 1.4.0
