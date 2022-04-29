@@ -828,6 +828,9 @@ class GitRunner(object):
           'Commit %s is already tagged with %s', start_commit, start_tag)
       return start_tag, start_commit
 
+    logging.warning(
+      '%s HEAD commit of %s is newer than %s tag at %s.',
+            git_dir.split('/')[2], commit_id, start_tag, start_commit)
     # Get the master commit so we can use it in the merge-base call below.
     # If we checked out some branch other than master, we might not have
     # the actual branch so cannot use the symbolic name.
