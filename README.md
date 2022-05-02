@@ -67,18 +67,30 @@ new_branch=release-1.27.x
   --spinnaker_version "${new_branch}"
 ```
 
-When troubleshooting, try targeting a single service on your own forks:
+When troubleshooting try using your forks, targeting a single service and
+disabling git push:
 
 ```
 new_branch=release-0.1.x
+fork_owner=<you>
 
 ./dev/buildtool.sh \
   --log_level debug \
   new_release_branch \
   --git_branch master \
   --spinnaker_version "${new_branch}" \
-  --github_owner kskewes-sf \
-  --only_repositories clouddriver
+  --github_owner "${fork_owner}" \
+  --only_repositories clouddriver \
+  --git_never_push true
+
+# check branch creation locally
+cd source_code/new_release_branch/clouddriver/
+
+git branch
+  master
+* release-0.2.x
+
+# consider enabling git push and running again (remove: `--git_never_push true`)
 ```
 
 ### Build BOM
@@ -217,8 +229,12 @@ wget "https://storage.googleapis.com/halconfig/bom/${previous_release}.yml" \
 
 ### Publish Changelog
 
+Create a GitHub [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) which is required to push via HTTPS to a `gist`. Potentially
+the code could be refactored to support `ssh` authentication.
+
 Manually create a [gist](https://gist.github.com/spinnaker-release/about) for
 raw changelog named after the release branch, eg: `release-1.27.x-raw-changelog.md`.
+You can put anything in the `contents`, it will be overwritten.
 
 Push branches raw changelog to new [spinnaker-release/about gists](https://gist.github.com/spinnaker-release/4f8cd09490870ae9ebf78be3be1763ee)
 
@@ -227,7 +243,7 @@ changelog_gist_url=<created_above>
 git_branch=release-1.27.x
 
 ./dev/buildtool.sh push_changelog_to_gist \
-  --build_changelog_gist_url "${changelog_gist_url}"
+  --build_changelog_gist_url "${changelog_gist_url}" \
   --changelog_path output/build_changelog/changelog.md \
   --git_branch "${git_branch}"
 ```
@@ -236,3 +252,20 @@ Create a [gist](https://gist.github.com/spinnaker-release) following the format
 `M.m.p.md`, for example: `1.27.0.md`.
 
 Follow the steps in [Release Manager Runbook](https://spinnaker.io/docs/releases/release-manager-runbook/#one-week-after-branches-are-cut-monday) to curate the changelog.
+
+To troubleshoot, try creating your own Gist and pushing the changelog to your
+fork:
+
+```
+changelog_gist_url=<created_above>
+git_branch=release-1.27.x
+fork_owner=<you>
+
+./dev/buildtool.sh \
+  --log_level debug \
+  push_changelog_to_gist \
+  --build_changelog_gist_url "${changelog_gist_url}" \
+  --changelog_path output/build_changelog/changelog.md \
+  --git_branch "${git_branch}" \
+  --github_owner "${fork_owner}"
+```

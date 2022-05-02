@@ -606,7 +606,7 @@ class CreateReleaseChangelogCommand(CommandProcessor):
         release_gist_path, '-a -m "Updated {file}"'.format(file=os.path.basename(release_changelog)))
 
     logging.debug('Pushing back gist')
-    git_run_with_retries(self.__git, release_gist_path, 'push origin master')
+    git_run_with_retries(self.__git, release_gist_path, 'push origin main')
 
 class PushChangelogCommand(CommandProcessor):
   """Implements push_changelog_to_gist."""
@@ -637,7 +637,7 @@ class PushChangelogCommand(CommandProcessor):
         git_dir, '-a -m "Updated %s"' % os.path.basename(dest_path))
 
     logging.debug('Pushing back gist')
-    git_run_with_retries(self.__git, git_dir, 'push origin master')
+    git_run_with_retries(self.__git, git_dir, 'push origin main')
 
 def ensure_gist_repo(git, input_dir, gist_url):
   index = gist_url.rfind('/')
@@ -652,9 +652,9 @@ def ensure_gist_repo(git, input_dir, gist_url):
     git_run_with_retries(git, os.path.dirname(git_dir), 'clone ' + gist_url)
   else:
     logging.debug('Updating gist in "%s"', git_dir)
-    git_run_with_retries(git, git_dir, 'fetch origin master')
-    git_run_with_retries(git, git_dir, 'checkout master')
-    git_run_with_retries(git, git_dir, 'reset --hard origin/master')
+    git_run_with_retries(git, git_dir, 'fetch origin main')
+    git_run_with_retries(git, git_dir, 'checkout main')
+    git_run_with_retries(git, git_dir, 'reset --hard origin/main')
   return git_dir
 
 # For some reason gist.github.com seems to have a lot of connection timeout
