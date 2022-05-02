@@ -49,6 +49,7 @@ from buildtool import (
 SUPPORTED_DEPLOYMENT_TYPES = ['localdebian', 'distributed']
 SUPPORTED_DISTRIBUTED_PLATFORMS = ['kubernetes_v2']
 HALYARD_SERVICES = ['halyard']
+# keel is not included because it is not supported by Halyard. Halyard ignores it if in BOM.
 SPINNAKER_SERVICES = [
     'clouddriver', 'echo', 'fiat', 'front50', 'gate', 'igor', 'orca',
     'rosco', 'kayenta', 'monitoring'

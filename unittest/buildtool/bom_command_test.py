@@ -170,7 +170,7 @@ class TestBuildBomCommand(BaseGitRepoTestFixture):
             origin='https://%s/TestOwner/%s' % (options.github_hostname, name),
             upstream='https://github.com/spinnaker/' + name)
         for name in sorted(['clouddriver', 'deck', 'echo', 'fiat', 'front50',
-                            'gate', 'igor', 'kayenta', 'orca', 'rosco',
+                            'gate', 'igor', 'kayenta', 'keel','orca', 'rosco',
                             'spinnaker-monitoring'])
     ]
     mock_filter.assert_called_once_with(bom_repo_list)

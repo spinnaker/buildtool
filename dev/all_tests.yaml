@@ -31,6 +31,7 @@ tests:
       configuration:
         google_account_enabled: true
         jenkins_master_enabled: true
+      # keel is not included because it is not supported by Halyard. Halyard ignores it if in BOM.
       services: [clouddriver, echo, front50, gate, igor, orca, rosco]
     quota:
       gce_region_IN_USE_ADDRESSES: 1
