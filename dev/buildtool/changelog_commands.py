@@ -415,6 +415,7 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
     base_branch = 'master'
     self.scm.ensure_git_path(repository, branch=base_branch)
     version = self.options.spinnaker_version
+
     if self.options.git_allow_publish_master_branch:
       branch_flag = ''
       head_branch = 'master'

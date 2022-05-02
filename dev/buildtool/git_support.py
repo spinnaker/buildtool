@@ -665,7 +665,7 @@ class GitRunner(object):
     parser.added_publishing = True
 
     add_parser_argument(
-        parser, 'git_allow_publish_master_branch', defaults, True,
+        parser, 'git_allow_publish_master_branch', defaults, True, type=bool,
         help='If false then push to a version-specific branch'
              ' rather than "master" so it can be reviewed.')
     add_parser_argument(

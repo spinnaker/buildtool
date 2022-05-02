@@ -17,6 +17,9 @@ pip3 install pip --upgrade
 pip3 install -r dev/requirements.txt
 pip3 install -r dev/buildtool/requirements.txt
 
+# setup PYTHONPATH for IDE's and testing
+export PYTHONPATH="${PWD}/dev/"
+
 # install debugger if required
 pip3 install ipdb
 
@@ -42,9 +45,7 @@ run all unittests:
 run a specific test:
 
 ```
-cd unittest/buildtool
-
-PYTHONPATH=$(pwd)/../../dev/ python $(pwd)/git_support_test.py -v
+python ./unittest/buildtool/git_support_test.py -v
 <snip>
 Ran 25 tests in 2.509s
 
@@ -227,7 +228,7 @@ wget "https://storage.googleapis.com/halconfig/bom/${previous_release}.yml" \
 
 ```
 
-### Publish Changelog
+### Push Changelog to Gist
 
 Create a GitHub [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) which is required to push via HTTPS to a `gist`. Potentially
 the code could be refactored to support `ssh` authentication.
@@ -268,4 +269,51 @@ fork_owner=<you>
   --changelog_path output/build_changelog/changelog.md \
   --git_branch "${git_branch}" \
   --github_owner "${fork_owner}"
+```
+
+### Publish Changelog
+
+`buildtool` will clone your fork, branch off master, commit new changelog file
+and push up to GitHub. Once complete raise a PR to
+[github.com/spinnaker/spinnaker.io](https://github.com/spinnaker/spinnaker/io/pulls)
+
+```
+changelog_gist_url=<created_above>
+git_branch=master
+spinnaker_version=1.27.0
+fork_owner=<you>
+
+./dev/buildtool.sh publish_changelog \
+  --changelog_gist_url "${changelog_gist_url}" \
+  --git_branch "${git_branch}" \
+  --spinnaker_version "${version}" \
+  --git_allow_publish_master_branch false \
+  --github_owner "${fork_owner}"
+```
+
+To troubleshoot, try creating your own Gist and pushing the changelog to your
+fork:
+
+```
+changelog_gist_url=<created_above>
+git_branch=master
+spinnaker_version=1.27.0
+fork_owner=<you>
+
+./dev/buildtool.sh \
+  --log_level debug \
+  publish_changelog \
+  --changelog_gist_url "${changelog_gist_url}" \
+  --git_branch "${git_branch}" \
+  --spinnaker_version "${version}" \
+  --git_allow_publish_master_branch false \
+  --github_owner "${fork_owner}" \
+  --git_never_push true
+
+# check branch creation locally
+cd source_code/publish_changelog/spinnaker.io
+
+git show
+
+# consider enabling git push and running again (remove: `--git_never_push true`)
 ```
