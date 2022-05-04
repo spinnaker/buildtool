@@ -1,3 +1,8 @@
+# buildtool retrieved and generated files
+input
+source_code
+output
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

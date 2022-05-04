@@ -25,7 +25,7 @@ import yaml
 
 from spinnaker.run import check_run_quick
 
-# Path to the posts directory in the spinnaker.github.io site.
+# Path to the posts directory in the spinnaker.io site.
 POSTS_DIR = '_posts'
 
 class TestResultPublisher():
@@ -39,7 +39,7 @@ class TestResultPublisher():
 
 
   def __checkout_githubio_repo(self):
-    """Clones the spinnaker.github.io git repo.
+    """Clones the spinnaker.io git repo.
     """
     check_run_quick('git clone {0}'.format(self.__githubio_repo_uri))
     self.__repo_name = os.path.basename(self.__githubio_repo_uri)
@@ -85,10 +85,10 @@ class TestResultPublisher():
     check_run_quick('git -C {0} push origin master'.format(self.__repo_name))
 
   def publish_nightly_post(self):
-    """Creates and publishes Nightly Build post for the spinnaker.github.io site.
+    """Creates and publishes Nightly Build post for the spinnaker.io site.
 
     'Publishing' in this case means creating a new file, 'git add'ing it to the
-    local git repository for spinnaker.github.io, and then pushing a commit
+    local git repository for spinnaker.io, and then pushing a commit
     to origin/master.
 
     A private key that has access to --githubio_repo needs added
@@ -107,8 +107,8 @@ class TestResultPublisher():
   def init_argument_parser(cls, parser):
     """Initialize command-line arguments."""
     parser.add_argument('--githubio_repo_uri', default='', required=True,
-                        help='The ssh uri of the spinnaker.github.io repo to'
-                        'commit the nightly build post to, e.g. git@github.com:spinnaker/spinnaker.github.io.')
+                        help='The ssh uri of the spinnaker.io repo to'
+                        'commit the nightly build post to, e.g. git@github.com:spinnaker/spinnaker.io.')
     parser.add_argument('--nightly_version', default='', required=True,
                         help='The version of Spinnaker we build during our nightly build.')
     parser.add_argument('--test_results_file', default='', required=True,

@@ -34,7 +34,7 @@ except ImportError:
 from retrying import retry
 
 from buildtool import (
-    SPINNAKER_GITHUB_IO_REPOSITORY_NAME,
+    SPINNAKER_IO_REPOSITORY_NAME,
 
     CommandFactory,
     CommandProcessor,
@@ -63,7 +63,7 @@ TITLE_LINE_MATCHER = re.compile(r'\W*\w+\(([^\)]+)\)\s*[:-]?(.*)')
 
 
 def make_options_with_fallback(options):
-  """A hack for now, using git_fallback_branch to support spinnaker.github.io
+  """A hack for now, using git_fallback_branch to support spinnaker.io
 
   That repo does not use the release branches, rather master.
   So if creating a release, it will fallback to master for that repo.
@@ -371,7 +371,7 @@ class PublishChangelogFactory(RepositoryCommandFactory):
   def __init__(self, **kwargs):
     super(PublishChangelogFactory, self).__init__(
         'publish_changelog', PublishChangelogCommand,
-        'Publish Spinnaker version Changelog to spinnaker.github.io.',
+        'Publish Spinnaker version Changelog to spinnaker.io.',
         BranchSourceCodeManager, **kwargs)
 
   def init_argparser(self, parser, defaults):
@@ -394,7 +394,7 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
   def __init__(self, factory, options, **kwargs):
     super(PublishChangelogCommand, self).__init__(
         factory, make_options_with_fallback(options),
-        source_repository_names=[SPINNAKER_GITHUB_IO_REPOSITORY_NAME],
+        source_repository_names=[SPINNAKER_IO_REPOSITORY_NAME],
         **kwargs)
     check_options_set(options, ['spinnaker_version', 'changelog_gist_url'])
     try:
@@ -409,12 +409,13 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
                   error=error.message)))
 
   def _do_repository(self, repository):
-    if repository.name != SPINNAKER_GITHUB_IO_REPOSITORY_NAME:
+    if repository.name != SPINNAKER_IO_REPOSITORY_NAME:
       raise_and_log_error(UnexpectedError('Got "%s"' % repository.name))
 
     base_branch = 'master'
     self.scm.ensure_git_path(repository, branch=base_branch)
     version = self.options.spinnaker_version
+
     if self.options.git_allow_publish_master_branch:
       branch_flag = ''
       head_branch = 'master'
@@ -448,7 +449,7 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
     git.push_branch_to_origin(git_dir, branch=head_branch)
 
   def prepare_local_repository_files(self, repository):
-    if repository.name != SPINNAKER_GITHUB_IO_REPOSITORY_NAME:
+    if repository.name != SPINNAKER_IO_REPOSITORY_NAME:
       raise_and_log_error(UnexpectedError('Got "%s"' % repository.name))
 
     updated_files = []
@@ -466,7 +467,7 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
     version = self.options.spinnaker_version
     changelog_filename = '{version}-changelog.md'.format(version=version)
     target_path = os.path.join(repository.git_dir,
-                               '_changelogs', changelog_filename)
+                               'content','en','changelogs', changelog_filename)
     major, minor, patch = version.split('.')
     patch = int(patch)
     logging.debug('Adding changelog file %s', target_path)
@@ -509,7 +510,7 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
 
     changelog_filename = '{version}-changelog.md'.format(version=priorVersion)
     target_path = os.path.join(repository.git_dir,
-                               '_changelogs', changelog_filename)
+                               'content','en','changelogs', changelog_filename)
 
     logging.debug('Deprecating prior version %s', target_path)
     for line in fileinput.input(target_path, inplace=True):
@@ -606,7 +607,7 @@ class CreateReleaseChangelogCommand(CommandProcessor):
         release_gist_path, '-a -m "Updated {file}"'.format(file=os.path.basename(release_changelog)))
 
     logging.debug('Pushing back gist')
-    git_run_with_retries(self.__git, release_gist_path, 'push origin master')
+    git_run_with_retries(self.__git, release_gist_path, 'push origin main')
 
 class PushChangelogCommand(CommandProcessor):
   """Implements push_changelog_to_gist."""
@@ -637,7 +638,7 @@ class PushChangelogCommand(CommandProcessor):
         git_dir, '-a -m "Updated %s"' % os.path.basename(dest_path))
 
     logging.debug('Pushing back gist')
-    git_run_with_retries(self.__git, git_dir, 'push origin master')
+    git_run_with_retries(self.__git, git_dir, 'push origin main')
 
 def ensure_gist_repo(git, input_dir, gist_url):
   index = gist_url.rfind('/')
@@ -652,9 +653,9 @@ def ensure_gist_repo(git, input_dir, gist_url):
     git_run_with_retries(git, os.path.dirname(git_dir), 'clone ' + gist_url)
   else:
     logging.debug('Updating gist in "%s"', git_dir)
-    git_run_with_retries(git, git_dir, 'fetch origin master')
-    git_run_with_retries(git, git_dir, 'checkout master')
-    git_run_with_retries(git, git_dir, 'reset --hard origin/master')
+    git_run_with_retries(git, git_dir, 'fetch origin main')
+    git_run_with_retries(git, git_dir, 'checkout main')
+    git_run_with_retries(git, git_dir, 'reset --hard origin/main')
   return git_dir
 
 # For some reason gist.github.com seems to have a lot of connection timeout

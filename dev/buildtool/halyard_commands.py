@@ -28,7 +28,7 @@ import yaml
 
 from buildtool import (
     DEFAULT_BUILD_NUMBER,
-    SPINNAKER_GITHUB_IO_REPOSITORY_NAME,
+    SPINNAKER_IO_REPOSITORY_NAME,
     SPINNAKER_HALYARD_REPOSITORY_NAME,
 
     BranchSourceCodeManager,
@@ -567,7 +567,7 @@ class PublishHalyardCommand(CommandProcessor):
   def push_docs(self, repository):
     base_branch = 'master'
     target_repository = self.__scm.make_repository_spec(
-        SPINNAKER_GITHUB_IO_REPOSITORY_NAME)
+        SPINNAKER_IO_REPOSITORY_NAME)
     self.__scm.ensure_git_path(target_repository)
     target_rel_path = self.write_target_docs(repository, target_repository)
 

@@ -19,7 +19,7 @@ SPIN_REPOSITORY_NAMES = ['spin']
 SPINNAKER_HALYARD_REPOSITORY_NAME = 'halyard'
 
 # Documentation is version agnostic
-SPINNAKER_GITHUB_IO_REPOSITORY_NAME = 'spinnaker.github.io'
+SPINNAKER_IO_REPOSITORY_NAME = 'spinnaker.io'
 
 
 from buildtool.util import (

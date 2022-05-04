@@ -156,12 +156,13 @@ class BomBuilder(object):
       if source_prefix != default_source_prefix:
         version_info['gitPrefix'] = source_prefix
 
-    branch = options.git_branch or 'master'
     artifact_sources = {
         'gitPrefix': default_source_prefix,
+        'dockerRegistry': "us-docker.pkg.dev/spinnaker-community/docker",
+        'googleImageProject': "marketplace-spinnaker-release",
     }
     debian_repository = (
-        None
+        'https://us-apt.pkg.dev/projects/spinnaker-community'
         if options.bintray_debian_repository is None
         else 'https://dl.bintray.com/{org}/{repo}'.format(
             org=options.bintray_org,
@@ -216,7 +217,7 @@ class BomBuilder(object):
         'artifactSources': artifact_sources,
         'dependencies': dependencies,
         'services': services,
-        'version': '%s-%s' % (branch, options.build_number),
+        'version': options.build_number,
         'timestamp': '{:%Y-%m-%d %H:%M:%S}'.format(now())
     }
 

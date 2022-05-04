@@ -43,8 +43,8 @@ class SourceInfo(
   """Basic things about the state of a source repository."""
 
   def to_build_version(self):
-    """Return the build-number specific version name."""
-    return '%s-%s' % (self.summary.version, self.build_number)
+    """Return the version name which is a git tag on the repository."""
+    return self.summary.version
 
 
 class RepositoryWorker(object):
@@ -178,7 +178,7 @@ class SpinnakerSourceCodeManager(object):
 
     Normally one would use ensure_repository which also ensures the metadata
     is cached. However repositories that are not version controlled in the
-    normal way (e.g. spinnaker.github.io) dont use the metadata so the
+    normal way (e.g. spinnaker.io) dont use the metadata so the
     assumptions in ensure_repository are not applicable.
 
     Returns: The build number to use

@@ -49,7 +49,7 @@ NORMAL_SERVICE = 'gate'
 NORMAL_REPO = NORMAL_SERVICE
 OUTLIER_SERVICE = 'monitoring-daemon'
 OUTLIER_REPO = 'spinnaker-monitoring'
-EXTRA_REPO = 'spinnaker.github.io'
+EXTRA_REPO = 'spinnaker.io'
 EXTRA_SERVICE = EXTRA_REPO
 
 STANDARD_GIT_HOST = 'test-gitserver'
@@ -57,8 +57,8 @@ OUTLIER_GIT_HOST = STANDARD_GIT_HOST
 STANDARD_GIT_OWNER = 'spinnaker'
 OUTLIER_GIT_OWNER = 'spinnaker'
 
-BASE_VERSION_TAG = 'version-7.8.9'
-PATCH_VERSION_TAG = 'version-7.8.10'
+BASE_VERSION_TAG = 'v7.8.9'
+PATCH_VERSION_TAG = 'v7.8.10'
 PATCH_VERSION_NUMBER = '7.8.10'
 PATCH_BRANCH = 'patch'
 UNTAGGED_BRANCH = 'untagged-branch'

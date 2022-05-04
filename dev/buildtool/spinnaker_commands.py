@@ -28,7 +28,7 @@ except ImportError:
 
 from buildtool import (
     SPINNAKER_BOM_REPOSITORY_NAMES,
-    SPINNAKER_GITHUB_IO_REPOSITORY_NAME,
+    SPINNAKER_IO_REPOSITORY_NAME,
     SPINNAKER_PROCESS_REPOSITORY_NAMES,
     SPIN_REPOSITORY_NAMES,
     BomSourceCodeManager,
@@ -55,7 +55,7 @@ class InitiateReleaseBranchFactory(RepositoryCommandFactory):
     repo_names = list(SPINNAKER_BOM_REPOSITORY_NAMES)
     repo_names.extend(SPINNAKER_PROCESS_REPOSITORY_NAMES)
     repo_names.extend(SPIN_REPOSITORY_NAMES)
-    repo_names.append(SPINNAKER_GITHUB_IO_REPOSITORY_NAME)
+    repo_names.append(SPINNAKER_IO_REPOSITORY_NAME)
     super(InitiateReleaseBranchFactory, self).__init__(
         'new_release_branch', InitiateReleaseBranchCommand,
         'Create a new spinnaker release branch in each of the repos.',
@@ -315,7 +315,7 @@ class PublishSpinnakerCommand(CommandProcessor):
     options = self.options
     spinnaker_version = options.spinnaker_version
     options_copy = copy.copy(options)
-    options_copy.git_branch = 'master'  # push to master in spinnaker.github.io
+    options_copy.git_branch = 'master'  # push to master in spinnaker.io
     publish_changelog_command = PublishChangelogFactory().make_command(
         options_copy)
     changelog_gist_url = options.changelog_gist_url

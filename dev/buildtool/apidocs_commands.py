@@ -28,7 +28,7 @@ except ImportError:
   from urllib.error import URLError
 
 from buildtool import (
-    SPINNAKER_GITHUB_IO_REPOSITORY_NAME,
+    SPINNAKER_IO_REPOSITORY_NAME,
 
     RepositoryCommandFactory,
     RepositoryCommandProcessor,
@@ -63,7 +63,7 @@ BUILD_DOCS_COMMAND = 'build_apidocs'
 
 
 def make_options_with_fallback(options):
-  """A hack for now, using git_fallback_branch to support spinnaker.github.io
+  """A hack for now, using git_fallback_branch to support spinnaker.io
 
   That repo does not use the release branches, rather master.
   So if creating a release, it will fallback to master for that repo.
@@ -93,7 +93,7 @@ class BuildApiDocsCommand(RepositoryCommandProcessor):
     scm = BranchSourceCodeManager(
         make_options_with_fallback(self.options),
         self.get_input_dir())
-    repository = scm.make_repository_spec(SPINNAKER_GITHUB_IO_REPOSITORY_NAME)
+    repository = scm.make_repository_spec(SPINNAKER_IO_REPOSITORY_NAME)
 
     # These documents arent tied to version control, especially since they are
     # published to a different repository.
@@ -245,7 +245,7 @@ class BuildApiDocsFactory(RepositoryCommandFactory):
 
   def init_argparser(self, parser, defaults):
     """Implements CommandFactory interface."""
-    # For the spinnaker.github.io repository
+    # For the spinnaker.io repository
     BranchSourceCodeManager.add_parser_args(parser, defaults)
 
     self.add_argument(
@@ -291,7 +291,7 @@ class PublishApiDocsCommand(CommandProcessor):
         self.get_input_dir())
 
     self.__docs_repository = self.__scm.make_repository_spec(
-        SPINNAKER_GITHUB_IO_REPOSITORY_NAME)
+        SPINNAKER_IO_REPOSITORY_NAME)
 
   def _check_args(self):
     check_path_exists(self.__html_path,
@@ -336,7 +336,7 @@ class PublishApiDocsCommand(CommandProcessor):
   def _prepare_local_repository_files(self):
     """Implements CommandProcessor interface."""
 
-    # And putting them into the SPINNAKER_GITHUB_IO_REPOSITORY_NAME
+    # And putting them into the SPINNAKER_IO_REPOSITORY_NAME
     #
     # NOTE(ewiseblatt): 20171218
     # This is the current scheme, however I think this should read
@@ -358,7 +358,7 @@ class PublishApiDocsFactory(CommandFactory):
   def __init__(self, **kwargs):
     super(PublishApiDocsFactory, self).__init__(
         'publish_apidocs', PublishApiDocsCommand,
-        'Publish Spinnaker REST API documentation to spinnaker.github.io.',
+        'Publish Spinnaker REST API documentation to spinnaker.io.',
         **kwargs)
 
   def init_argparser(self, parser, defaults):
@@ -369,7 +369,7 @@ class PublishApiDocsFactory(CommandFactory):
     GitRunner.add_publishing_parser_args(parser, defaults)
     self.add_argument(
         parser, 'git_branch', defaults, None,
-        help='The branch to checkout in ' + SPINNAKER_GITHUB_IO_REPOSITORY_NAME)
+        help='The branch to checkout in ' + SPINNAKER_IO_REPOSITORY_NAME)
     self.add_argument(
         parser, 'spinnaker_version', defaults, None,
         help='The version of spinnaker this documentation is for.')

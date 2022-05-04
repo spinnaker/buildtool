@@ -20,9 +20,12 @@ jobs:
         with:
           python-version: '3.8'
           cache: 'pip'
-      - name: Display Python version
-        run: python --version
-      - run: |
+      - name: Install dependencies with pip
+        run: |
           pip install -r dev/requirements.txt
           pip install -r dev/buildtool/requirements.txt
+      - name: Setup for tests
+        run: |
+          git config --global user.email "sig-platform@spinnaker.io"
+          git config --global user.name "Spinnaker GHA"
       - run: ./unittest/run_tests.sh
