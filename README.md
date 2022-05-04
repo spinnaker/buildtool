@@ -56,9 +56,13 @@ FAILED (errors=4)
 
 ### Create Release Branches
 
-Create new `release-*` branches off the latest tag on `master` branch.
+Before starting this step all branches should be tagged with the latest semVer
+`{minor}` version and a `{patch}` value of `0`. For example: `1.2.0`
 
-TODO:(kskewes-sf) - add `keel` to repository list.
+TODO: Check that this walks back to last tag and doesn't create branches from
+HEAD.
+
+Create new `release-{major}-{minor}-x` branches off the latest tag on `master` branch.
 
 ```
 new_branch=release-1.27.x
@@ -96,10 +100,10 @@ git branch
 
 ### Build BOM
 
-WARNING: If the HEAD of the new `release-*` branch is not tagged then
+WARNING: If the HEAD of the new `release-{major}-{minor}-x` branch is not tagged then
 `buildtool` will log the following and automatically increment the latest tag's
 patch version. You will need to push a new tag to HEAD of the branch and try
-again.
+again. (FIXME - return latest tag instead)
 
 Warning log line:
 
@@ -120,6 +124,8 @@ version=1.27.0
   --build_number "${version}" \
   --refresh_from_bom_path dev/buildtool/bom_base.yml \
   --exclude_repositories spinnaker-monitoring
+
+# output below
 W 14:08:19.436 [MainThread.12300] Monitoring is disabled
 I 14:08:19.445 [MainThread.12300] Mapping 11/['clouddriver', 'deck', 'echo', 'fiat', 'front50', 'gate', 'igor', 'kayenta', 'orca', 'rosco', 'spinnaker-monitoring']
 I 14:08:19.445 [Thread-1.12300] build_bom processing clouddriver
@@ -198,13 +204,13 @@ timestamp: '2022-04-19 04:18:35'
 version: 1.27.0
 ```
 
-### Build Changelog
+### Build Raw Changelog
 
-Build changelog of commits in release since previous BOM versions.
+Build raw changelog of commits in release since previous BOM versions.
 
 A previous BOM file must be provided otherwise `buildtool` will compare the new
 BOM tag to the previous tag in the same branch. Due to auto-bump PR's there may
-be multiple tags on a `release-*` branch between Spinnaker Releases.
+be multiple tags on a `release-{major}-{minor}-x` branch between Spinnaker Releases.
 
 For example:
 
@@ -228,7 +234,10 @@ wget "https://storage.googleapis.com/halconfig/bom/${previous_release}.yml" \
 
 ```
 
-### Push Changelog to Gist
+### Push Raw Changelog to Gist
+
+#FIXME: Avoid pushing changelogs to gist, instead put them on spinnaker.io
+somewhere via PR.
 
 Create a GitHub [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) which is required to push via HTTPS to a `gist`. Potentially
 the code could be refactored to support `ssh` authentication.
@@ -249,11 +258,6 @@ git_branch=release-1.27.x
   --git_branch "${git_branch}"
 ```
 
-Create a [gist](https://gist.github.com/spinnaker-release) following the format
-`M.m.p.md`, for example: `1.27.0.md`.
-
-Follow the steps in [Release Manager Runbook](https://spinnaker.io/docs/releases/release-manager-runbook/#one-week-after-branches-are-cut-monday) to curate the changelog.
-
 To troubleshoot, try creating your own Gist and pushing the changelog to your
 fork:
 
@@ -271,7 +275,55 @@ fork_owner=<you>
   --github_owner "${fork_owner}"
 ```
 
+### Create Release Changelog Gist
+
+Log into GitHub as spinnaker-release.
+The release-manager@spinnaker.io group has access to the
+[spinnaker-release GitHub account credentials](https://docs.google.com/document/d/1CFPP-QXV8lu9QR76B9V0W8TEtObOBv52UqohQ-ztH58/edit?usp=sharing).
+
+Create a public [gist](https://gist.github.com/spinnaker-release) following the
+format `M.m.p.md`, for example: `1.27.0.md`.
+
+1.  The description should be “Spinnaker 1.nn.x Release Notes” (e.g., Spinnaker
+    1.18.x Release Notes). The gist will eventually have a separate file with
+    the release notes for each patch release on this branch.
+
+1.  Add a file 1.nn.0.md (e.g., `1.27.0.md`) to hold the release notes for the
+    new release.
+
+    Use this template to build the file:
+
+    ```md
+    # Spinnaker Release ${nn.nn.nn}
+
+    **_Note: This release requires Halyard version ${nn.nn.nn} or later._**
+
+    This release includes fixes, features, and performance improvements across a wide feature set in Spinnaker. This section provides a summary of notable improvements followed by the comprehensive changelog.
+
+    ${CURATED_CHANGE_LOG}
+
+    # Changelog
+
+    ${RAW_CHANGE_LOG}
+    ```
+
+    1. Copy the contents from the [build-raw-changelog] curated above replacing
+       #{RAW_CHANGE_LOG}
+
+    1. Add the notes from the [curated changelog]({{< ref "next-release-preview" >}})
+       to the top of the gist ([sample 1.nn.0 release notes](https://gist.github.com/spinnaker-release/cc4410d674679c5765246a40f28e3cad)).
+
+    1. Reset the [curated changelog]({{< ref "next-release-preview" >}})
+       for the next release by removing all added notes and incrementing the
+       version number in the heading. Raise a PR to:
+       [github.com/spinnaker/spinnaker.io](https://github.com/spinnaker/spinnaker/io/pulls)
+
+1.  Save the gist and copy the URL for use in the next step.
+    For example, 1.27.0 URL is: https://gist.github.com/spinnaker-release/d00cb1268d2951862a7126bf6e43f058
+
 ### Publish Changelog
+
+WARNING: The following has not been tested with a new PATCH version, eg: 1.27.1
 
 `buildtool` will clone your fork, branch off master, commit new changelog file
 and push up to GitHub. Once complete raise a PR to
