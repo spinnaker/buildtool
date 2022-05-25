@@ -159,8 +159,7 @@ class SemanticVersion(
                            ['series_name', 'major', 'minor', 'patch'])):
   """Helper class for interacting with semantic version tags."""
 
-  # TODO: remove '-' HACK from `[a-z-]` when 'version-*' tags not required
-  SEMVER_MATCHER = re.compile(r'([a-z-]+)(\d+)\.(\d+)\.(\d+)')
+  SEMVER_MATCHER = re.compile(r'(v)(\d+)\.(\d+)\.(\d+)')
   TAG_INDEX = 0
   MAJOR_INDEX = 1
   MINOR_INDEX = 2

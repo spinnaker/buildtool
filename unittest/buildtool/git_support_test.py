@@ -387,13 +387,13 @@ class TestGitRunner(unittest.TestCase):
 
 class TestSemanticVersion(unittest.TestCase):
   def test_semver_make_valid(self):
-    tests = [('simplez1.0.0', SemanticVersion('simplez', 1, 0, 0)),
-             ('anotherz10.11.12', SemanticVersion('anotherz', 10, 11, 12))]
+    tests = [('v1.0.0', SemanticVersion('v', 1, 0, 0)),
+             ('v10.11.12', SemanticVersion('v', 10, 11, 12))]
     for tag, expect in tests:
       semver = SemanticVersion.make(tag)
       self.assertEqual(semver, expect)
       self.assertEqual(tag, semver.to_tag())
-      self.assertEqual(tag[tag.rfind('z') + 1:], semver.to_version())
+      self.assertEqual(tag[tag.rfind('v') + 1:], semver.to_version())
 
   def test_semver_next(self):
     semver = SemanticVersion('A', 1, 2, 3)
