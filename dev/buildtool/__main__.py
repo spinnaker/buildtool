@@ -242,7 +242,6 @@ def main():
           'source',
           'spinnaker',
           'inspection',
-          'spin',
       ]]
 
   GitRunner.stash_and_clear_auth_env_vars()
