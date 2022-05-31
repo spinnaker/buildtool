@@ -235,8 +235,6 @@ def main():
           'apidocs',
           'bom',
           'changelog',
-          'container',
-          'debian',
           'halyard',
           'image',
           'source',
