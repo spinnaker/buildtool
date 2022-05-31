@@ -239,7 +239,6 @@ def main():
           'debian',
           'halyard',
           'image',
-          'rpm',
           'source',
           'spinnaker',
           'inspection',

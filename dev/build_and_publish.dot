@@ -12,7 +12,6 @@ digraph Flow_Build {
     Trigger -> build_bom
     bom_built -> build_containers
     bom_built -> build_debians
-    bom_built -> build_rpms
     bom_built -> build_changelog
     bom_built -> build_apidocs
 
@@ -62,23 +61,6 @@ digraph Flow_Build {
 		}
 	}
 	gradle_buildDeb_20 -> publish_nightly_bom;
-
-	subgraph cluster_30 {
-		label = "RPMs";
-		color=lightblue;
-
-		build_rpms -> git_clone_from_BOM_hash_30;
-		subgraph cluster_31 {
-		    label = "For Each Service..."
-		    color=aquamarine3
-
-    		git_clone_from_BOM_hash_30 -> git_tag_SEMVER_buildnum_30;
-    		// delete tags
-    		git_tag_SEMVER_buildnum_30 -> gradle_buildRpm_30;
-
-		}
-	}
-	gradle_buildRpm_30 -> publish_nightly_bom;
 
 	subgraph cluster_40 {
 		label = "Changelog";
