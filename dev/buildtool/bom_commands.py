@@ -23,6 +23,9 @@ from buildtool import (
     DEFAULT_BUILD_NUMBER,
 
     SPINNAKER_BOM_REPOSITORY_NAMES,
+    SPINNAKER_DEBIAN_REPOSITORY,
+    SPINNAKER_DOCKER_REGISTRY,
+    SPINNAKER_GOOGLE_IMAGE_PROJECT,
 
     BranchSourceCodeManager,
     RepositoryCommandFactory,
@@ -155,9 +158,9 @@ class BomBuilder(object):
 
     artifact_sources = {
         'gitPrefix': default_source_prefix,
-        'debianRepository': 'https://us-apt.pkg.dev/projects/spinnaker-community',
-        'dockerRegistry': "us-docker.pkg.dev/spinnaker-community/docker",
-        'googleImageProject': "marketplace-spinnaker-release"
+        'debianRepository': SPINNAKER_DEBIAN_REPOSITORY,
+        'dockerRegistry': SPINNAKER_DOCKER_REGISTRY,
+        'googleImageProject': SPINNAKER_GOOGLE_IMAGE_PROJECT
     }
 
     services = dict(self.__base_bom.get('services', {}))

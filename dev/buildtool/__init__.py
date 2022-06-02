@@ -1,4 +1,4 @@
-"""Support for building and spinnaker releases."""
+"""Support for spinnaker releases."""
 
 # pylint: disable=wrong-import-position
 
@@ -20,6 +20,11 @@ SPINNAKER_HALYARD_REPOSITORY_NAME = 'halyard'
 
 # Documentation is version agnostic
 SPINNAKER_IO_REPOSITORY_NAME = 'spinnaker.io'
+
+# Artifact sources are per GitHub Action build jobs
+SPINNAKER_DEBIAN_REPOSITORY = 'https://us-apt.pkg.dev/projects/spinnaker-community'
+SPINNAKER_DOCKER_REGISTRY = 'us-docker.pkg.dev/spinnaker-community/docker'
+SPINNAKER_GOOGLE_IMAGE_PROJECT = 'marketplace-spinnaker-release'
 
 
 from buildtool.util import (

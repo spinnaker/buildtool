@@ -24,6 +24,9 @@ import yaml
 
 from buildtool import (
     DEFAULT_BUILD_NUMBER,
+    SPINNAKER_DEBIAN_REPOSITORY,
+    SPINNAKER_DOCKER_REGISTRY,
+    SPINNAKER_GOOGLE_IMAGE_PROJECT,
     BranchSourceCodeManager,
     GitRepositorySpec,
     MetricsManager,
@@ -175,9 +178,9 @@ class TestBuildBomCommand(BaseGitRepoTestFixture):
     golden_text = textwrap.dedent("""\
         artifactSources:
           gitPrefix: http://test-domain.com/test-owner
-          debianRepository: https://us-apt.pkg.dev/projects/spinnaker-community
-          dockerRegistry: us-docker.pkg.dev/spinnaker-community/docker
-          googleImageProject: marketplace-spinnaker-release
+          debianRepository: %s
+          dockerRegistry: %s
+          googleImageProject: %s
         dependencies:
         services:
           clouddriver:
@@ -185,8 +188,12 @@ class TestBuildBomCommand(BaseGitRepoTestFixture):
             version: 9.8.7
         timestamp: '2018-01-02 03:04:05'
         version: OptionBuildNumber
-    """)
-    golden_bom = yaml.safe_load(golden_text)
+    """) % (
+            SPINNAKER_DEBIAN_REPOSITORY,
+            SPINNAKER_DOCKER_REGISTRY,
+            SPINNAKER_GOOGLE_IMAGE_PROJECT
+            )
+    golden_bom = yaml.safe_load(golden_text.format())
     golden_bom['dependencies'] = load_default_bom_dependencies()
 
     for key, value in golden_bom.items():
@@ -269,9 +276,9 @@ class TestBomBuilder(BaseGitRepoTestFixture):
 
     golden_bom['artifactSources'] = {
       'gitPrefix': os.path.dirname(self.repo_commit_map[NORMAL_REPO]['ORIGIN']),
-      'debianRepository': 'https://us-apt.pkg.dev/projects/spinnaker-community',
-      'dockerRegistry': "us-docker.pkg.dev/spinnaker-community/docker",
-      'googleImageProject': "marketplace-spinnaker-release"
+      'debianRepository': SPINNAKER_DEBIAN_REPOSITORY,
+      'dockerRegistry': SPINNAKER_DOCKER_REGISTRY,
+      'googleImageProject': SPINNAKER_GOOGLE_IMAGE_PROJECT
     }
 
     for key, value in bom['services'].items():
@@ -317,9 +324,9 @@ class TestBomBuilder(BaseGitRepoTestFixture):
     updated_bom['services'][OUTLIER_SERVICE] = updated_service
     updated_bom['artifactSources'] = {
       'gitPrefix': self.golden_bom['artifactSources']['gitPrefix'],
-      'debianRepository': 'https://us-apt.pkg.dev/projects/spinnaker-community',
-      'dockerRegistry': "us-docker.pkg.dev/spinnaker-community/docker",
-      'googleImageProject': "marketplace-spinnaker-release"
+      'debianRepository': SPINNAKER_DEBIAN_REPOSITORY,
+      'dockerRegistry': SPINNAKER_DOCKER_REGISTRY,
+      'googleImageProject': SPINNAKER_GOOGLE_IMAGE_PROJECT
     }
     for key, value in updated_bom.items():
       self.assertEqual(value, bom[key])

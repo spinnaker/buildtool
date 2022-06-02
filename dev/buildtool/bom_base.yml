@@ -1,8 +1,3 @@
-artifactSources:
-  debianRepository: https://us-apt.pkg.dev/projects/spinnaker-community
-  dockerRegistry: us-docker.pkg.dev/spinnaker-community/docker
-  gitPrefix: https://github.com/spinnaker
-  googleImageProject: marketplace-spinnaker-release
 dependencies:
   consul:
     version: 0.7.5
