@@ -235,15 +235,11 @@ def main():
           'apidocs',
           'bom',
           'changelog',
-          'container',
-          'debian',
           'halyard',
           'image',
-          'rpm',
           'source',
           'spinnaker',
           'inspection',
-          'spin',
       ]]
 
   GitRunner.stash_and_clear_auth_env_vars()

@@ -315,7 +315,7 @@ class GradleRunner(object):
     ]
 
     if options.maven_custom_init_file:
-      # Note, this was only debians, not for rpms before.
+      # Note, this was only debians
       args.append('-I {}'.format(options.maven_custom_init_file))
 
     return args

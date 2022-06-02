@@ -19,13 +19,13 @@ import logging
 import os
 import yaml
 
-import buildtool.container_commands
-import buildtool.debian_commands
-
 from buildtool import (
     DEFAULT_BUILD_NUMBER,
 
     SPINNAKER_BOM_REPOSITORY_NAMES,
+    SPINNAKER_DEBIAN_REPOSITORY,
+    SPINNAKER_DOCKER_REGISTRY,
+    SPINNAKER_GOOGLE_IMAGE_PROJECT,
 
     BranchSourceCodeManager,
     RepositoryCommandFactory,
@@ -158,25 +158,10 @@ class BomBuilder(object):
 
     artifact_sources = {
         'gitPrefix': default_source_prefix,
-        'dockerRegistry': "us-docker.pkg.dev/spinnaker-community/docker",
-        'googleImageProject': "marketplace-spinnaker-release",
+        'debianRepository': SPINNAKER_DEBIAN_REPOSITORY,
+        'dockerRegistry': SPINNAKER_DOCKER_REGISTRY,
+        'googleImageProject': SPINNAKER_GOOGLE_IMAGE_PROJECT
     }
-    debian_repository = (
-        'https://us-apt.pkg.dev/projects/spinnaker-community'
-        if options.bintray_debian_repository is None
-        else 'https://dl.bintray.com/{org}/{repo}'.format(
-            org=options.bintray_org,
-            repo=options.bintray_debian_repository))
-
-    artifact_sources.update({
-        name: source
-        for name, source in [
-            ('debianRepository', debian_repository),
-            ('dockerRegistry', options.artifact_registry),
-            ('googleImageProject', options.publish_gce_image_project)
-        ]
-        if source
-    })
 
     services = dict(self.__base_bom.get('services', {}))
     changed = False
@@ -283,8 +268,6 @@ class BuildBomCommandFactory(RepositoryCommandFactory):
   def init_argparser(self, parser, defaults):
     super(BuildBomCommandFactory, self).init_argparser(parser, defaults)
     HalRunner.add_parser_args(parser, defaults)
-    buildtool.container_commands.add_bom_parser_args(parser, defaults)
-    buildtool.debian_commands.add_bom_parser_args(parser, defaults)
 
     self.add_argument(
         parser, 'publish_gce_image_project', defaults, None,
