@@ -100,12 +100,9 @@ git branch
 
 ### Build BOM
 
-WARNING: If the HEAD of the new `release-{major}-{minor}-x` branch is not tagged then
-`buildtool` will log the following and automatically increment the latest tag's
-patch version. You will need to push a new tag to HEAD of the branch and try
-again. (FIXME - return latest tag instead)
-
-Warning log line:
+WARNING: If the HEAD of the new `release-{major}-{minor}-x` branch is not
+tagged then `buildtool` will log the following warning. You may wish to push
+a new tag to HEAD of the branch and try again.
 
 ```
 W 19:50:36.886 [Thread-4.552794] fiat HEAD commit of 52a8f5204dc12b693b8eac5ff6126759c119684a is newer than v1.28.4 tag at 23cf00d96d55e02ff3e4ce2d0cd42ef614532bb7

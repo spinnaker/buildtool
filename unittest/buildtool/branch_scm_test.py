@@ -145,9 +145,9 @@ class TestSourceCodeManager(unittest.TestCase):
       self.assertEqual(UNTAGGED_BRANCH, in_branch)
 
       summary = scm.git.collect_repository_summary(git_dir)
+      # always use last tag as version
       semver = SemanticVersion.make(BASE_VERSION)
-      expect_version = semver.next(
-          SemanticVersion.MINOR_INDEX).to_version()
+      expect_version = semver.to_version()
 
       self.assertEqual(expect_version, summary.version)
 

@@ -467,22 +467,6 @@ class CommitMessage(
 
     return result
 
-  @staticmethod
-  def determine_semver_implication_on_list(
-      msg_list, major_regexs=None, minor_regexs=None, patch_regexs=None,
-      default_semver_index=SemanticVersion.MINOR_INDEX):
-    """Determine the worst case semvar component that needs incremented."""
-    if not msg_list:
-      return None
-    msi = SemanticVersion.PATCH_INDEX + 1
-    for commit_message in msg_list:
-      msi = min(msi, commit_message.determine_semver_implication(
-          major_regexs=major_regexs,
-          minor_regexs=minor_regexs,
-          patch_regexs=patch_regexs,
-          default_semver_index=default_semver_index))
-    return msi
-
   def determine_semver_implication(
       self, major_regexs=None, minor_regexs=None, patch_regexs=None,
       default_semver_index=SemanticVersion.MINOR_INDEX):
@@ -556,9 +540,10 @@ class RepositorySummary(collections.namedtuple(
   """Denotes information about a repository that a build-delta wants.
 
   Attributes:
-    commit_id: [string] The HEAD commit id
-    tag: [string] The tag at the HEAD
+    commit_id: [string] The latest tag commit id
+    tag: [string] The latest tag
     version: [string] The Major.Minor.Patch version number
+    prev_version: [string] The Previous Major.Minor.Patch version number TODO(kskewes-sf): remove as not correct
     commit_messages: [list of CommitMessage] The commits since the last tag.
        If this is empty then the tag and version already exists.
        Otherwise the tag and version are proposed values.
@@ -769,7 +754,7 @@ class GitRunner(object):
     return stdout
 
   def find_newest_tag_and_common_commit_from_id(
-      self, git_dir, commit_id, commit_tags):
+      self, git_dir, commit_id):
     """Returns most recent tag and common commit to a given commit_id.
 
     So if we have this:
@@ -781,102 +766,47 @@ class GitRunner(object):
          |
          Y - Z <id>
     Then we want for <id> to get the tag <0.2.0> and commit A.
-    We'll use this to know that the changes since the tag are X, Y, Z,
-    and be able to determine the new semantic version tag based on 0.2.0 even
-    though it is not directly in <id>'s hierarchy.
-
-    Args:
-      base_commit_id [string]: If base_commit_id is provided then rather than
-          use it ias the base commit id for determining recent commits.
     """
-    # Find the starting commit, which is most recent tag in our direct history.
+    # Find the ancestor commit, which is most recent tag in our direct history.
     # For the example in the function docs, this would be tag 0.1.0
     retcode, most_recent_ancestor_tag = self.run_git(
         git_dir, 'describe --abbrev=0 --tags --match v* ' + commit_id)
     if retcode != 0:
-      start_tag = 'v0.0.0'
+      tag = 'v0.0.0'
       logging.warning('No baseline tag for "%s", assuming this is first one.',
                       git_dir)
-      start_commit = self.check_run(git_dir, 'rev-list --max-parents=0 HEAD')
+      tag_commit = self.check_run(git_dir, 'rev-list --max-parents=0 HEAD')
     else:
-      start_tag = most_recent_ancestor_tag
-      start_commit = self.check_run(git_dir, 'rev-list -n 1 ' + start_tag)
+      tag = most_recent_ancestor_tag
+      tag_commit = self.check_run(git_dir, 'rev-list -n 1 ' + tag)
 
-    if start_commit == commit_id:
+    if tag_commit == commit_id:
       logging.debug(
-          'Commit %s is already tagged with %s', start_commit, start_tag)
-      return start_tag, start_commit
+          'Commit %s is already tagged with %s', tag_commit, tag)
+    else:
+      logging.warning(
+              '%s HEAD commit of %s is newer than %s tag at %s. Using last tag & its commit',
+              git_dir.split('/')[2], commit_id, tag, tag_commit)
 
-    logging.warning(
-      '%s HEAD commit of %s is newer than %s tag at %s.',
-            git_dir.split('/')[2], commit_id, start_tag, start_commit)
-    # Get the master commit so we can use it in the merge-base call below.
-    # If we checked out some branch other than master, we might not have
-    # the actual branch so cannot use the symbolic name.
-    master_commit = self.check_run(git_dir, 'show-ref master').split(' ')[0]
-    logging.debug('  master_commit=%s may be used to locate the branch.', master_commit)
+    return tag, tag_commit
 
-    # Find branch our commit is on. There could be multiple branches.
-    # We'll remember them all. These should be the same in practice, but
-    # could be different if a branch spawned another for some reason.
-    # We use -r here because the branches arent known to the original git clone.
-    remote_commit_branches = self.check_run(
-        git_dir, 'branch -r --contains {id}'.format(id=commit_id))
+  def query_local_repository_commits_between_two_commit_ids(
+      self, git_dir, start_commit_id, end_commit_id):
+    """Returns the list of commit messages to the local repository within the
+       range from start_commit_id to end_commit_id, inclusive.
 
-    commit_branch_nodes = set([])
-    for remote_commit_branch in remote_commit_branches.split('\n'):
-      remote_commit_branch = remote_commit_branch.strip()
-      if not remote_commit_branch.startswith('origin/release-'):
-        logging.debug('   skipping non-release branch %r', remote_commit_branch)
-        continue
-
-      # Find place our branch diverges from master. We'll be using this to
-      # detect if a tag we consider was after our branch. We'll do this by
-      # checking if the common point between us is it is here.
-      node = self.check_run(
-          git_dir, 'merge-base {branch} {master}'.format(
-              branch=remote_commit_branch, master=master_commit))
-      commit_branch_nodes.add(node)
-      logging.debug('   adding branching node=%r', node)
-
-    logging.debug('Initial tag id=%s branch=%s which diverged @ %s with tag=%s.',
-                  commit_id, remote_commit_branches, commit_branch_nodes, start_tag)
-
-    # Now there could be other versions that were created in branches between
-    # that first commit and our commit, such as tag 0.2.0 in the above.
-    start_version = LooseVersion(start_tag)
-    for tag_entry in reversed(sorted(commit_tags)):
-      tag = tag_entry.tag
-      if LooseVersion(tag) <= start_version:
-        logging.debug('tag %s <= %s', tag, start_tag)
-        break
-
-      # Find where in our commit history the branch this tag is on intersects
-      tag_intersect = self.check_run(git_dir, 'merge-base {id} {tag}'.format(
-          id=commit_id, tag=tag))
-      if tag_intersect in commit_branch_nodes:
-        logging.debug('tag %s intersects branch at %s', tag, tag_intersect)
-        continue
-      logging.debug('Found newer tag=%s at intersect id=%s', tag, tag_intersect)
-      return tag, tag_intersect
-
-    return start_tag, start_commit
-
-  def query_local_repository_commits_to_existing_tag_from_id(
-      self, git_dir, commit_id, commit_tags, base_commit_id=None):
-    """Returns the list of commit messages to the local repository."""
+    Args:
+      start_commit_id [string]: commits including and since this id
+      end_commit_id [string]: commits until and including this id
+    """
     # pylint: disable=invalid-name
 
-    tag, found_commit = self.find_newest_tag_and_common_commit_from_id(
-        git_dir, commit_id, commit_tags)
-
-    base_commit = base_commit_id or found_commit
     commit_history = self.check_run(
         git_dir,
-        'log --pretty=medium {base_commit}..{id}'.format(
-            base_commit=base_commit, id=commit_id))
+        'log --pretty=medium {start_commit_id}..{end_commit_id}'.format(
+            start_commit_id=start_commit_id, end_commit_id=end_commit_id))
     messages = CommitMessage.make_list_from_result(commit_history)
-    return tag, messages
+    return messages
 
   def query_commit_at_tag(self, git_dir, tag):
     """Return the commit for the given tag, or None if tag is not known."""
@@ -1150,37 +1080,33 @@ class GitRunner(object):
                              origin=origin_url,
                              upstream=remote_urls.get('upstream'))
 
-  def collect_repository_summary(self, git_dir, base_commit_id=None):
-    """Collects RepsitorySummary from local repository directory."""
+  def collect_repository_summary(self, git_dir, start_commit_id=None):
+    """Collects RepositorySummary from local repository directory up to the
+        latest tag commit.
+
+    Args:
+      start_commit_id [string]: If start_commit_id is provided then return
+          commit messages from it until the latest tag, inclusive.
+    """
     start_time = time.time()
     logging.debug('Begin analyzing %s', git_dir)
-    all_tags = self.query_tag_commits(
-        git_dir, r'^v[0-9]+\.[0-9]+\.[0-9]+$')
-    current_id = self.query_local_repository_commit_id(git_dir)
-    tag, msgs = self.query_local_repository_commits_to_existing_tag_from_id(
-        git_dir, current_id, all_tags, base_commit_id=base_commit_id)
 
-    if not tag:
-      current_semver = SemanticVersion.make('v0.0.0')
-    else:
-      current_semver = SemanticVersion.make(tag)
+    head_commit_id = self.query_local_repository_commit_id(git_dir)
 
-    next_semver = None
-    if msgs:
-      semver_significance = CommitMessage.determine_semver_implication_on_list(
-          msgs)
-      next_semver = current_semver.next(semver_significance)
-      use_tag = next_semver.to_tag()
-      use_version = next_semver.to_version()
-    else:
-      use_tag = tag
-      use_version = current_semver.to_version()
+    tag, tag_commit_id = self.find_newest_tag_and_common_commit_from_id(
+        git_dir, head_commit_id)
+
+    msgs = []
+    if start_commit_id != None:
+        msgs = self.query_local_repository_commits_between_two_commit_ids(
+                git_dir, start_commit_id, tag_commit_id)
+
+    tag_semver = SemanticVersion.make(tag)
 
     total_ms = int((time.time() - start_time) * 1000)
     logging.debug('Finished analyzing %s in %d ms', git_dir, total_ms)
-    return RepositorySummary(current_id, use_tag, use_version,
-                             current_semver.to_version(),
-                             msgs)
+    return RepositorySummary(tag_commit_id, tag, tag_semver.to_version(),
+            tag_semver.to_version(), msgs)
 
   def delete_local_branch_if_exists(self, git_dir, branch):
     """Delete the branch from git_dir if one exists.

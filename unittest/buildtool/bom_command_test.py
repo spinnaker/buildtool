@@ -43,7 +43,7 @@ from buildtool.bom_commands import (
 from test_util import (
     ALL_STANDARD_TEST_BOM_REPO_NAMES,
     PATCH_BRANCH,
-    PATCH_VERSION_NUMBER,
+    BASE_VERSION_NUMBER,
     NORMAL_REPO,
     NORMAL_SERVICE,
     OUTLIER_REPO,
@@ -268,11 +268,11 @@ class TestBomBuilder(BaseGitRepoTestFixture):
     golden_bom['version'] = 'OptionBuildNumber'
     golden_bom['timestamp'] = '2018-01-02 03:04:05'
     golden_bom['services'][NORMAL_SERVICE]['version'] = (
-        PATCH_VERSION_NUMBER)
+        BASE_VERSION_NUMBER)
     golden_bom['services'][OUTLIER_SERVICE]['version'] = (
-        PATCH_VERSION_NUMBER)
+        BASE_VERSION_NUMBER)
     golden_bom['services']['monitoring-third-party']['version'] = (
-        PATCH_VERSION_NUMBER)
+        BASE_VERSION_NUMBER)
 
     golden_bom['artifactSources'] = {
       'gitPrefix': os.path.dirname(self.repo_commit_map[NORMAL_REPO]['ORIGIN']),
@@ -282,10 +282,14 @@ class TestBomBuilder(BaseGitRepoTestFixture):
     }
 
     for key, value in bom['services'].items():
-      self.assertEqual(value, golden_bom['services'][key])
+      # gate has extra commit on branch so commit id's should not match
+      if key in ['gate', 'monitoring-daemon', 'monitoring-third-party']:
+        self.assertNotEqual(value, golden_bom['services'][key], msg='key: {} - value: {}'.format(key, value))
+      else:
+        self.assertEqual(value, golden_bom['services'][key], msg='key: {} - value: {}'.format(key, value))
     for key, value in bom.items():
-      self.assertEqual(value, golden_bom[key])
-    self.assertEqual(golden_bom, bom)
+      if key != 'services':
+        self.assertEqual(value, golden_bom[key])
 
   def test_rebuild(self):
     test_root = self.test_root
@@ -311,26 +315,34 @@ class TestBomBuilder(BaseGitRepoTestFixture):
       bom = builder.build()
 
     updated_service = bom['services'][OUTLIER_SERVICE]
-    self.assertEqual(updated_service, {
+    # OUTLIER_REPO hasn't been tagged since extra commits so bom should be same
+    self.assertNotEqual(updated_service, {
         'commit': self.repo_commit_map[OUTLIER_REPO][PATCH_BRANCH],
-        'version': PATCH_VERSION_NUMBER
+        'version': BASE_VERSION_NUMBER
         })
 
     # The bom should be the same as before, but with new timestamp/version
-    # and our service updated. And the artifactSources to our configs.
+    # and our service unchanged. And the artifactSources to our configs.
     updated_bom = dict(self.golden_bom)
     updated_bom['timestamp'] = '2018-01-02 03:04:05'
     updated_bom['version'] = 'UpdatedBuildNumber'
-    updated_bom['services'][OUTLIER_SERVICE] = updated_service
     updated_bom['artifactSources'] = {
       'gitPrefix': self.golden_bom['artifactSources']['gitPrefix'],
       'debianRepository': SPINNAKER_DEBIAN_REPOSITORY,
       'dockerRegistry': SPINNAKER_DOCKER_REGISTRY,
       'googleImageProject': SPINNAKER_GOOGLE_IMAGE_PROJECT
     }
-    for key, value in updated_bom.items():
-      self.assertEqual(value, bom[key])
-    self.assertEqual(updated_bom, bom)
+
+    for key, value in bom['services'].items():
+      # monitoring-daemon has extra commit on branch so commit id's should not match
+      if key in ['monitoring-daemon', 'monitoring-third-party']:
+        self.assertNotEqual(value, updated_bom['services'][key], msg='key: {} - value: {}'.format(key, value))
+      else:
+        self.assertEqual(value, updated_bom['services'][key], msg='key: {} - value: {}'.format(key, value))
+    for key, value in bom.items():
+      if key != 'services':
+        self.assertEqual(value, updated_bom[key])
+
 
   def test_determine_most_common_prefix(self):
     options = self.options
