@@ -536,14 +536,13 @@ class CommitMessage(
 
 class RepositorySummary(collections.namedtuple(
     'RepositorySummary',
-    ['commit_id', 'tag', 'version', 'prev_version', 'commit_messages'])):
+    ['commit_id', 'tag', 'version', 'commit_messages'])):
   """Denotes information about a repository that a build-delta wants.
 
   Attributes:
     commit_id: [string] The latest tag commit id
     tag: [string] The latest tag
     version: [string] The Major.Minor.Patch version number
-    prev_version: [string] The Previous Major.Minor.Patch version number TODO(kskewes-sf): remove as not correct
     commit_messages: [list of CommitMessage] The commits since the last tag.
        If this is empty then the tag and version already exists.
        Otherwise the tag and version are proposed values.
@@ -576,7 +575,6 @@ class RepositorySummary(collections.namedtuple(
         ('commit_id', self.commit_id),
         ('tag', self.tag),
         ('version', self.version),
-        ('prev_version', self.prev_version),
         ('commit_messages', self.commit_messages)
     ])
 
@@ -1105,8 +1103,7 @@ class GitRunner(object):
 
     total_ms = int((time.time() - start_time) * 1000)
     logging.debug('Finished analyzing %s in %d ms', git_dir, total_ms)
-    return RepositorySummary(tag_commit_id, tag, tag_semver.to_version(),
-            tag_semver.to_version(), msgs)
+    return RepositorySummary(tag_commit_id, tag, tag_semver.to_version(), msgs)
 
   def delete_local_branch_if_exists(self, git_dir, branch):
     """Delete the branch from git_dir if one exists.

@@ -356,7 +356,6 @@ class TestGitRunner(unittest.TestCase):
                        summary.commit_id)
       self.assertEqual(tag, summary.tag)
       self.assertEqual(tag.split('v')[1], summary.version)
-      self.assertEqual(tag.split('v')[1], summary.prev_version)
       self.assertEqual([], summary.commit_messages)
 
 
@@ -513,14 +512,13 @@ class TestCommitMessage(unittest.TestCase):
     all_tests = [(self.PATCH_BRANCH, '0.1.0'),
                  (self.MINOR_BRANCH, '0.1.0'),
                  (self.MAJOR_BRANCH, '0.1.0')]
-    for changes, spec in enumerate(all_tests):
+    for _, spec in enumerate(all_tests):
       branch, version = spec
       # CommitMessage fixture for more interesting cases.
       self.run_git('checkout ' + branch)
       summary = self.git.collect_repository_summary(self.git_dir)
       self.assertEqual('v' + version, summary.tag)
       self.assertEqual(version, summary.version)
-      self.assertEqual('0.1.0', summary.prev_version)
       clean_messages = ['\n'.join([line.strip() for line in lines])
                         for lines in [m.message.split('\n')
                                       for m in summary.commit_messages]]
@@ -553,22 +551,20 @@ class TestCommitMessage(unittest.TestCase):
 class TestRepositorySummary(unittest.TestCase):
   def test_to_yaml(self):
     summary = RepositorySummary(
-        'abcd1234', 'mytag-987', '0.0.1', '0.0.0',
+        'abcd1234', 'mytag-987', '0.0.1',
         [CommitMessage('commit-abc', 'author', 'date', 'commit message')])
 
     expect = """commit_id: {id}
-prev_version: {prev}
 tag: {tag}
 version: {version}
-""".format(id=summary.commit_id, tag=summary.tag, version=summary.version,
-           prev=summary.prev_version)
+""".format(id=summary.commit_id, tag=summary.tag, version=summary.version)
     self.assertEqual(expect, summary.to_yaml(with_commit_messages=False))
 
   def test_yamilfy(self):
     # The summary values are arbitrary. Just verifying we can go in and out
     # of yaml.
     summary = RepositorySummary(
-        'abcd', 'tag-123', '1.2.0', '1.1.5',
+        'abcd', 'tag-123', '1.2.0',
         [
             CommitMessage('commitB', 'authorB', 'dateB', 'messageB'),
             CommitMessage('commitA', 'authorA', 'dateA', 'messageA')
@@ -577,7 +573,6 @@ version: {version}
     self.assertEqual(summary.commit_id, yamlized['commit_id'])
     self.assertEqual(summary.tag, yamlized['tag'])
     self.assertEqual(summary.version, yamlized['version'])
-    self.assertEqual(summary.prev_version, yamlized['prev_version'])
     self.assertEqual(
         [{
             'commit_id': 'commit' + x,

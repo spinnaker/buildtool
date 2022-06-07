@@ -138,7 +138,7 @@ class TestBuildBomCommand(BaseGitRepoTestFixture):
     # When the base command asks for the repository metadata, we'll return
     # this hardcoded info, then look for it later in the generated om.
     mock_refresh = make_fake(BranchSourceCodeManager, 'refresh_source_info')
-    summary = RepositorySummary('CommitA', 'TagA', '9.8.7', '44.55.66', [])
+    summary = RepositorySummary('CommitA', 'TagA', '9.8.7', [])
     source_info = SourceInfo('MyBuildNumber', summary)
     mock_refresh.return_value = source_info
 
@@ -358,7 +358,7 @@ class TestBomBuilder(BaseGitRepoTestFixture):
           'RepoOne', origin=prefix[0] + '/RepoOne',
           commit_id='RepoOneCommit')
       summary = RepositorySummary('RepoOneCommit', 'RepoOneTag',
-                                  '1.2.3', '1.2.2', [])
+                                  '1.2.3', [])
       source_info = SourceInfo('BuildOne', summary)
       builder.add_repository(repository, source_info)
       self.assertEqual(prefix[0], builder.determine_most_common_prefix())
@@ -367,7 +367,7 @@ class TestBomBuilder(BaseGitRepoTestFixture):
           'RepoTwo', origin=prefix[which] + '/RepoTwo',
           commit_id='RepoTwoCommit')
       summary = RepositorySummary('RepoTwoCommit', 'RepoTwoTag',
-                                  '2.2.3', '2.2.3', [])
+                                  '2.2.3', [])
       source_info = SourceInfo('BuildTwo', summary)
       builder.add_repository(repository, source_info)
 
@@ -375,7 +375,7 @@ class TestBomBuilder(BaseGitRepoTestFixture):
           'RepoThree', origin=prefix[1] + '/RepoThree',
           commit_id='RepoThreeCommit')
       summary = RepositorySummary('RepoThreeCommit', 'RepoThreeTag',
-                                  '3.2.0', '2.2.1', [])
+                                  '3.2.0', [])
       source_info = SourceInfo('BuildThree', summary)
       builder.add_repository(repository, source_info)
       self.assertEqual(prefix[which], builder.determine_most_common_prefix())
