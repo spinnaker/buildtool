@@ -69,8 +69,7 @@ class TestBomSourceCodeManager(BaseGitRepoTestFixture):
 
       summary = scm.git.collect_repository_summary(git_dir)
       semver = SemanticVersion.make(BASE_VERSION_TAG)
-      expect_version = semver.next(
-          SemanticVersion.PATCH_INDEX).to_version()
+      expect_version = semver.to_version()
       self.assertEqual(expect_version, summary.version)
 
 

@@ -318,7 +318,7 @@ class BuildChangelogCommand(RepositoryCommandProcessor):
     else:
       bom_commit = None
     return self.git.collect_repository_summary(repository.git_dir,
-                                               base_commit_id=bom_commit)
+                                               start_commit_id=bom_commit)
 
   def _do_postprocess(self, result_dict):
     """Construct changelog from the collected summary, then write it out."""

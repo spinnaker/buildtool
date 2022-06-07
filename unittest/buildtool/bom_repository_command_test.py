@@ -81,9 +81,16 @@ class TestBomRepositoryCommandProcessor(BaseGitRepoTestFixture):
 
     for repository in command.source_repositories:
       self.assertTrue(os.path.exists(repository.git_dir))
-      self.assertEqual(
+      # gate and spinnaker-monitoring have extra commits after last tag so the
+      # repo_commit_map won't match the summary we get (which is up to last tag)
+      if repository.name in ['gate', 'spinnaker-monitoring']:
+        self.assertNotEqual(
           command.summary_info[repository.name].commit_id,
-          self.repo_commit_map[repository.name][PATCH_BRANCH])
+          self.repo_commit_map[repository.name][PATCH_BRANCH], msg='repository: {} - commit_id: {}'.format(repository,command.summary_info[repository.name].commit_id))
+      else:
+        self.assertEqual(
+          command.summary_info[repository.name].commit_id,
+          self.repo_commit_map[repository.name][PATCH_BRANCH], msg='repository: {} - commit_id: {}'.format(repository,command.summary_info[repository.name].commit_id))
 
 
 if __name__ == '__main__':

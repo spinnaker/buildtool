@@ -29,7 +29,6 @@ import yaml
 from buildtool import (
     GitRepositorySpec,
     GitRunner,
-    RepositorySummary,
 
     add_parser_argument,
     check_kwargs_empty,
@@ -221,30 +220,6 @@ class SpinnakerSourceCodeManager(object):
         'Refreshing source info for %s and caching to %s for buildnum=%s',
         repository.name, cache_path, build_number)
     write_to_path(info.summary.to_yaml(), cache_path)
-    return info
-
-  def lookup_source_info(self, repository):
-    """Return the SourceInfo for the given repository."""
-    filename = repository.name + '-meta.yml'
-    dir_path = os.path.join(self.__options.output_dir, 'source_info')
-    build_number = self.determine_build_number(repository)
-    with open(os.path.join(dir_path, filename), 'r') as stream:
-      return SourceInfo(
-          build_number,
-          RepositorySummary.from_dict(yaml.safe_load(stream.read())))
-
-  def check_source_info(self, repository):
-    """Ensure cached source info is consistent with current repository."""
-    logging.debug('Checking that cached commit is consistent with %s',
-                  repository.git_dir)
-    info = self.lookup_source_info(repository)
-    commit = self.__git.query_local_repository_commit_id(repository.git_dir)
-    cached_commit = info.summary.commit_id
-    if cached_commit != commit:
-      raise_and_log_error(
-          UnexpectedError(
-              'Cached commit {cache} != current commit {id} in {dir}'.format(
-                  cache=cached_commit, id=commit, dir=repository.git_dir)))
     return info
 
   def foreach_source_repository(
