@@ -571,26 +571,6 @@ class RepositorySummary(collections.namedtuple(
                                for raw in data['commit_messages']]
     return RepositorySummary(**data)
 
-  @property
-  def patchable(self):
-    """Return True if the changes in this repository is only a patch release."""
-    previous_parts = self.prev_version.split('.')
-    current_parts = self.version.split('.')
-    if len(previous_parts) != 3:
-      raise_and_log_error(
-          ConfigError('Previous version %s is not X.Y.Z' % self.prev_version))
-    if len(current_parts) != 3:
-      raise_and_log_error(
-          ConfigError('Version %s is not X.Y.Z' % self.version))
-    if previous_parts[:2] != current_parts[:2]:
-      return False
-    if int(previous_parts[2]) != int(current_parts[2]) - 1:
-      raise_and_log_error(
-          UnexpectedError(
-              'Unexpected version sequence {prev} to {current}'.format(
-                  prev=self.prev_version, current=self.version)))
-    return True
-
   def to_yaml(self, with_commit_messages=True):
     """Convert the summary to a yaml string."""
     data = dict(self._asdict())

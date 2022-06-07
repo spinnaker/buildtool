@@ -652,22 +652,6 @@ version: {version}
            prev=summary.prev_version)
     self.assertEqual(expect, summary.to_yaml(with_commit_messages=False))
 
-  def test_patchable_true(self):
-    tests = [('1.2.3', '1.2.2'),
-             ('1.2.1', '1.2.0'),
-             ('1.2.10', '1.2.9')]
-    for test in tests:
-      summary = RepositorySummary('abcd', 'tag-123', test[0], test[1], [])
-      self.assertTrue(summary.patchable)
-
-  def test_patchable_false(self):
-    tests = [('1.3.0', '1.2.0'),
-             ('1.3.0', '1.2.1'),
-             ('1.3.1', '1.2.0')]
-    for test in tests:
-      summary = RepositorySummary('abcd', 'tag-123', test[0], test[1], [])
-      self.assertFalse(summary.patchable)
-
   def test_yamilfy(self):
     # The summary values are arbitrary. Just verifying we can go in and out
     # of yaml.
