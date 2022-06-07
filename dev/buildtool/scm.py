@@ -233,20 +233,6 @@ class SpinnakerSourceCodeManager(object):
           build_number,
           RepositorySummary.from_dict(yaml.safe_load(stream.read())))
 
-  def check_source_info(self, repository):
-    """Ensure cached source info is consistent with current repository."""
-    logging.debug('Checking that cached commit is consistent with %s',
-                  repository.git_dir)
-    info = self.lookup_source_info(repository)
-    commit = self.__git.query_local_repository_commit_id(repository.git_dir)
-    cached_commit = info.summary.commit_id
-    if cached_commit != commit:
-      raise_and_log_error(
-          UnexpectedError(
-              'Cached commit {cache} != current commit {id} in {dir}'.format(
-                  cache=cached_commit, id=commit, dir=repository.git_dir)))
-    return info
-
   def foreach_source_repository(
       self, all_repos, call_function, *posargs, **kwargs):
     """Call the function on each of the SourceRepository instances."""
