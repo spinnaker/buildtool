@@ -879,7 +879,7 @@ class ValidateBomTestController(object):
         Returns:
           True if requirements are satisfied, False if not.
         """
-        if not "api" in spec:
+        if "api" not in spec:
             raise_and_log_error(
                 UnexpectedError(
                     'Test "{name}" is missing an "api" spec.'.format(name=test_name)
@@ -966,7 +966,7 @@ class ValidateBomTestController(object):
                 value = str(value)
             if key == "alias":
                 for alias_name in value:
-                    if not alias_name in aliases_dict:
+                    if alias_name not in aliases_dict:
                         raise_and_log_error(
                             ConfigError(
                                 'Unknown alias "{name}" referenced in args for "{test}"'.format(

@@ -143,7 +143,7 @@ class ChangelogRepositoryData(
             """Return bucket for title_line, adding new one if needed."""
             match = TITLE_LINE_MATCHER.match(title_line)
             thing = match.group(1) if match else ""
-            if not thing in thing_dict:
+            if thing not in thing_dict:
                 thing_dict[thing] = []
             return thing_dict[thing]
 

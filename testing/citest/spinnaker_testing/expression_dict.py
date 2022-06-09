@@ -60,7 +60,7 @@ class ExpressionDict(dict):
 
         This will track down values that reference other keys in the dictionary.
         """
-        if not key in self:
+        if key not in self:
             return default_value
         return self.__resolve_value(key, saw=[], original=key)
 
@@ -69,7 +69,7 @@ class ExpressionDict(dict):
 
         This will track down values that reference other keys in the dictionary.
         """
-        if not key in self:
+        if key not in self:
             raise KeyError(key)
         return self.__resolve_value(key, saw=[], original=key)
 
@@ -86,7 +86,7 @@ class ExpressionDict(dict):
           ValueError if a cycle is encountered.
         """
         value = super(ExpressionDict, self).get(key, None)
-        if value is None and not key in self:
+        if value is None and key not in self:
             raise KeyError(key)
 
         if not isinstance(value, basestring):

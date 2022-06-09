@@ -145,7 +145,7 @@ class BomSourceCodeManager(SpinnakerSourceCodeManager):
         """Make sure repository path is consistent with BOM."""
         check_kwargs_empty(kwargs)
         service_name = self.repository_name_to_service_name(repository.name)
-        if not service_name in self.__bom["services"].keys():
+        if service_name not in self.__bom["services"].keys():
             raise_and_log_error(
                 UnexpectedError('"%s" is not a BOM repo' % service_name)
             )
@@ -161,7 +161,7 @@ class BomSourceCodeManager(SpinnakerSourceCodeManager):
 
     def determine_build_number(self, repository):
         service_name = self.repository_name_to_service_name(repository.name)
-        if not service_name in self.__bom["services"].keys():
+        if service_name not in self.__bom["services"].keys():
             raise_and_log_error(
                 UnexpectedError('"%s" is not a BOM repo' % service_name)
             )
@@ -172,7 +172,7 @@ class BomSourceCodeManager(SpinnakerSourceCodeManager):
 
     def determine_repository_version(self, repository):
         service_name = self.repository_name_to_service_name(repository.name)
-        if not service_name in self.__bom["services"].keys():
+        if service_name not in self.__bom["services"].keys():
             raise_and_log_error(
                 UnexpectedError('"%s" is not a BOM repo' % service_name)
             )

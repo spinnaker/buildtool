@@ -169,7 +169,7 @@ def __write_image_delete_script(
 
         if __image_age_days(payload) > days_before:
             labels = payload.get("labels", None)
-            if not labels or not PUBLISHED_TAG_KEY in labels:
+            if not labels or PUBLISHED_TAG_KEY not in labels:
                 line = "gcloud compute images delete --project={project} --account={account} {image} -q".format(
                     project=project, account=account, image=image
                 )

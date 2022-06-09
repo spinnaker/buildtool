@@ -138,7 +138,7 @@ class RepositoryCommandProcessor(CommandProcessor):
             for repository in source_repositories
             if (
                 (not restrict_filter or repository.name in restrict_filter)
-                and not repository.name in exclude_filter
+                and repository.name not in exclude_filter
             )
         ]
 

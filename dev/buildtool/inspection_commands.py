@@ -566,7 +566,7 @@ class CollectArtifactVersions(CommandProcessor):
     def difference(self, versions, target):
         missing = []
         for version in versions:
-            if not version in target:
+            if version not in target:
                 missing.append(version)
         return missing
 
@@ -576,11 +576,11 @@ class CollectArtifactVersions(CommandProcessor):
         for package, versions in debian_map.items():
             if package.startswith(prefix):
                 key = package[len(prefix) :]
-            if not key in jar_map:
+            if key not in jar_map:
                 key = package
                 if key == "spinnaker-monitoring":
                     key = "spinnaker-monitoring-daemon"
-                if not key in jar_map:
+                if key not in jar_map:
                     if key == "spinnaker-monitoring-third-party":
                         continue
                     continue
@@ -594,9 +594,9 @@ class CollectArtifactVersions(CommandProcessor):
         missing_debians = {}
         for package, versions in jar_map.items():
             key = "spinnaker-" + package
-            if not key in debian_map:
+            if key not in debian_map:
                 key = package
-                if not key in debian_map:
+                if key not in debian_map:
                     if key == "spinnaker-monitoring":
                         key = "spinnaker-monitoring-daemon"
                     else:
@@ -1240,7 +1240,7 @@ class AuditArtifactVersions(CommandProcessor):
                 # We're going to keep malformed versions. These are rare so
                 # we'll leave it to manual cleanup.
                 pruned = [
-                    version for version in candidates if not version in skip_versions
+                    version for version in candidates if version not in skip_versions
                 ]
                 if pruned:
                     prune_map[name] = sorted(pruned)
