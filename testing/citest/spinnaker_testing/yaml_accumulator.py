@@ -19,52 +19,51 @@ import yaml
 
 
 def __flatten_into(root, prefix, target):
-  """Helper function that flattens a dictionary into the target dictionary.
+    """Helper function that flattens a dictionary into the target dictionary.
 
-  Args:
-    root: [dict] The dictionary to flatten from.
-    prefix: [string] The key prefix to use when adding entries into the target.
-    target: [dict] The dictinoary to update into.
-  """
-  for name, value in root.items():
-    key = prefix + name
-    if isinstance(value, dict):
-      __flatten_into(value, key + '.', target)
-    else:
-      target[key] = value
+    Args:
+      root: [dict] The dictionary to flatten from.
+      prefix: [string] The key prefix to use when adding entries into the target.
+      target: [dict] The dictinoary to update into.
+    """
+    for name, value in root.items():
+        key = prefix + name
+        if isinstance(value, dict):
+            __flatten_into(value, key + ".", target)
+        else:
+            target[key] = value
 
 
 def flatten(root):
-  """Flatten a hierarchical YAML dictionary into one with composite keys.
+    """Flatten a hierarchical YAML dictionary into one with composite keys.
 
-  Args:
-    root: [dict] A hierarchical dictionary.
+    Args:
+      root: [dict] A hierarchical dictionary.
 
-  Returns:
-    Equivalent dictionary with '.'-delimited keys.
-  """
-  result = {}
-  __flatten_into(root, '', result)
-  return result
+    Returns:
+      Equivalent dictionary with '.'-delimited keys.
+    """
+    result = {}
+    __flatten_into(root, "", result)
+    return result
 
 
 def load_string(source, target):
-  """Load dictionary implied by YAML text into target dictionary.
+    """Load dictionary implied by YAML text into target dictionary.
 
-  Args:
-    source: [string] YAML document text.
-    target: [dict] To update from YAML.
-  """
-  target.update(flatten(yaml.safe_load(source, Loader=yaml.Loader)))
+    Args:
+      source: [string] YAML document text.
+      target: [dict] To update from YAML.
+    """
+    target.update(flatten(yaml.safe_load(source, Loader=yaml.Loader)))
 
 
 def load_path(path, target):
-  """Load dictionary implied by YAML file into target dictionary.
+    """Load dictionary implied by YAML file into target dictionary.
 
-  Args:
-    path: [string] Path to file containing YAML document text.
-    target: [dict] To update from YAML.
-  """
-  with open(path, 'r') as f:
-    target.update(flatten(yaml.safe_load(f, Loader=yaml.Loader)))
-
+    Args:
+      path: [string] Path to file containing YAML document text.
+      target: [dict] To update from YAML.
+    """
+    with open(path, "r") as f:
+        target.update(flatten(yaml.safe_load(f, Loader=yaml.Loader)))

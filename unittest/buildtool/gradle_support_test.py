@@ -17,18 +17,17 @@
 import textwrap
 import unittest
 
-from buildtool import (
-    GitRepositorySpec,
-    MetricsManager)
+from buildtool import GitRepositorySpec, MetricsManager
 
 from buildtool.gradle_support import GradleMetricsUpdater
 
 from test_util import init_runtime
 
 
-REPOSITORY = GitRepositorySpec('testRepo')
+REPOSITORY = GitRepositorySpec("testRepo")
 
-BINTRAY_ERROR_OUTPUT = textwrap.dedent("""\
+BINTRAY_ERROR_OUTPUT = textwrap.dedent(
+    """\
      :echo-web:publishBuildDeb
      
      FAILURE: Build completed with 9 failures.
@@ -41,42 +40,49 @@ BINTRAY_ERROR_OUTPUT = textwrap.dedent("""\
      
      * Try:
      Run with --info or --debug option to get more log output.
-""")
+"""
+)
 
 
 class TestGradleMetricsUpdater(unittest.TestCase):
-  def setUp(self):
-    self.metrics = MetricsManager.singleton()
+    def setUp(self):
+        self.metrics = MetricsManager.singleton()
 
-  def test_ok(self):
-    updater = GradleMetricsUpdater(self.metrics, REPOSITORY, 'TestWhatThing')
-    counter = updater(0, BINTRAY_ERROR_OUTPUT)
-    self.assertEqual(1, counter.count)
-    self.assertEqual('GradleOutcome', counter.family.name)
-    self.assertEqual({
-        'repository': 'testRepo',
-        'context': 'TestWhatThing',
-        'success': True,
-        'failed_task': '',
-        'failed_by': '',
-        'failed_reason': ''
-    }, counter.labels)
+    def test_ok(self):
+        updater = GradleMetricsUpdater(self.metrics, REPOSITORY, "TestWhatThing")
+        counter = updater(0, BINTRAY_ERROR_OUTPUT)
+        self.assertEqual(1, counter.count)
+        self.assertEqual("GradleOutcome", counter.family.name)
+        self.assertEqual(
+            {
+                "repository": "testRepo",
+                "context": "TestWhatThing",
+                "success": True,
+                "failed_task": "",
+                "failed_by": "",
+                "failed_reason": "",
+            },
+            counter.labels,
+        )
 
-  def test_bintray_error(self):
-    updater = GradleMetricsUpdater(self.metrics, REPOSITORY, 'TestWhatThing')
-    counter = updater(-1, BINTRAY_ERROR_OUTPUT)
-    self.assertEqual(1, counter.count)
-    self.assertEqual('GradleOutcome', counter.family.name)
-    self.assertEqual({
-        'repository': 'testRepo',
-        'context': 'TestWhatThing',
-        'success': False,
-        'failed_task': ':echo-core:bintrayUpload',
-        'failed_by': 'bintray',
-        'failed_reason': '409'
-    }, counter.labels)
+    def test_bintray_error(self):
+        updater = GradleMetricsUpdater(self.metrics, REPOSITORY, "TestWhatThing")
+        counter = updater(-1, BINTRAY_ERROR_OUTPUT)
+        self.assertEqual(1, counter.count)
+        self.assertEqual("GradleOutcome", counter.family.name)
+        self.assertEqual(
+            {
+                "repository": "testRepo",
+                "context": "TestWhatThing",
+                "success": False,
+                "failed_task": ":echo-core:bintrayUpload",
+                "failed_by": "bintray",
+                "failed_reason": "409",
+            },
+            counter.labels,
+        )
 
 
-if __name__ == '__main__':
-  init_runtime()
-  unittest.main(verbosity=2)
+if __name__ == "__main__":
+    init_runtime()
+    unittest.main(verbosity=2)

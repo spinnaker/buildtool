@@ -31,13 +31,13 @@ from buildtool import (
     GitRepositorySpec,
     MetricsManager,
     RepositorySummary,
-    SourceInfo)
+    SourceInfo,
+)
 import buildtool
 
 import buildtool.__main__ as bomtool_main
 import buildtool.bom_commands
-from buildtool.bom_commands import (
-    BomBuilder, BuildBomCommand)
+from buildtool.bom_commands import BomBuilder, BuildBomCommand
 
 
 from test_util import (
@@ -49,133 +49,157 @@ from test_util import (
     OUTLIER_REPO,
     OUTLIER_SERVICE,
     BaseGitRepoTestFixture,
-    init_runtime)
+    init_runtime,
+)
+
 
 def load_default_bom_dependencies():
-  path = os.path.join(os.path.dirname(__file__),
-                      '../../dev/buildtool/bom_dependencies.yml')
-  with open(path, 'r') as stream:
-    return yaml.safe_load(stream.read())
+    path = os.path.join(
+        os.path.dirname(__file__), "../../dev/buildtool/bom_dependencies.yml"
+    )
+    with open(path, "r") as stream:
+        return yaml.safe_load(stream.read())
+
 
 def make_default_options(options):
-  options.git_branch = 'OptionBranch'
-  options.github_hostname = 'test-hostname'
-  options.github_owner = 'test-user'
-  options.bom_dependencies_path = None
-  options.build_number = 'OptionBuildNumber'
-  options.github_upstream_owner = 'spinnaker'
-  return options
+    options.git_branch = "OptionBranch"
+    options.github_hostname = "test-hostname"
+    options.github_owner = "test-user"
+    options.bom_dependencies_path = None
+    options.build_number = "OptionBuildNumber"
+    options.github_upstream_owner = "spinnaker"
+    return options
 
 
 class TestBuildBomCommand(BaseGitRepoTestFixture):
-  def setUp(self):
-    super(TestBuildBomCommand, self).setUp()
-    self.parser = argparse.ArgumentParser()
-    self.subparsers = self.parser.add_subparsers()
+    def setUp(self):
+        super(TestBuildBomCommand, self).setUp()
+        self.parser = argparse.ArgumentParser()
+        self.subparsers = self.parser.add_subparsers()
 
-  def make_test_options(self):
-    options = super(TestBuildBomCommand, self).make_test_options()
-    return make_default_options(options)
+    def make_test_options(self):
+        options = super(TestBuildBomCommand, self).make_test_options()
+        return make_default_options(options)
 
-  def test_default_bom_options(self):
-    registry = {}
-    buildtool.bom_commands.register_commands(registry, self.subparsers, {})
-    self.assertTrue('build_bom' in registry)
+    def test_default_bom_options(self):
+        registry = {}
+        buildtool.bom_commands.register_commands(registry, self.subparsers, {})
+        self.assertTrue("build_bom" in registry)
 
-    options = self.parser.parse_args(['build_bom'])
-    option_dict = vars(options)
-    self.assertEqual(DEFAULT_BUILD_NUMBER, options.build_number)
+        options = self.parser.parse_args(["build_bom"])
+        option_dict = vars(options)
+        self.assertEqual(DEFAULT_BUILD_NUMBER, options.build_number)
 
-    for key in ['bom_path', 'github_owner']:
-      self.assertIsNone(option_dict[key])
+        for key in ["bom_path", "github_owner"]:
+            self.assertIsNone(option_dict[key])
 
-  def test_bom_option_default_overrides(self):
-    defaults = {'not_used': False}
-    defaults.update(vars(self.options))
+    def test_bom_option_default_overrides(self):
+        defaults = {"not_used": False}
+        defaults.update(vars(self.options))
 
-    registry = {}
-    buildtool.bom_commands.register_commands(
-        registry, self.subparsers, defaults)
-    parsed_options = self.parser.parse_args(['build_bom'])
-    parsed_option_dict = vars(parsed_options)
+        registry = {}
+        buildtool.bom_commands.register_commands(registry, self.subparsers, defaults)
+        parsed_options = self.parser.parse_args(["build_bom"])
+        parsed_option_dict = vars(parsed_options)
 
-    self.assertTrue('not_used' not in parsed_option_dict)
-    for key, value in defaults.items():
-      if key in ['not_used', 'command', 'input_dir', 'output_dir']:
-        continue
-      self.assertEqual(value, parsed_option_dict[key])
+        self.assertTrue("not_used" not in parsed_option_dict)
+        for key, value in defaults.items():
+            if key in ["not_used", "command", "input_dir", "output_dir"]:
+                continue
+            self.assertEqual(value, parsed_option_dict[key])
 
-  def test_bom_command(self):
-    """Make sure when we run "build_bom" we actually get what we meant."""
-    defaults = vars(make_default_options(self.options))
-    defaults.update({'bom_path': 'MY PATH',
-                     'github_owner': 'TestOwner',
-                     'input_dir': 'TestInputRoot'})
-    del defaults['github_repository_root']
-    parser = argparse.ArgumentParser()
-    registry = bomtool_main.make_registry([buildtool.bom_commands],
-                                          parser, defaults)
-    bomtool_main.add_standard_parser_args(parser, defaults)
-    options = parser.parse_args(['build_bom'])
+    def test_bom_command(self):
+        """Make sure when we run "build_bom" we actually get what we meant."""
+        defaults = vars(make_default_options(self.options))
+        defaults.update(
+            {
+                "bom_path": "MY PATH",
+                "github_owner": "TestOwner",
+                "input_dir": "TestInputRoot",
+            }
+        )
+        del defaults["github_repository_root"]
+        parser = argparse.ArgumentParser()
+        registry = bomtool_main.make_registry(
+            [buildtool.bom_commands], parser, defaults
+        )
+        bomtool_main.add_standard_parser_args(parser, defaults)
+        options = parser.parse_args(["build_bom"])
 
-    prefix = 'http://test-domain.com/test-owner'
+        prefix = "http://test-domain.com/test-owner"
 
-    make_fake = self.patch_method
+        make_fake = self.patch_method
 
-    # When asked to filter the normal bom repos to determine source_repositories
-    # we'll return our own fake repository as if we configured the original
-    # command for it. This will also make it easier to test just the one
-    # repo rather than all, and that there are no assumptions.
-    mock_filter = make_fake(BuildBomCommand, 'filter_repositories')
-    test_repository = GitRepositorySpec('clouddriver', commit_id='CommitA',
-                                        origin=prefix + '/TestRepoA')
-    mock_filter.return_value = [test_repository]
+        # When asked to filter the normal bom repos to determine source_repositories
+        # we'll return our own fake repository as if we configured the original
+        # command for it. This will also make it easier to test just the one
+        # repo rather than all, and that there are no assumptions.
+        mock_filter = make_fake(BuildBomCommand, "filter_repositories")
+        test_repository = GitRepositorySpec(
+            "clouddriver", commit_id="CommitA", origin=prefix + "/TestRepoA"
+        )
+        mock_filter.return_value = [test_repository]
 
-    # When the base command ensures the local repository exists, we'll
-    # intercept that call and do nothing rather than the git checkouts, etc.
-    make_fake(BranchSourceCodeManager, 'ensure_local_repository')
+        # When the base command ensures the local repository exists, we'll
+        # intercept that call and do nothing rather than the git checkouts, etc.
+        make_fake(BranchSourceCodeManager, "ensure_local_repository")
 
-    # When the base command asks for the repository metadata, we'll return
-    # this hardcoded info, then look for it later in the generated om.
-    mock_refresh = make_fake(BranchSourceCodeManager, 'refresh_source_info')
-    summary = RepositorySummary('CommitA', 'TagA', '9.8.7', [])
-    source_info = SourceInfo('MyBuildNumber', summary)
-    mock_refresh.return_value = source_info
+        # When the base command asks for the repository metadata, we'll return
+        # this hardcoded info, then look for it later in the generated om.
+        mock_refresh = make_fake(BranchSourceCodeManager, "refresh_source_info")
+        summary = RepositorySummary("CommitA", "TagA", "9.8.7", [])
+        source_info = SourceInfo("MyBuildNumber", summary)
+        mock_refresh.return_value = source_info
 
-    # When asked to write the bom out, do nothing.
-    # We'll verify the bom later when looking at the mock call sequencing.
-    mock_write = self.patch_function('buildtool.bom_commands.write_to_path')
+        # When asked to write the bom out, do nothing.
+        # We'll verify the bom later when looking at the mock call sequencing.
+        mock_write = self.patch_function("buildtool.bom_commands.write_to_path")
 
-    mock_now = self.patch_function('buildtool.bom_commands.now')
-    mock_now.return_value = datetime.datetime(2018, 1, 2, 3, 4, 5)
+        mock_now = self.patch_function("buildtool.bom_commands.now")
+        mock_now.return_value = datetime.datetime(2018, 1, 2, 3, 4, 5)
 
-    factory = registry['build_bom']
-    command = factory.make_command(options)
-    command()
+        factory = registry["build_bom"]
+        command = factory.make_command(options)
+        command()
 
-    # Verify source repositories were filtered
-    self.assertEqual([test_repository], command.source_repositories)
+        # Verify source repositories were filtered
+        self.assertEqual([test_repository], command.source_repositories)
 
-    # Verify that the filter was called with the original bom repos,
-    # and these repos were coming from the configured github_owner's repo.
-    bom_repo_list = [
-        GitRepositorySpec(
-            name,
-            git_dir=os.path.join('TestInputRoot', 'build_bom', name),
-            origin='https://%s/TestOwner/%s' % (options.github_hostname, name),
-            upstream='https://github.com/spinnaker/' + name)
-        for name in sorted(['clouddriver', 'deck', 'echo', 'fiat', 'front50',
-                            'gate', 'igor', 'kayenta', 'orca', 'rosco',
-                            'spinnaker-monitoring'])
-    ]
-    mock_filter.assert_called_once_with(bom_repo_list)
-    mock_refresh.assert_called_once_with(test_repository, 'OptionBuildNumber')
-    bom_text, bom_path = mock_write.call_args_list[0][0]
+        # Verify that the filter was called with the original bom repos,
+        # and these repos were coming from the configured github_owner's repo.
+        bom_repo_list = [
+            GitRepositorySpec(
+                name,
+                git_dir=os.path.join("TestInputRoot", "build_bom", name),
+                origin="https://%s/TestOwner/%s" % (options.github_hostname, name),
+                upstream="https://github.com/spinnaker/" + name,
+            )
+            for name in sorted(
+                [
+                    "clouddriver",
+                    "deck",
+                    "echo",
+                    "fiat",
+                    "front50",
+                    "gate",
+                    "igor",
+                    "kayenta",
+                    "orca",
+                    "rosco",
+                    "spinnaker-monitoring",
+                ]
+            )
+        ]
+        mock_filter.assert_called_once_with(bom_repo_list)
+        mock_refresh.assert_called_once_with(test_repository, "OptionBuildNumber")
+        bom_text, bom_path = mock_write.call_args_list[0][0]
 
-    self.assertEqual(bom_path, 'MY PATH')
-    bom = yaml.safe_load(bom_text)
+        self.assertEqual(bom_path, "MY PATH")
+        bom = yaml.safe_load(bom_text)
 
-    golden_text = textwrap.dedent("""\
+        golden_text = (
+            textwrap.dedent(
+                """\
         artifactSources:
           gitPrefix: http://test-domain.com/test-owner
           debianRepository: %s
@@ -188,199 +212,220 @@ class TestBuildBomCommand(BaseGitRepoTestFixture):
             version: 9.8.7
         timestamp: '2018-01-02 03:04:05'
         version: OptionBuildNumber
-    """) % (
-            SPINNAKER_DEBIAN_REPOSITORY,
-            SPINNAKER_DOCKER_REGISTRY,
-            SPINNAKER_GOOGLE_IMAGE_PROJECT
+    """
             )
-    golden_bom = yaml.safe_load(golden_text.format())
-    golden_bom['dependencies'] = load_default_bom_dependencies()
+            % (
+                SPINNAKER_DEBIAN_REPOSITORY,
+                SPINNAKER_DOCKER_REGISTRY,
+                SPINNAKER_GOOGLE_IMAGE_PROJECT,
+            )
+        )
+        golden_bom = yaml.safe_load(golden_text.format())
+        golden_bom["dependencies"] = load_default_bom_dependencies()
 
-    for key, value in golden_bom.items():
-      self.assertEqual(value, bom[key])
+        for key, value in golden_bom.items():
+            self.assertEqual(value, bom[key])
 
 
 class TestBomBuilder(BaseGitRepoTestFixture):
-  def make_test_options(self):
-    options = super(TestBomBuilder, self).make_test_options()
-    return make_default_options(options)
+    def make_test_options(self):
+        options = super(TestBomBuilder, self).make_test_options()
+        return make_default_options(options)
 
-  def setUp(self):
-    super(TestBomBuilder, self).setUp()
-    self.test_root = os.path.join(self.base_temp_dir, self._testMethodName)
-    self.scm = BranchSourceCodeManager(self.options, self.test_root)
+    def setUp(self):
+        super(TestBomBuilder, self).setUp()
+        self.test_root = os.path.join(self.base_temp_dir, self._testMethodName)
+        self.scm = BranchSourceCodeManager(self.options, self.test_root)
 
-  def test_default_build(self):
-    builder = BomBuilder(self.options, self.scm, MetricsManager.singleton())
-    bom = builder.build()
-    self.assertEqual(
-        bom['dependencies'], load_default_bom_dependencies())
+    def test_default_build(self):
+        builder = BomBuilder(self.options, self.scm, MetricsManager.singleton())
+        bom = builder.build()
+        self.assertEqual(bom["dependencies"], load_default_bom_dependencies())
 
-    # There are no services because we never added any.
-    # Although the builder takes an SCM, you still need to explicitly add repos.
-    self.assertEqual({}, bom['services'])
+        # There are no services because we never added any.
+        # Although the builder takes an SCM, you still need to explicitly add repos.
+        self.assertEqual({}, bom["services"])
 
-  def test_inject_dependencies(self):
-    dependencies = {
-        'DependencyA': {'version': 'vA'},
-        'DependencyB': {'version': 'vB'}
-    }
-    fd, path = tempfile.mkstemp(prefix='bomdeps')
-    os.close(fd)
-    with open(path, 'w') as stream:
-      yaml.safe_dump(dependencies, stream)
+    def test_inject_dependencies(self):
+        dependencies = {
+            "DependencyA": {"version": "vA"},
+            "DependencyB": {"version": "vB"},
+        }
+        fd, path = tempfile.mkstemp(prefix="bomdeps")
+        os.close(fd)
+        with open(path, "w") as stream:
+            yaml.safe_dump(dependencies, stream)
 
-    options = self.options
-    options.bom_dependencies_path = path
+        options = self.options
+        options.bom_dependencies_path = path
 
-    try:
-      builder = BomBuilder(options, self.scm, MetricsManager.singleton())
-      bom = builder.build()
-    finally:
-      os.remove(path)
+        try:
+            builder = BomBuilder(options, self.scm, MetricsManager.singleton())
+            bom = builder.build()
+        finally:
+            os.remove(path)
 
-    self.assertEqual(dependencies, bom['dependencies'])
-    self.assertEqual({}, bom['services'])
+        self.assertEqual(dependencies, bom["dependencies"])
+        self.assertEqual({}, bom["services"])
 
-  def test_build(self):
-    test_root = self.test_root
-    options = self.options
-    options.git_branch = PATCH_BRANCH
-    options.github_owner = 'default'
-    options.github_disable_upstream_push = True
+    def test_build(self):
+        test_root = self.test_root
+        options = self.options
+        options.git_branch = PATCH_BRANCH
+        options.github_owner = "default"
+        options.github_disable_upstream_push = True
 
-    scm = BranchSourceCodeManager(options, test_root)
-    golden_bom = dict(self.golden_bom)
-    builder = BomBuilder.new_from_bom(
-      options, scm, MetricsManager.singleton(), golden_bom)
-    source_repositories = [scm.make_repository_spec(name)
-                           for name in ALL_STANDARD_TEST_BOM_REPO_NAMES]
-    for repository in source_repositories:
-      scm.ensure_git_path(repository)
-      summary = scm.git.collect_repository_summary(repository.git_dir)
-      source_info = SourceInfo('SourceInfoBuildNumber', summary)
-      builder.add_repository(repository, source_info)
+        scm = BranchSourceCodeManager(options, test_root)
+        golden_bom = dict(self.golden_bom)
+        builder = BomBuilder.new_from_bom(
+            options, scm, MetricsManager.singleton(), golden_bom
+        )
+        source_repositories = [
+            scm.make_repository_spec(name) for name in ALL_STANDARD_TEST_BOM_REPO_NAMES
+        ]
+        for repository in source_repositories:
+            scm.ensure_git_path(repository)
+            summary = scm.git.collect_repository_summary(repository.git_dir)
+            source_info = SourceInfo("SourceInfoBuildNumber", summary)
+            builder.add_repository(repository, source_info)
 
-    with patch('buildtool.bom_commands.now') as mock_now:
-      mock_now.return_value = datetime.datetime(2018, 1, 2, 3, 4, 5)
-      bom = builder.build()
+        with patch("buildtool.bom_commands.now") as mock_now:
+            mock_now.return_value = datetime.datetime(2018, 1, 2, 3, 4, 5)
+            bom = builder.build()
 
-    golden_bom['version'] = 'OptionBuildNumber'
-    golden_bom['timestamp'] = '2018-01-02 03:04:05'
-    golden_bom['services'][NORMAL_SERVICE]['version'] = (
-        BASE_VERSION_NUMBER)
-    golden_bom['services'][OUTLIER_SERVICE]['version'] = (
-        BASE_VERSION_NUMBER)
-    golden_bom['services']['monitoring-third-party']['version'] = (
-        BASE_VERSION_NUMBER)
+        golden_bom["version"] = "OptionBuildNumber"
+        golden_bom["timestamp"] = "2018-01-02 03:04:05"
+        golden_bom["services"][NORMAL_SERVICE]["version"] = BASE_VERSION_NUMBER
+        golden_bom["services"][OUTLIER_SERVICE]["version"] = BASE_VERSION_NUMBER
+        golden_bom["services"]["monitoring-third-party"][
+            "version"
+        ] = BASE_VERSION_NUMBER
 
-    golden_bom['artifactSources'] = {
-      'gitPrefix': os.path.dirname(self.repo_commit_map[NORMAL_REPO]['ORIGIN']),
-      'debianRepository': SPINNAKER_DEBIAN_REPOSITORY,
-      'dockerRegistry': SPINNAKER_DOCKER_REGISTRY,
-      'googleImageProject': SPINNAKER_GOOGLE_IMAGE_PROJECT
-    }
+        golden_bom["artifactSources"] = {
+            "gitPrefix": os.path.dirname(self.repo_commit_map[NORMAL_REPO]["ORIGIN"]),
+            "debianRepository": SPINNAKER_DEBIAN_REPOSITORY,
+            "dockerRegistry": SPINNAKER_DOCKER_REGISTRY,
+            "googleImageProject": SPINNAKER_GOOGLE_IMAGE_PROJECT,
+        }
 
-    for key, value in bom['services'].items():
-      # gate has extra commit on branch so commit id's should not match
-      if key in ['gate', 'monitoring-daemon', 'monitoring-third-party']:
-        self.assertNotEqual(value, golden_bom['services'][key], msg='key: {} - value: {}'.format(key, value))
-      else:
-        self.assertEqual(value, golden_bom['services'][key], msg='key: {} - value: {}'.format(key, value))
-    for key, value in bom.items():
-      if key != 'services':
-        self.assertEqual(value, golden_bom[key])
+        for key, value in bom["services"].items():
+            # gate has extra commit on branch so commit id's should not match
+            if key in ["gate", "monitoring-daemon", "monitoring-third-party"]:
+                self.assertNotEqual(
+                    value,
+                    golden_bom["services"][key],
+                    msg="key: {} - value: {}".format(key, value),
+                )
+            else:
+                self.assertEqual(
+                    value,
+                    golden_bom["services"][key],
+                    msg="key: {} - value: {}".format(key, value),
+                )
+        for key, value in bom.items():
+            if key != "services":
+                self.assertEqual(value, golden_bom[key])
 
-  def test_rebuild(self):
-    test_root = self.test_root
-    options = self.options
-    options.git_branch = 'master'
-    options.github_owner = 'default'
-    options.github_disable_upstream_push = True
-    options.build_number = 'UpdatedBuildNumber'
+    def test_rebuild(self):
+        test_root = self.test_root
+        options = self.options
+        options.git_branch = "master"
+        options.github_owner = "default"
+        options.github_disable_upstream_push = True
+        options.build_number = "UpdatedBuildNumber"
 
-    scm = BranchSourceCodeManager(options, test_root)
-    builder = BomBuilder.new_from_bom(
-      options, scm, MetricsManager.singleton(), self.golden_bom)
+        scm = BranchSourceCodeManager(options, test_root)
+        builder = BomBuilder.new_from_bom(
+            options, scm, MetricsManager.singleton(), self.golden_bom
+        )
 
-    repository = scm.make_repository_spec(OUTLIER_REPO)
-    scm.ensure_git_path(repository)
-    scm.git.check_run(repository.git_dir, 'checkout ' + PATCH_BRANCH)
-    summary = scm.git.collect_repository_summary(repository.git_dir)
-    source_info = SourceInfo('SourceInfoBuildNumber', summary)
-    builder.add_repository(repository, source_info)
+        repository = scm.make_repository_spec(OUTLIER_REPO)
+        scm.ensure_git_path(repository)
+        scm.git.check_run(repository.git_dir, "checkout " + PATCH_BRANCH)
+        summary = scm.git.collect_repository_summary(repository.git_dir)
+        source_info = SourceInfo("SourceInfoBuildNumber", summary)
+        builder.add_repository(repository, source_info)
 
-    with patch('buildtool.bom_commands.now') as mock_now:
-      mock_now.return_value = datetime.datetime(2018, 1, 2, 3, 4, 5)
-      bom = builder.build()
+        with patch("buildtool.bom_commands.now") as mock_now:
+            mock_now.return_value = datetime.datetime(2018, 1, 2, 3, 4, 5)
+            bom = builder.build()
 
-    updated_service = bom['services'][OUTLIER_SERVICE]
-    # OUTLIER_REPO hasn't been tagged since extra commits so bom should be same
-    self.assertNotEqual(updated_service, {
-        'commit': self.repo_commit_map[OUTLIER_REPO][PATCH_BRANCH],
-        'version': BASE_VERSION_NUMBER
-        })
+        updated_service = bom["services"][OUTLIER_SERVICE]
+        # OUTLIER_REPO hasn't been tagged since extra commits so bom should be same
+        self.assertNotEqual(
+            updated_service,
+            {
+                "commit": self.repo_commit_map[OUTLIER_REPO][PATCH_BRANCH],
+                "version": BASE_VERSION_NUMBER,
+            },
+        )
 
-    # The bom should be the same as before, but with new timestamp/version
-    # and our service unchanged. And the artifactSources to our configs.
-    updated_bom = dict(self.golden_bom)
-    updated_bom['timestamp'] = '2018-01-02 03:04:05'
-    updated_bom['version'] = 'UpdatedBuildNumber'
-    updated_bom['artifactSources'] = {
-      'gitPrefix': self.golden_bom['artifactSources']['gitPrefix'],
-      'debianRepository': SPINNAKER_DEBIAN_REPOSITORY,
-      'dockerRegistry': SPINNAKER_DOCKER_REGISTRY,
-      'googleImageProject': SPINNAKER_GOOGLE_IMAGE_PROJECT
-    }
+        # The bom should be the same as before, but with new timestamp/version
+        # and our service unchanged. And the artifactSources to our configs.
+        updated_bom = dict(self.golden_bom)
+        updated_bom["timestamp"] = "2018-01-02 03:04:05"
+        updated_bom["version"] = "UpdatedBuildNumber"
+        updated_bom["artifactSources"] = {
+            "gitPrefix": self.golden_bom["artifactSources"]["gitPrefix"],
+            "debianRepository": SPINNAKER_DEBIAN_REPOSITORY,
+            "dockerRegistry": SPINNAKER_DOCKER_REGISTRY,
+            "googleImageProject": SPINNAKER_GOOGLE_IMAGE_PROJECT,
+        }
 
-    for key, value in bom['services'].items():
-      # monitoring-daemon has extra commit on branch so commit id's should not match
-      if key in ['monitoring-daemon', 'monitoring-third-party']:
-        self.assertNotEqual(value, updated_bom['services'][key], msg='key: {} - value: {}'.format(key, value))
-      else:
-        self.assertEqual(value, updated_bom['services'][key], msg='key: {} - value: {}'.format(key, value))
-    for key, value in bom.items():
-      if key != 'services':
-        self.assertEqual(value, updated_bom[key])
+        for key, value in bom["services"].items():
+            # monitoring-daemon has extra commit on branch so commit id's should not match
+            if key in ["monitoring-daemon", "monitoring-third-party"]:
+                self.assertNotEqual(
+                    value,
+                    updated_bom["services"][key],
+                    msg="key: {} - value: {}".format(key, value),
+                )
+            else:
+                self.assertEqual(
+                    value,
+                    updated_bom["services"][key],
+                    msg="key: {} - value: {}".format(key, value),
+                )
+        for key, value in bom.items():
+            if key != "services":
+                self.assertEqual(value, updated_bom[key])
+
+    def test_determine_most_common_prefix(self):
+        options = self.options
+        builder = BomBuilder(options, self.scm, MetricsManager.singleton())
+        self.assertIsNone(builder.determine_most_common_prefix())
+
+        prefix = ["http://github.com/one", "/local/source/path/two"]
+
+        # Test two vs one in from different repo prefix
+        # run the test twice changing the ordering the desired prefix is visible.
+        for which in [0, 1]:
+            repository = GitRepositorySpec(
+                "RepoOne", origin=prefix[0] + "/RepoOne", commit_id="RepoOneCommit"
+            )
+            summary = RepositorySummary("RepoOneCommit", "RepoOneTag", "1.2.3", [])
+            source_info = SourceInfo("BuildOne", summary)
+            builder.add_repository(repository, source_info)
+            self.assertEqual(prefix[0], builder.determine_most_common_prefix())
+
+            repository = GitRepositorySpec(
+                "RepoTwo", origin=prefix[which] + "/RepoTwo", commit_id="RepoTwoCommit"
+            )
+            summary = RepositorySummary("RepoTwoCommit", "RepoTwoTag", "2.2.3", [])
+            source_info = SourceInfo("BuildTwo", summary)
+            builder.add_repository(repository, source_info)
+
+            repository = GitRepositorySpec(
+                "RepoThree",
+                origin=prefix[1] + "/RepoThree",
+                commit_id="RepoThreeCommit",
+            )
+            summary = RepositorySummary("RepoThreeCommit", "RepoThreeTag", "3.2.0", [])
+            source_info = SourceInfo("BuildThree", summary)
+            builder.add_repository(repository, source_info)
+            self.assertEqual(prefix[which], builder.determine_most_common_prefix())
 
 
-  def test_determine_most_common_prefix(self):
-    options = self.options
-    builder = BomBuilder(options, self.scm, MetricsManager.singleton())
-    self.assertIsNone(builder.determine_most_common_prefix())
-
-    prefix = ['http://github.com/one', '/local/source/path/two']
-
-    # Test two vs one in from different repo prefix
-    # run the test twice changing the ordering the desired prefix is visible.
-    for which in [0, 1]:
-      repository = GitRepositorySpec(
-          'RepoOne', origin=prefix[0] + '/RepoOne',
-          commit_id='RepoOneCommit')
-      summary = RepositorySummary('RepoOneCommit', 'RepoOneTag',
-                                  '1.2.3', [])
-      source_info = SourceInfo('BuildOne', summary)
-      builder.add_repository(repository, source_info)
-      self.assertEqual(prefix[0], builder.determine_most_common_prefix())
-
-      repository = GitRepositorySpec(
-          'RepoTwo', origin=prefix[which] + '/RepoTwo',
-          commit_id='RepoTwoCommit')
-      summary = RepositorySummary('RepoTwoCommit', 'RepoTwoTag',
-                                  '2.2.3', [])
-      source_info = SourceInfo('BuildTwo', summary)
-      builder.add_repository(repository, source_info)
-
-      repository = GitRepositorySpec(
-          'RepoThree', origin=prefix[1] + '/RepoThree',
-          commit_id='RepoThreeCommit')
-      summary = RepositorySummary('RepoThreeCommit', 'RepoThreeTag',
-                                  '3.2.0', [])
-      source_info = SourceInfo('BuildThree', summary)
-      builder.add_repository(repository, source_info)
-      self.assertEqual(prefix[which], builder.determine_most_common_prefix())
-
-
-if __name__ == '__main__':
-  init_runtime()
-  unittest.main(verbosity=2)
+if __name__ == "__main__":
+    init_runtime()
+    unittest.main(verbosity=2)

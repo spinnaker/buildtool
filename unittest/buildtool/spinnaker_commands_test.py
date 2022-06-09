@@ -23,61 +23,57 @@ import yaml
 
 import buildtool.__main__ as bomtool_main
 import buildtool.spinnaker_commands
-from buildtool import (
-    GitRunner)
+from buildtool import GitRunner
 
-from test_util import (
-    EXTRA_REPO,
-    init_runtime,
-    BaseGitRepoTestFixture)
+from test_util import EXTRA_REPO, init_runtime, BaseGitRepoTestFixture
 
 
 class TestSpinnakerCommandFixture(BaseGitRepoTestFixture):
-  def setUp(self):
-    super(TestSpinnakerCommandFixture, self).setUp()
-    self.parser = argparse.ArgumentParser()
-    self.subparsers = self.parser.add_subparsers(title='command', dest='command')
+    def setUp(self):
+        super(TestSpinnakerCommandFixture, self).setUp()
+        self.parser = argparse.ArgumentParser()
+        self.subparsers = self.parser.add_subparsers(title="command", dest="command")
 
-  def test_new_release_branch_command(self):
-    defaults = {
-        'input_dir': self.options.input_dir,
-        'output_dir': self.options.output_dir,
+    def test_new_release_branch_command(self):
+        defaults = {
+            "input_dir": self.options.input_dir,
+            "output_dir": self.options.output_dir,
+            "only_repositories": EXTRA_REPO,
+            "github_owner": "default",
+            "git_branch": EXTRA_REPO + "-branch",
+            "spinnaker_version": "NewSpinnakerVersion",
+            "github_repository_root": self.options.github_repository_root,
+        }
 
-        'only_repositories': EXTRA_REPO,
-        'github_owner': 'default',
-        'git_branch': EXTRA_REPO + '-branch',
+        registry = {}
+        bomtool_main.add_standard_parser_args(self.parser, defaults)
+        buildtool.spinnaker_commands.register_commands(
+            registry, self.subparsers, defaults
+        )
 
-        'spinnaker_version': 'NewSpinnakerVersion',
-        'github_repository_root': self.options.github_repository_root,
-    }
+        factory = registry["new_release_branch"]
+        factory.init_argparser(self.parser, defaults)
 
-    registry = {}
-    bomtool_main.add_standard_parser_args(self.parser, defaults)
-    buildtool.spinnaker_commands.register_commands(
-        registry, self.subparsers, defaults)
+        options = self.parser.parse_args(["new_release_branch"])
 
-    factory = registry['new_release_branch']
-    factory.init_argparser(self.parser, defaults)
+        mock_push_tag = self.patch_method(GitRunner, "push_tag_to_origin")
+        mock_push_branch = self.patch_method(GitRunner, "push_branch_to_origin")
 
-    options = self.parser.parse_args(['new_release_branch'])
+        command = factory.make_command(options)
+        command()
 
-    mock_push_tag = self.patch_method(GitRunner, 'push_tag_to_origin')
-    mock_push_branch = self.patch_method(GitRunner, 'push_branch_to_origin')
+        base_git_dir = os.path.join(options.input_dir, "new_release_branch")
+        self.assertEqual(os.listdir(base_git_dir), [EXTRA_REPO])
+        git_dir = os.path.join(base_git_dir, EXTRA_REPO)
+        self.assertEqual(
+            GitRunner(options).query_local_repository_commit_id(git_dir),
+            self.repo_commit_map[EXTRA_REPO][EXTRA_REPO + "-branch"],
+        )
 
-    command = factory.make_command(options)
-    command()
-
-    base_git_dir = os.path.join(options.input_dir, 'new_release_branch')
-    self.assertEqual(os.listdir(base_git_dir), [EXTRA_REPO])
-    git_dir = os.path.join(base_git_dir, EXTRA_REPO)
-    self.assertEqual(
-        GitRunner(options).query_local_repository_commit_id(git_dir),
-        self.repo_commit_map[EXTRA_REPO][EXTRA_REPO + '-branch'])
-
-    mock_push_branch.assert_called_once_with(git_dir, 'NewSpinnakerVersion')
-    self.assertEqual(0, mock_push_tag.call_count)
+        mock_push_branch.assert_called_once_with(git_dir, "NewSpinnakerVersion")
+        self.assertEqual(0, mock_push_tag.call_count)
 
 
-if __name__ == '__main__':
-  init_runtime()
-  unittest.main(verbosity=2)
+if __name__ == "__main__":
+    init_runtime()
+    unittest.main(verbosity=2)

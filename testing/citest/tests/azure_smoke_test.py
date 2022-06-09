@@ -37,295 +37,381 @@ import citest.json_contract as jc
 import citest.json_predicate as jp
 import citest.service_testing as st
 import citest.base
+
 ov_factory = jc.ObservationPredicateFactory()
 
 # Spinnaker modules.
 import spinnaker_testing as sk
 import spinnaker_testing.gate as gate
 
+
 class AzureSmokeTestScenario(sk.SpinnakerTestScenario):
-  """Defines the scenario for the smoke test.
+    """Defines the scenario for the smoke test.
 
-  This scenario defines the different test operations.
-  We're going to:
-    Create a Spinnaker Application
-    Create a Spinnaker Security Group
-    Delete each of the above (in reverse order)
-  """
-
-  @classmethod
-  def new_agent(cls, bindings):
-    """Implements citest.service_testing.AgentTestScenario.new_agent."""
-    agent = gate.new_agent(bindings)
-    agent.default_max_wait_secs = 180
-    return agent
-
-  def __init__(self, bindings, agent=None):
-    """Constructor.
-    Args:
-      bindings: [dict] The data bindings to use to configure the scenario.
-      agent: [GateAgent] The agent for invoking the test operations on Gate.
-    """
-    super(AzureSmokeTestScenario, self).__init__(bindings, agent)
-    bindings = self.bindings
-
-    # create default sec grp name  
-    # Spinnaker-azure appends region to actual RG used by an app to support multi-region
-    # pylint: disable=invalid-name
-    self.TEST_SECURITY_GROUP = 'sec_grp_' + self.bindings['TEST_APP']
-    self.TEST_SECURITY_GROUP_RULE_1=self.TEST_SECURITY_GROUP + '_RULE_1'
-    self.TEST_SECURITY_GROUP_RG = self.bindings['TEST_APP'] + '-' + self.bindings['TEST_AZURE_RG_LOCATION']
-
-  #TODO: Perform the login to Azure withTEST_APP the SPN passed as parameters
-
-  def create_app(self):
-    """Creates OperationContract that creates a new Spinnaker Application."""
-    contract = jc.Contract()
-    return st.OperationContract(
-        self.agent.make_create_app_operation(
-            bindings=self.bindings, application=self.bindings['TEST_APP'],
-            account_name=self.bindings['SPINNAKER_AZURE_ACCOUNT']),
-        contract=contract)
-
-  def delete_app(self):
-    """Creates OperationContract that deletes a new Spinnaker Application."""
-    contract = jc.Contract()
-    return st.OperationContract(
-        self.agent.make_delete_app_operation(
-            application=self.bindings['TEST_APP'],
-            account_name=self.bindings['SPINNAKER_AZURE_ACCOUNT']),
-        contract=contract)
-
-  def old_create_app(self):
-    """Creates OperationContract that creates a new Spinnaker Application and validate its creation in Azure Storage.
-    """
-    email = self.bindings.get('TEST_EMAIL', 'testuser@testhost.org')
-    payload = self.agent.make_json_payload_from_kwargs(
-            job=[{
-                'type': 'createApplication',
-                'account': self.bindings['SPINNAKER_AZURE_ACCOUNT'],
-                'application': {
-                    'name': self.bindings['TEST_APP'],
-                    'description': 'Gate Testing Application for Azure',
-                    'email': email
-                },
-                'user': '[anonymous]'
-            }],
-            description= 'Test - create application {app}'.format(app=self.bindings['TEST_APP']),
-            application=self.bindings['TEST_APP'])
-
-    builder = az.AzContractBuilder(self.az_observer)
-    (builder.new_clause_builder(
-        'Application Created', retryable_for_secs=30)
-      .collect_resources(
-          az_resource='storage',
-          command='blob',
-          args=['exists', '--container-name', 'front50',
-          '--name', 'applications/'+self.bindings['TEST_APP']+'/application-metadata.json',
-          '--account-name', self.bindings['azure_storage_account_name'],
-          '--account-key', self.bindings['spinnaker_azure_storage_account_key']])
-      .EXPECT(ov_factory.value_list_path_contains(
-          'exists', jp.EQUIVALENT(True))))
-
-    return st.OperationContract(
-        self.new_post_operation(
-            title='create_app', data=payload,
-            path='tasks'),
-        contract=builder.build())
-
-  def old_delete_app(self):
-    """Creates OperationContract that deletes a new Spinnaker Application and validates its deletion in Azure Storage.
+    This scenario defines the different test operations.
+    We're going to:
+      Create a Spinnaker Application
+      Create a Spinnaker Security Group
+      Delete each of the above (in reverse order)
     """
 
-    payload = self.agent.make_json_payload_from_kwargs(
-            job=[{
-                'type': 'deleteApplication',
-                'account': self.bindings['SPINNAKER_AZURE_ACCOUNT'],
-                'application': {
-                    'name': self.bindings['TEST_APP']
-                },
-                'user': '[anonymous]'
-            }],
-            description= 'Test - delete application {app}'.format(app=self.bindings['TEST_APP']),
-            application=self.bindings['TEST_APP'])
+    @classmethod
+    def new_agent(cls, bindings):
+        """Implements citest.service_testing.AgentTestScenario.new_agent."""
+        agent = gate.new_agent(bindings)
+        agent.default_max_wait_secs = 180
+        return agent
 
-    builder = az.AzContractBuilder(self.az_observer)
-    (builder.new_clause_builder(
-        'Application Created', retryable_for_secs=30)
-      .collect_resources(
-          az_resource='storage',
-          command='blob',
-          args=['exists', '--container-name', 'front50',
-          '--name', 'applications/'+self.bindings['TEST_APP']+'/application-metadata.json',
-          '--account-name', self.bindings['azure_storage_account_name'],
-          '--account-key', self.bindings['spinnaker_azure_storage_account_key']])
-      .EXPECT(ov_factory.value_list_path_contains(
-          'exists', jp.EQUIVALENT(False))))
+    def __init__(self, bindings, agent=None):
+        """Constructor.
+        Args:
+          bindings: [dict] The data bindings to use to configure the scenario.
+          agent: [GateAgent] The agent for invoking the test operations on Gate.
+        """
+        super(AzureSmokeTestScenario, self).__init__(bindings, agent)
+        bindings = self.bindings
 
-    return st.OperationContract(
-        self.new_post_operation(
-            title='delete_app', data=payload,
-            path='tasks'),
-        contract=builder.build())
+        # create default sec grp name
+        # Spinnaker-azure appends region to actual RG used by an app to support multi-region
+        # pylint: disable=invalid-name
+        self.TEST_SECURITY_GROUP = "sec_grp_" + self.bindings["TEST_APP"]
+        self.TEST_SECURITY_GROUP_RULE_1 = self.TEST_SECURITY_GROUP + "_RULE_1"
+        self.TEST_SECURITY_GROUP_RG = (
+            self.bindings["TEST_APP"] + "-" + self.bindings["TEST_AZURE_RG_LOCATION"]
+        )
 
+    # TODO: Perform the login to Azure withTEST_APP the SPN passed as parameters
 
-  def create_a_security_group(self):
-    """Creates AzContract for createServerGroup.
+    def create_app(self):
+        """Creates OperationContract that creates a new Spinnaker Application."""
+        contract = jc.Contract()
+        return st.OperationContract(
+            self.agent.make_create_app_operation(
+                bindings=self.bindings,
+                application=self.bindings["TEST_APP"],
+                account_name=self.bindings["SPINNAKER_AZURE_ACCOUNT"],
+            ),
+            contract=contract,
+        )
 
-    To verify the operation, we just check that the spinnaker security group
-    for the given application was created.
-    This will create a Network Security Group in a Resource Group on your azure Subscription
-    """
-    rules = [
-        {
-            "access": "Allow",
-            "destinationAddressPrefix": "*",
-            "destinationPortRange": "80-80",
-            "direction": "InBound",
-            "endPort": 80,
-            "name": self.TEST_SECURITY_GROUP_RULE_1,
-            "priority": 100,
-            "protocol": "tcp",
-            "sourceAddressPrefix": "*",
-            "sourcePortRange": "*",
-            "startPort": 80
-        }]
-    job = [{
-        "provider": "azure",
-        "application": self.bindings['TEST_APP'],
-        "appName": self.bindings['TEST_APP'],
-        "region": self.bindings['TEST_AZURE_RG_LOCATION'],
-        "stack": self.bindings['TEST_STACK'],
-        "description": "Test - create security group for {app}".format(
-            app=self.bindings['TEST_APP']),
-        "detail": "",
-        "credentials": self.bindings['SPINNAKER_AZURE_ACCOUNT'],
-        "securityRules": rules,
-        "name": self.TEST_SECURITY_GROUP,
-        "securityGroupName": self.TEST_SECURITY_GROUP,
-        "cloudProvider": "azure",
-        "type": "upsertSecurityGroup",
-        "user": "[anonymous]"
-    }]
-    builder = az.AzContractBuilder(self.az_observer)
-    (builder.new_clause_builder(
-        'Security Group Created', retryable_for_secs=30)
-    .collect_resources(
-         az_resource='network',
-         command='nsg',
-         args=['show',
-               '--name', self.TEST_SECURITY_GROUP,
-               '--resource-group', self.TEST_SECURITY_GROUP_RG])
-    .EXPECT(ov_factory.error_list_contains(
-        jp.ExceptionMatchesPredicate(
-            klass=st.CliAgentRunError,
-            regex='(?:.* operation: Cannot find .*)|(?:.*\(.*NotFound\).*)')))
-    .OR(ov_factory.value_list_contains(
-        # sec grp name matches expected
-        jp.DICT_MATCHES({
-            'name': jp.STR_SUBSTR(self.TEST_SECURITY_GROUP),
-            'securityRules': jp.LIST_MATCHES([
-                jp.DICT_MATCHES({
-                'protocol': jp.STR_EQ('tcp'),
-                'name': jp.STR_EQ(self.TEST_SECURITY_GROUP_RULE_1)})],
-            strict=True)}))
-    ))
+    def delete_app(self):
+        """Creates OperationContract that deletes a new Spinnaker Application."""
+        contract = jc.Contract()
+        return st.OperationContract(
+            self.agent.make_delete_app_operation(
+                application=self.bindings["TEST_APP"],
+                account_name=self.bindings["SPINNAKER_AZURE_ACCOUNT"],
+            ),
+            contract=contract,
+        )
 
-    payload = self.agent.make_json_payload_from_kwargs(
-        job=job, description=' Test - create security group for {app}'.format(
-            app=self.bindings['TEST_APP']),
-        application=self.bindings['TEST_APP'])
+    def old_create_app(self):
+        """Creates OperationContract that creates a new Spinnaker Application and validate its creation in Azure Storage."""
+        email = self.bindings.get("TEST_EMAIL", "testuser@testhost.org")
+        payload = self.agent.make_json_payload_from_kwargs(
+            job=[
+                {
+                    "type": "createApplication",
+                    "account": self.bindings["SPINNAKER_AZURE_ACCOUNT"],
+                    "application": {
+                        "name": self.bindings["TEST_APP"],
+                        "description": "Gate Testing Application for Azure",
+                        "email": email,
+                    },
+                    "user": "[anonymous]",
+                }
+            ],
+            description="Test - create application {app}".format(
+                app=self.bindings["TEST_APP"]
+            ),
+            application=self.bindings["TEST_APP"],
+        )
 
-    return st.OperationContract(
-        self.new_post_operation(
-            title='create_security_group', data=payload,
-            path='applications/{app}/tasks'.format(app=self.bindings['TEST_APP'])),
-        contract=builder.build())
+        builder = az.AzContractBuilder(self.az_observer)
+        (
+            builder.new_clause_builder("Application Created", retryable_for_secs=30)
+            .collect_resources(
+                az_resource="storage",
+                command="blob",
+                args=[
+                    "exists",
+                    "--container-name",
+                    "front50",
+                    "--name",
+                    "applications/"
+                    + self.bindings["TEST_APP"]
+                    + "/application-metadata.json",
+                    "--account-name",
+                    self.bindings["azure_storage_account_name"],
+                    "--account-key",
+                    self.bindings["spinnaker_azure_storage_account_key"],
+                ],
+            )
+            .EXPECT(ov_factory.value_list_path_contains("exists", jp.EQUIVALENT(True)))
+        )
 
-  def delete_a_security_group(self):
-    """Creates azContract for deleteServerGroup.
+        return st.OperationContract(
+            self.new_post_operation(title="create_app", data=payload, path="tasks"),
+            contract=builder.build(),
+        )
 
-    To verify the operation, we just check that the spinnaker security group
-    for the given application was deleted.
-    """
+    def old_delete_app(self):
+        """Creates OperationContract that deletes a new Spinnaker Application and validates its deletion in Azure Storage."""
 
-    payload = self.agent.make_json_payload_from_kwargs(
-        job = [{
-            "Provider": "azure",
-            "appName": self.bindings['TEST_APP'],
-            "region": self.bindings['TEST_AZURE_RG_LOCATION'],
-            "regions": [self.bindings['TEST_AZURE_RG_LOCATION']],
-            "credentials": self.bindings['SPINNAKER_AZURE_ACCOUNT'],
-            "securityGroupName": self.TEST_SECURITY_GROUP,
-            "cloudProvider": "azure",
-            "type": "deleteSecurityGroup",
-            "user": "[anonymous]"
-        }],
-        application=self.bindings['TEST_APP'],
-        description='Delete Security Group: : ' + self.TEST_SECURITY_GROUP)
+        payload = self.agent.make_json_payload_from_kwargs(
+            job=[
+                {
+                    "type": "deleteApplication",
+                    "account": self.bindings["SPINNAKER_AZURE_ACCOUNT"],
+                    "application": {"name": self.bindings["TEST_APP"]},
+                    "user": "[anonymous]",
+                }
+            ],
+            description="Test - delete application {app}".format(
+                app=self.bindings["TEST_APP"]
+            ),
+            application=self.bindings["TEST_APP"],
+        )
 
+        builder = az.AzContractBuilder(self.az_observer)
+        (
+            builder.new_clause_builder("Application Created", retryable_for_secs=30)
+            .collect_resources(
+                az_resource="storage",
+                command="blob",
+                args=[
+                    "exists",
+                    "--container-name",
+                    "front50",
+                    "--name",
+                    "applications/"
+                    + self.bindings["TEST_APP"]
+                    + "/application-metadata.json",
+                    "--account-name",
+                    self.bindings["azure_storage_account_name"],
+                    "--account-key",
+                    self.bindings["spinnaker_azure_storage_account_key"],
+                ],
+            )
+            .EXPECT(ov_factory.value_list_path_contains("exists", jp.EQUIVALENT(False)))
+        )
 
-    builder = az.AzContractBuilder(self.az_observer)
-    (builder.new_clause_builder(
-        'Security Group Deleted', retryable_for_secs=30)
-     .collect_resources(
-         az_resource='network',
-         command='nsg',
-         args=['list', '--resource-group', self.TEST_SECURITY_GROUP_RG])
-     .EXPECT(ov_factory.error_list_contains(
-         jp.ExceptionMatchesPredicate(
-             klass=st.CliAgentRunError,
-             regex='(?:.* operation: Cannot find .*)|(?:.*\(.*NotFound\).*)')))
-     .OR(ov_factory.value_list_path_excludes(
-         'name', jp.STR_EQ(self.TEST_SECURITY_GROUP)))
-    )
-     
-    return st.OperationContract(
-        self.new_post_operation(
-            title='delete_security_group', data=payload,
-            path='applications/{app}/tasks'.format(app=self.bindings['TEST_APP'])),
-        contract=builder.build())
+        return st.OperationContract(
+            self.new_post_operation(title="delete_app", data=payload, path="tasks"),
+            contract=builder.build(),
+        )
+
+    def create_a_security_group(self):
+        """Creates AzContract for createServerGroup.
+
+        To verify the operation, we just check that the spinnaker security group
+        for the given application was created.
+        This will create a Network Security Group in a Resource Group on your azure Subscription
+        """
+        rules = [
+            {
+                "access": "Allow",
+                "destinationAddressPrefix": "*",
+                "destinationPortRange": "80-80",
+                "direction": "InBound",
+                "endPort": 80,
+                "name": self.TEST_SECURITY_GROUP_RULE_1,
+                "priority": 100,
+                "protocol": "tcp",
+                "sourceAddressPrefix": "*",
+                "sourcePortRange": "*",
+                "startPort": 80,
+            }
+        ]
+        job = [
+            {
+                "provider": "azure",
+                "application": self.bindings["TEST_APP"],
+                "appName": self.bindings["TEST_APP"],
+                "region": self.bindings["TEST_AZURE_RG_LOCATION"],
+                "stack": self.bindings["TEST_STACK"],
+                "description": "Test - create security group for {app}".format(
+                    app=self.bindings["TEST_APP"]
+                ),
+                "detail": "",
+                "credentials": self.bindings["SPINNAKER_AZURE_ACCOUNT"],
+                "securityRules": rules,
+                "name": self.TEST_SECURITY_GROUP,
+                "securityGroupName": self.TEST_SECURITY_GROUP,
+                "cloudProvider": "azure",
+                "type": "upsertSecurityGroup",
+                "user": "[anonymous]",
+            }
+        ]
+        builder = az.AzContractBuilder(self.az_observer)
+        (
+            builder.new_clause_builder("Security Group Created", retryable_for_secs=30)
+            .collect_resources(
+                az_resource="network",
+                command="nsg",
+                args=[
+                    "show",
+                    "--name",
+                    self.TEST_SECURITY_GROUP,
+                    "--resource-group",
+                    self.TEST_SECURITY_GROUP_RG,
+                ],
+            )
+            .EXPECT(
+                ov_factory.error_list_contains(
+                    jp.ExceptionMatchesPredicate(
+                        klass=st.CliAgentRunError,
+                        regex="(?:.* operation: Cannot find .*)|(?:.*\(.*NotFound\).*)",
+                    )
+                )
+            )
+            .OR(
+                ov_factory.value_list_contains(
+                    # sec grp name matches expected
+                    jp.DICT_MATCHES(
+                        {
+                            "name": jp.STR_SUBSTR(self.TEST_SECURITY_GROUP),
+                            "securityRules": jp.LIST_MATCHES(
+                                [
+                                    jp.DICT_MATCHES(
+                                        {
+                                            "protocol": jp.STR_EQ("tcp"),
+                                            "name": jp.STR_EQ(
+                                                self.TEST_SECURITY_GROUP_RULE_1
+                                            ),
+                                        }
+                                    )
+                                ],
+                                strict=True,
+                            ),
+                        }
+                    )
+                )
+            )
+        )
+
+        payload = self.agent.make_json_payload_from_kwargs(
+            job=job,
+            description=" Test - create security group for {app}".format(
+                app=self.bindings["TEST_APP"]
+            ),
+            application=self.bindings["TEST_APP"],
+        )
+
+        return st.OperationContract(
+            self.new_post_operation(
+                title="create_security_group",
+                data=payload,
+                path="applications/{app}/tasks".format(app=self.bindings["TEST_APP"]),
+            ),
+            contract=builder.build(),
+        )
+
+    def delete_a_security_group(self):
+        """Creates azContract for deleteServerGroup.
+
+        To verify the operation, we just check that the spinnaker security group
+        for the given application was deleted.
+        """
+
+        payload = self.agent.make_json_payload_from_kwargs(
+            job=[
+                {
+                    "Provider": "azure",
+                    "appName": self.bindings["TEST_APP"],
+                    "region": self.bindings["TEST_AZURE_RG_LOCATION"],
+                    "regions": [self.bindings["TEST_AZURE_RG_LOCATION"]],
+                    "credentials": self.bindings["SPINNAKER_AZURE_ACCOUNT"],
+                    "securityGroupName": self.TEST_SECURITY_GROUP,
+                    "cloudProvider": "azure",
+                    "type": "deleteSecurityGroup",
+                    "user": "[anonymous]",
+                }
+            ],
+            application=self.bindings["TEST_APP"],
+            description="Delete Security Group: : " + self.TEST_SECURITY_GROUP,
+        )
+
+        builder = az.AzContractBuilder(self.az_observer)
+        (
+            builder.new_clause_builder("Security Group Deleted", retryable_for_secs=30)
+            .collect_resources(
+                az_resource="network",
+                command="nsg",
+                args=["list", "--resource-group", self.TEST_SECURITY_GROUP_RG],
+            )
+            .EXPECT(
+                ov_factory.error_list_contains(
+                    jp.ExceptionMatchesPredicate(
+                        klass=st.CliAgentRunError,
+                        regex="(?:.* operation: Cannot find .*)|(?:.*\(.*NotFound\).*)",
+                    )
+                )
+            )
+            .OR(
+                ov_factory.value_list_path_excludes(
+                    "name", jp.STR_EQ(self.TEST_SECURITY_GROUP)
+                )
+            )
+        )
+
+        return st.OperationContract(
+            self.new_post_operation(
+                title="delete_security_group",
+                data=payload,
+                path="applications/{app}/tasks".format(app=self.bindings["TEST_APP"]),
+            ),
+            contract=builder.build(),
+        )
 
 
 class AzureSmokeTest(st.AgentTestCase):
-  """The test fixture for the AzureSmokeTest.
+    """The test fixture for the AzureSmokeTest.
 
-  This is implemented using citest OperationContract instances that are
-  created by the AzureSmokeTestScenario.
-  """
-  # pylint: disable=missing-docstring
-  @property
-  def scenario(self):
-    return citest.base.TestRunner.global_runner().get_shared_data(
-        AzureSmokeTestScenario)
+    This is implemented using citest OperationContract instances that are
+    created by the AzureSmokeTestScenario.
+    """
 
-  def test_a_create_app(self):
-    self.run_test_case(self.scenario.create_app())
+    # pylint: disable=missing-docstring
+    @property
+    def scenario(self):
+        return citest.base.TestRunner.global_runner().get_shared_data(
+            AzureSmokeTestScenario
+        )
 
-  def test_b_create_security_group(self):
-    self.run_test_case(self.scenario.create_a_security_group())
+    def test_a_create_app(self):
+        self.run_test_case(self.scenario.create_app())
 
-  def test_y_delete_security_group(self):
-    self.run_test_case(self.scenario.delete_a_security_group(),
-                       retry_interval_secs=8, max_retries=8)
+    def test_b_create_security_group(self):
+        self.run_test_case(self.scenario.create_a_security_group())
 
-  def test_z_delete_app(self):
-    self.run_test_case(self.scenario.delete_app(),
-                       retry_interval_secs=8, max_retries=8)
+    def test_y_delete_security_group(self):
+        self.run_test_case(
+            self.scenario.delete_a_security_group(),
+            retry_interval_secs=8,
+            max_retries=8,
+        )
+
+    def test_z_delete_app(self):
+        self.run_test_case(
+            self.scenario.delete_app(), retry_interval_secs=8, max_retries=8
+        )
+
 
 def main():
-  """Implements the main method running this smoke test."""
+    """Implements the main method running this smoke test."""
 
-  defaults = {
-      'TEST_STACK': str(AzureSmokeTestScenario.DEFAULT_TEST_ID),
-      'TEST_APP': AzureSmokeTestScenario.DEFAULT_TEST_ID
-      }
+    defaults = {
+        "TEST_STACK": str(AzureSmokeTestScenario.DEFAULT_TEST_ID),
+        "TEST_APP": AzureSmokeTestScenario.DEFAULT_TEST_ID,
+    }
 
-  return citest.base.TestRunner.main(
-      parser_inits=[AzureSmokeTestScenario.initArgumentParser],
-      default_binding_overrides=defaults,
-      test_case_list=[AzureSmokeTest])
+    return citest.base.TestRunner.main(
+        parser_inits=[AzureSmokeTestScenario.initArgumentParser],
+        default_binding_overrides=defaults,
+        test_case_list=[AzureSmokeTest],
+    )
 
-if __name__ == '__main__':
-  sys.exit(main())
 
+if __name__ == "__main__":
+    sys.exit(main())

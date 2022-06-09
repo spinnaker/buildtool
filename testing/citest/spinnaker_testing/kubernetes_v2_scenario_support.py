@@ -19,41 +19,42 @@ from spinnaker_testing.base_scenario_support import BaseScenarioPlatformSupport
 
 
 class KubernetesV2ScenarioSupport(BaseScenarioPlatformSupport):
-  """Provides SpinnakerScenarioSupport for Kubernetes V2."""
+    """Provides SpinnakerScenarioSupport for Kubernetes V2."""
 
-  @classmethod
-  def add_commandline_parameters(cls, scenario_class, builder, defaults):
-    """Implements BaseScenarioPlatformSupport interface.
+    @classmethod
+    def add_commandline_parameters(cls, scenario_class, builder, defaults):
+        """Implements BaseScenarioPlatformSupport interface.
 
-    Args:
-      scenario_class: [class spinnaker_testing.SpinnakerTestScenario]
-      builder: [citest.base.ConfigBindingsBuilder]
-      defaults: [dict] Default binding value overrides.
-         This is used to initialize the default commandline parameters.
-    """
+        Args:
+          scenario_class: [class spinnaker_testing.SpinnakerTestScenario]
+          builder: [citest.base.ConfigBindingsBuilder]
+          defaults: [dict] Default binding value overrides.
+             This is used to initialize the default commandline parameters.
+        """
 
-    #
-    # Operation Parameters
-    #
-    builder.add_argument(
-        '--spinnaker_kubernetes_v2_account',
-        default=defaults.get('SPINNAKER_KUBERNETES_V2_ACCOUNT', None),
-        help='Spinnaker account name to use for test operations against'
-             ' Kubernetes V2. Only used when managing jobs running on'
-             ' Kubernetes.')
+        #
+        # Operation Parameters
+        #
+        builder.add_argument(
+            "--spinnaker_kubernetes_v2_account",
+            default=defaults.get("SPINNAKER_KUBERNETES_V2_ACCOUNT", None),
+            help="Spinnaker account name to use for test operations against"
+            " Kubernetes V2. Only used when managing jobs running on"
+            " Kubernetes.",
+        )
 
-  def _make_observer(self):
-    """Implements BaseScenarioPlatformSupport interface."""
-    bindings = self.scenario.bindings
-    if not bindings.get('SPINNAKER_KUBERNETES_V2_ACCOUNT'):
-      raise ValueError('There is no "spinnaker_kubernetes_v2_account"')
+    def _make_observer(self):
+        """Implements BaseScenarioPlatformSupport interface."""
+        bindings = self.scenario.bindings
+        if not bindings.get("SPINNAKER_KUBERNETES_V2_ACCOUNT"):
+            raise ValueError('There is no "spinnaker_kubernetes_v2_account"')
 
-    return kube.KubeCtlAgent()
+        return kube.KubeCtlAgent()
 
-  def __init__(self, scenario):
-    """Constructor.
+    def __init__(self, scenario):
+        """Constructor.
 
-    Args:
-      scenario: [SpinnakerTestScenario] The scenario being supported.
-    """
-    super(KubernetesV2ScenarioSupport, self).__init__("kubernetes_v2", scenario)
+        Args:
+          scenario: [SpinnakerTestScenario] The scenario being supported.
+        """
+        super(KubernetesV2ScenarioSupport, self).__init__("kubernetes_v2", scenario)

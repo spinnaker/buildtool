@@ -19,104 +19,107 @@ import threading
 
 
 class BaseScenarioPlatformSupport(object):
-  """Interface for adding a specific platform to SpinnakerTestScenario."""
+    """Interface for adding a specific platform to SpinnakerTestScenario."""
 
-  @property
-  def platform_name(self):
-    """Returns the platform name bound at construction."""
-    return self.__platform_name
+    @property
+    def platform_name(self):
+        """Returns the platform name bound at construction."""
+        return self.__platform_name
 
-  @property
-  def scenario(self):
-    """Returns the scenario instance bound at construction."""
-    return self.__scenario
+    @property
+    def scenario(self):
+        """Returns the scenario instance bound at construction."""
+        return self.__scenario
 
-  @property
-  def observer(self):
-    """Returns the default observer for this platform as configured.
+    @property
+    def observer(self):
+        """Returns the default observer for this platform as configured.
 
-    Raises:
-      This will throw an exception if the observer is not available for
-      whatever reason. The reason may vary depending on the platform.
-    """
-    with self.__lock:
-      if self.__observer is None:
-        logger = logging.getLogger(__name__)
-        logger.info('Initializing observer for "%s"', self.__platform_name)
-        try:
-          self.__observer = self._make_observer()
-        except:
-          logger.exception('Failed to create observer for "%s"',
-                           self.__platform_name)
-          raise
-      return self.__observer
+        Raises:
+          This will throw an exception if the observer is not available for
+          whatever reason. The reason may vary depending on the platform.
+        """
+        with self.__lock:
+            if self.__observer is None:
+                logger = logging.getLogger(__name__)
+                logger.info('Initializing observer for "%s"', self.__platform_name)
+                try:
+                    self.__observer = self._make_observer()
+                except:
+                    logger.exception(
+                        'Failed to create observer for "%s"', self.__platform_name
+                    )
+                    raise
+            return self.__observer
 
-  @classmethod
-  def init_bindings_builder(cls, scenario_class, builder, defaults):
-    """Mediates to the specific methods in this interface.
+    @classmethod
+    def init_bindings_builder(cls, scenario_class, builder, defaults):
+        """Mediates to the specific methods in this interface.
 
-    This is not intended to be overriden further. Instead, override
-    the remaining methods.
+        This is not intended to be overriden further. Instead, override
+        the remaining methods.
 
-    Args:
-      scenario_class: [class spinnaker_testing.SpinnakerTestScenario]
-      builder: [citest.base.ConfigBindingsBuilder]
-      defaults: [dict] Default binding value overrides.
-         This is used to initialize the default commandline parameters.
-    """
-    cls.add_commandline_parameters(builder, defaults)
+        Args:
+          scenario_class: [class spinnaker_testing.SpinnakerTestScenario]
+          builder: [citest.base.ConfigBindingsBuilder]
+          defaults: [dict] Default binding value overrides.
+             This is used to initialize the default commandline parameters.
+        """
+        cls.add_commandline_parameters(builder, defaults)
 
-  @classmethod
-  def add_commandline_parameters(cls, scenario_class, builder, defaults):
-    """Adds commandline arguments to the builder.
+    @classmethod
+    def add_commandline_parameters(cls, scenario_class, builder, defaults):
+        """Adds commandline arguments to the builder.
 
-    Args:
-      scenario_class: [class spinnaker_testing.SpinnakerTestScenario]
-      builder: [citest.base.ConfigBindingsBuilder]
-      defaults: [dict] Default binding value overrides.
-         This is used to initialize the default commandline parameters.
-    """
-    raise NotImplementedError('{0} not implemented'.format(cls))
+        Args:
+          scenario_class: [class spinnaker_testing.SpinnakerTestScenario]
+          builder: [citest.base.ConfigBindingsBuilder]
+          defaults: [dict] Default binding value overrides.
+             This is used to initialize the default commandline parameters.
+        """
+        raise NotImplementedError("{0} not implemented".format(cls))
 
-  def __init__(self, platform_name, scenario):
-    """Constructor.
+    def __init__(self, platform_name, scenario):
+        """Constructor.
 
-    This ensures the local bindings for:
-       SPINNAKER_<platform>_ACCOUNT
-       SPINNAKER_<platform>_ENABLED
-    where <platform> is the platform_name.
-    It will use the scenario's deployed configuration if available and needed
-    so that these variables will correspond to the agent's target.
-    The default ACCOUNT is the configured primary account.
+        This ensures the local bindings for:
+           SPINNAKER_<platform>_ACCOUNT
+           SPINNAKER_<platform>_ENABLED
+        where <platform> is the platform_name.
+        It will use the scenario's deployed configuration if available and needed
+        so that these variables will correspond to the agent's target.
+        The default ACCOUNT is the configured primary account.
 
-    Args:
-      platform_name: [string]  Identifies which platform this is.
-          This should be the name used in the Spinnaker "provider".
+        Args:
+          platform_name: [string]  Identifies which platform this is.
+              This should be the name used in the Spinnaker "provider".
 
-      scenario: [SpinnakerTestScenario] The scenario being supported.
-    """
-    self.__lock = threading.Lock()
-    self.__observer = None
-    self.__scenario = scenario
-    self.__platform_name = platform_name
-    test_platform_key = platform_name
+          scenario: [SpinnakerTestScenario] The scenario being supported.
+        """
+        self.__lock = threading.Lock()
+        self.__observer = None
+        self.__scenario = scenario
+        self.__platform_name = platform_name
+        test_platform_key = platform_name
 
-    bindings = scenario.bindings
-    agent = scenario.agent
-    account_key = 'spinnaker_{0}_account'.format(test_platform_key)
-    if not bindings.get(account_key):
-      bindings[account_key] = agent.deployed_config.get(
-        'providers.{0}.primaryCredentials.name'.format(platform_name))
+        bindings = scenario.bindings
+        agent = scenario.agent
+        account_key = "spinnaker_{0}_account".format(test_platform_key)
+        if not bindings.get(account_key):
+            bindings[account_key] = agent.deployed_config.get(
+                "providers.{0}.primaryCredentials.name".format(platform_name)
+            )
 
-    enabled_key = 'spinnaker_{0}_enabled'.format(test_platform_key)
-    if bindings.get(enabled_key, None) is None:
-      bindings[enabled_key] =  agent.deployed_config.get(
-          'providers.{0}.enabled'.format(platform_name))
+        enabled_key = "spinnaker_{0}_enabled".format(test_platform_key)
+        if bindings.get(enabled_key, None) is None:
+            bindings[enabled_key] = agent.deployed_config.get(
+                "providers.{0}.enabled".format(platform_name)
+            )
 
-  def _make_observer(self):
-    """Hook for specialized classes to instantiate their observer.
+    def _make_observer(self):
+        """Hook for specialized classes to instantiate their observer.
 
-    This method is called internally as needed when accessing the
-    observer property.
-    """
-    raise NotImplementedError('not implemented')
+        This method is called internally as needed when accessing the
+        observer property.
+        """
+        raise NotImplementedError("not implemented")

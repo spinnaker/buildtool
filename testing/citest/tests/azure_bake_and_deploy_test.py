@@ -49,7 +49,9 @@ import citest.service_testing as st
 # Spinnaker modules.
 import spinnaker_testing as sk
 import spinnaker_testing.gate as gate
+
 ov_factory = jc.ObservationPredicateFactory()
+
 
 class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
     """Defines the scenario for the test
@@ -84,12 +86,15 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         """
 
         super(AzureBakeAndDeployTestScenario, cls).initArgumentParser(
-            parser, defaults=defaults)
-        
+            parser, defaults=defaults
+        )
+
         defaults = defaults or {}
         parser.add_argument(
-            '--test_namespace', default='default',
-            help='The namespace to manage within the tests.')
+            "--test_namespace",
+            default="default",
+            help="The namespace to manage within the tests.",
+        )
 
     def __init__(self, bindings, agent=None):
         """Constructor.
@@ -99,32 +104,34 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         """
 
         # to avoid error when citest call binding
-        bindings['GCE_PROJECT'] = None
-        bindings['GOOGLE_PRIMARY_MANAGED_PROJECT_ID'] = None
+        bindings["GCE_PROJECT"] = None
+        bindings["GOOGLE_PRIMARY_MANAGED_PROJECT_ID"] = None
 
         super(AzureBakeAndDeployTestScenario, self).__init__(bindings, agent)
         bindings = self.bindings
 
-        self.TEST_APP = bindings['TEST_APP']
-        self.ACCOUNT = bindings['SPINNAKER_AZURE_ACCOUNT']
-        self.__rg_name = bindings['TEST_AZURE_RESOURCE_GROUP']
-        self.__rg_location = bindings['TEST_AZURE_RG_LOCATION']
-        self.__subscription_id = bindings['TEST_AZURE_SUBSCRIPTION_ID']
-        self.__vnet_name = bindings['TEST_AZURE_VNET']
-        self.__subnets = [sn.split('=')[0] for sn in bindings['TEST_AZURE_SUBNETS'].split(',')]
-        self.__subnets_address = [sn.split('=')[1] for sn in bindings['TEST_AZURE_SUBNETS'].split(',')]
-        self.__os_type = bindings['TEST_AZURE_OSTYPE']
-        self.__base_os = bindings['TEST_AZURE_BASEOS']
-        self.__stack = bindings['TEST_STACK']
-        self.__detail = 'dt'
+        self.TEST_APP = bindings["TEST_APP"]
+        self.ACCOUNT = bindings["SPINNAKER_AZURE_ACCOUNT"]
+        self.__rg_name = bindings["TEST_AZURE_RESOURCE_GROUP"]
+        self.__rg_location = bindings["TEST_AZURE_RG_LOCATION"]
+        self.__subscription_id = bindings["TEST_AZURE_SUBSCRIPTION_ID"]
+        self.__vnet_name = bindings["TEST_AZURE_VNET"]
+        self.__subnets = [
+            sn.split("=")[0] for sn in bindings["TEST_AZURE_SUBNETS"].split(",")
+        ]
+        self.__subnets_address = [
+            sn.split("=")[1] for sn in bindings["TEST_AZURE_SUBNETS"].split(",")
+        ]
+        self.__os_type = bindings["TEST_AZURE_OSTYPE"]
+        self.__base_os = bindings["TEST_AZURE_BASEOS"]
+        self.__stack = bindings["TEST_STACK"]
+        self.__detail = "dt"
         self.__sku = dict(
-            name=bindings['TEST_AZURE_VM_SKU'],
-            tier='Standard',
-            capacity=1
+            name=bindings["TEST_AZURE_VM_SKU"], tier="Standard", capacity=1
         )
-        self.__full_lb_name = '{app}-{stack}-{detail}'.format(
-            app=self.TEST_APP, stack=self.__stack,
-            detail=self.__detail)
+        self.__full_lb_name = "{app}-{stack}-{detail}".format(
+            app=self.TEST_APP, stack=self.__stack, detail=self.__detail
+        )
 
         assert len(self.__subnets) >= 2
         assert len(self.__subnets_address) >= 2
@@ -133,26 +140,32 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         """Creates OperationContract that creates a new Spinnaker Application."""
         return st.OperationContract(
             self.agent.make_create_app_operation(
-                bindings=self.bindings, application=self.TEST_APP,
-                account_name=self.ACCOUNT),
-            contract=jc.Contract())
+                bindings=self.bindings,
+                application=self.TEST_APP,
+                account_name=self.ACCOUNT,
+            ),
+            contract=jc.Contract(),
+        )
 
     def delete_app(self):
         """Creates OperationContract that deletes a new Spinnaker Application."""
         return st.OperationContract(
             self.agent.make_delete_app_operation(
-                application=self.TEST_APP,
-                account_name=self.ACCOUNT),
+                application=self.TEST_APP, account_name=self.ACCOUNT
+            ),
             contract=jc.Contract(),
-            cleanup=self.delete_resource_group)
+            cleanup=self.delete_resource_group,
+        )
 
     def delete_resource_group(self, _unused_execution_context):
         """Deletes the Azure Resource Group created by this Spinnaker Application."""
         execution_context = citest.base.ExecutionContext()
-        args = ['--name', 
-                '{app}-{rg}'.format(app=self.TEST_APP, rg=self.__rg_location), 
-                '--yes'] # wait until the Resource Group deleted
-        cmd = self.az_observer.build_az_command_args('group', 'delete', args)
+        args = [
+            "--name",
+            "{app}-{rg}".format(app=self.TEST_APP, rg=self.__rg_location),
+            "--yes",
+        ]  # wait until the Resource Group deleted
+        cmd = self.az_observer.build_az_command_args("group", "delete", args)
         self.az_observer.run(execution_context.eval(cmd))
 
     def create_load_balancer(self):
@@ -162,38 +175,46 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         for the given application was created.
         """
 
-        healthyCheck = [{
-            "probeName": "{lb}-probe".format(lb=self.__full_lb_name),
-            "probeProtocol": "HTTP",
-            "probePort": "80",
-            "probePath": "/",
-            "probeInterval": 30,
-            "unhealthyThreshold": 8,
-            "timeout": 120
-        }]
-        rules = [{
-            "ruleName": "{lb}-rule0".format(lb=self.__full_lb_name),
-            "protocol": "HTTP",
-            "externalPort": 80,
-            "backendPort": 80,
-            "probeName": "{lb}-probe".format(lb=self.__full_lb_name),
-            "persistence": "None",
-            "idleTimeout": 4
-        }]
-        subnets = [{
-            "account": self.ACCOUNT,
-            "addressPrefix": self.__subnets_address[1],
-            "device": [],
-            "id": '/subscriptions/{id}/resourceGroups/{rg}/providers/Microsoft.Network/virtualNetworks/{vnet}/subnets/{name}'.format(
-                id=self.__subscription_id, rg=self.__rg_name,
-                vnet=self.__vnet_name, name=self.__subnets[1]
-            ),
-            "name": self.__subnets[1],
-            "purpose": 'TBD',
-            "region": self.__rg_location,
-            "type": 'azure',
-            "vnet": self.__vnet_name
-        }]
+        healthyCheck = [
+            {
+                "probeName": "{lb}-probe".format(lb=self.__full_lb_name),
+                "probeProtocol": "HTTP",
+                "probePort": "80",
+                "probePath": "/",
+                "probeInterval": 30,
+                "unhealthyThreshold": 8,
+                "timeout": 120,
+            }
+        ]
+        rules = [
+            {
+                "ruleName": "{lb}-rule0".format(lb=self.__full_lb_name),
+                "protocol": "HTTP",
+                "externalPort": 80,
+                "backendPort": 80,
+                "probeName": "{lb}-probe".format(lb=self.__full_lb_name),
+                "persistence": "None",
+                "idleTimeout": 4,
+            }
+        ]
+        subnets = [
+            {
+                "account": self.ACCOUNT,
+                "addressPrefix": self.__subnets_address[1],
+                "device": [],
+                "id": "/subscriptions/{id}/resourceGroups/{rg}/providers/Microsoft.Network/virtualNetworks/{vnet}/subnets/{name}".format(
+                    id=self.__subscription_id,
+                    rg=self.__rg_name,
+                    vnet=self.__vnet_name,
+                    name=self.__subnets[1],
+                ),
+                "name": self.__subnets[1],
+                "purpose": "TBD",
+                "region": self.__rg_location,
+                "type": "azure",
+                "vnet": self.__vnet_name,
+            }
+        ]
         vnet = {
             "account": self.ACCOUNT,
             "cloudProvider": "azure",
@@ -201,58 +222,77 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
             "name": self.__vnet_name,
             "region": self.__rg_location,
             "resourceGroup": self.__rg_name,
-            "subnets": subnets
+            "subnets": subnets,
         }
         payload = self.agent.make_json_payload_from_kwargs(
-            job=[{
-                "stack": self.__stack,
-                "detail": self.__detail,
-                "credentials": self.ACCOUNT,
-                "region": self.__rg_location,
-                "cloudProvider": "azure",
-                "vnet": self.__vnet_name,
-                "subnet": self.__subnets[1],
-                "probes": healthyCheck,
-                "securityGroups": [],
-                "loadBalancingRules": rules,
-                "name": self.__full_lb_name,
-                "selectedVnet": vnet,
-                "vnetResourceGroup": self.__rg_name,
-                "selectedSubnet": subnets[0],
-                "type": "upsertLoadBalancer",
-                "loadBalancerType": "Azure Application Gateway",
-                "appName": self.TEST_APP,
-                "loadBalancerName": self.__full_lb_name,
-                "user": "[anonymous]"
-            }],
+            job=[
+                {
+                    "stack": self.__stack,
+                    "detail": self.__detail,
+                    "credentials": self.ACCOUNT,
+                    "region": self.__rg_location,
+                    "cloudProvider": "azure",
+                    "vnet": self.__vnet_name,
+                    "subnet": self.__subnets[1],
+                    "probes": healthyCheck,
+                    "securityGroups": [],
+                    "loadBalancingRules": rules,
+                    "name": self.__full_lb_name,
+                    "selectedVnet": vnet,
+                    "vnetResourceGroup": self.__rg_name,
+                    "selectedSubnet": subnets[0],
+                    "type": "upsertLoadBalancer",
+                    "loadBalancerType": "Azure Application Gateway",
+                    "appName": self.TEST_APP,
+                    "loadBalancerName": self.__full_lb_name,
+                    "user": "[anonymous]",
+                }
+            ],
             description="Test - Create load balancer: {lb}".format(
-                lb=self.__full_lb_name),
-            application=self.TEST_APP)
+                lb=self.__full_lb_name
+            ),
+            application=self.TEST_APP,
+        )
 
         builder = az.AzContractBuilder(self.az_observer)
-        (builder.new_clause_builder(
-            'Load Balancer Created', retryable_for_secs=30)
-        .collect_resources(
-            az_resource='network',
-            command='application-gateway',
-            args=['list', '--resource-group',
-            '{app}-{rg}'.format(app=self.TEST_APP, rg=self.__rg_location)])
-        .EXPECT(ov_factory.value_list_contains(
-            jp.DICT_MATCHES({
-                'name': jp.STR_EQ(self.__full_lb_name),
-                'tags': jp.DICT_MATCHES({
-                    'vnet': jp.STR_EQ(self.__vnet_name),
-                    'subnet': jp.STR_EQ(self.__subnets[1])
-                })
-            }))))
+        (
+            builder.new_clause_builder("Load Balancer Created", retryable_for_secs=30)
+            .collect_resources(
+                az_resource="network",
+                command="application-gateway",
+                args=[
+                    "list",
+                    "--resource-group",
+                    "{app}-{rg}".format(app=self.TEST_APP, rg=self.__rg_location),
+                ],
+            )
+            .EXPECT(
+                ov_factory.value_list_contains(
+                    jp.DICT_MATCHES(
+                        {
+                            "name": jp.STR_EQ(self.__full_lb_name),
+                            "tags": jp.DICT_MATCHES(
+                                {
+                                    "vnet": jp.STR_EQ(self.__vnet_name),
+                                    "subnet": jp.STR_EQ(self.__subnets[1]),
+                                }
+                            ),
+                        }
+                    )
+                )
+            )
+        )
 
         return st.OperationContract(
             self.new_post_operation(
-                title="create_load_balancer", data=payload,
-                path=('applications/{app}/tasks').format(app=self.TEST_APP),
-                max_wait_secs=2400),
-            contract=builder.build())
-    
+                title="create_load_balancer",
+                data=payload,
+                path=("applications/{app}/tasks").format(app=self.TEST_APP),
+                max_wait_secs=2400,
+            ),
+            contract=builder.build(),
+        )
+
     def delete_load_balancer(self):
         """Create OperationContract that delete the Load Balancer
 
@@ -261,46 +301,65 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         """
 
         payload = self.agent.make_json_payload_from_kwargs(
-            job=[{
-                "cloudProvider": "azure",
-                "loadBalancerName": self.__full_lb_name,
-                "credentials": self.ACCOUNT,
-                "region": self.__rg_location,
-                "appName": self.TEST_APP,
-                "type": "deleteLoadBalancer",
-                "user": "[anonymous]"
-            }],
+            job=[
+                {
+                    "cloudProvider": "azure",
+                    "loadBalancerName": self.__full_lb_name,
+                    "credentials": self.ACCOUNT,
+                    "region": self.__rg_location,
+                    "appName": self.TEST_APP,
+                    "type": "deleteLoadBalancer",
+                    "user": "[anonymous]",
+                }
+            ],
             description="Test - Delete load balancer: {lb}".format(
-                lb=self.__full_lb_name),
-            application=self.TEST_APP)
+                lb=self.__full_lb_name
+            ),
+            application=self.TEST_APP,
+        )
 
         builder = az.AzContractBuilder(self.az_observer)
-        (builder.new_clause_builder(
-            'Load Balancer Deleted', retryable_for_secs=30)
-        .collect_resources(
-            az_resource='network',
-            command='application-gateway',
-            args=['list', '--resource-group',
-            '{app}-{rg}'.format(app=self.TEST_APP, rg=self.__rg_location)])
-        # expected no lb
-        .EXPECT(ov_factory.error_list_contains(
-            jp.ExceptionMatchesPredicate(
-                klass=st.CliAgentRunError,
-                regex=r'(?:.* operation: Cannot find .*)|(?:.*\(.*could not be found.\).*)')))
-        # or no target lb
-        .OR(ov_factory.value_list_path_excludes(
-            'name', jp.STR_EQ(self.__full_lb_name)))
+        (
+            builder.new_clause_builder(
+                "Load Balancer Deleted", retryable_for_secs=30
+            ).collect_resources(
+                az_resource="network",
+                command="application-gateway",
+                args=[
+                    "list",
+                    "--resource-group",
+                    "{app}-{rg}".format(app=self.TEST_APP, rg=self.__rg_location),
+                ],
+            )
+            # expected no lb
+            .EXPECT(
+                ov_factory.error_list_contains(
+                    jp.ExceptionMatchesPredicate(
+                        klass=st.CliAgentRunError,
+                        regex=r"(?:.* operation: Cannot find .*)|(?:.*\(.*could not be found.\).*)",
+                    )
+                )
+            )
+            # or no target lb
+            .OR(
+                ov_factory.value_list_path_excludes(
+                    "name", jp.STR_EQ(self.__full_lb_name)
+                )
+            )
         )
 
         return st.OperationContract(
             self.new_post_operation(
-                title='delete_load_balancer', data=payload,
-                path=('applications/{app}/tasks').format(app=self.TEST_APP),
-                max_wait_secs=1800),
-            contract=builder.build())
+                title="delete_load_balancer",
+                data=payload,
+                path=("applications/{app}/tasks").format(app=self.TEST_APP),
+                max_wait_secs=1800,
+            ),
+            contract=builder.build(),
+        )
 
     def make_bake_stage(self, providerType, package="", requisiteStage=[], **kwargs):
-        stage  ={
+        stage = {
             "refId": "BAKE",
             "requisiteStageRefIds": requisiteStage,
             "type": "bake",
@@ -327,78 +386,72 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
             "version": "",
             "region": self.__rg_location,
             "uri": "",
-            "ostype": ""
+            "ostype": "",
         }
-        clusters = [{
-            "name": self.__full_lb_name,
-            "cloudProvider": "azure",
-            "application": self.TEST_APP,
-            "stack": self.__stack,
-            "strategy": "",
-            "rollback": {
-                "onFailure": None,
-            },
-            "allowDeleteActive": None,
-            "allowScaleDownActive": None,
-            "detail": self.__detail,
-            "freeFormDetails": self.__detail,
-            "account": self.ACCOUNT,
-            "selectedProvider": "azure",
-            "vnet": self.__vnet_name,
-            "subnet": self.__subnets[0],
-            "useSourceCapacity": False,
-            "capacity": {
-                "min": 1,
-                "max": 1
-            },
-            "region": self.__rg_location,
-            "loadBalancerName": self.__full_lb_name,
-            "user": "[anonymous]",
-            "upgradePolicy": "Manual",
-            "type": "createServerGroup",
-            "image": image,
-            "sku": self.__sku,
-            "instanceTags": {},
-            "viewState":{
-                "instanceProfile": "custom",
-                "allImageSelection": None,
-                "useAllImageSelection": False,
-                "useSimpleCapacity": True,
-                "usePreferredZones": True,
-                "mode": "createPipeline",
-                "disableStrategySelection": True,
-                "loadBalancersConfigured": True,
-                "networkSettingsConfigured": True,
-                "securityGroupsConfigured": True,
-                "disableImageSelection": True,
-                "showImageSourceSelector": True,
-                "expectedArtifacts": [],
-                "imageId": None,
-                "readOnlyFields": {},
-                "submitButtonLabel": "Add",
-                "hideClusterNamePreview": False,
-                "templatingEnabled": True
-            },
-            "osConfig": {
-                "customData": None
-            },
-            "customScriptsSettings": {
-                "fileUris": None,
-                "commandToExecute": ""
-            },
-            "zonesEnabled": False,
-            "zones": [],
-            "enableInboundNAT": False,
-            "instanceType": self.__sku['name'],
-            "interestingHealthProviderNames": []
-        }]
-   
+        clusters = [
+            {
+                "name": self.__full_lb_name,
+                "cloudProvider": "azure",
+                "application": self.TEST_APP,
+                "stack": self.__stack,
+                "strategy": "",
+                "rollback": {
+                    "onFailure": None,
+                },
+                "allowDeleteActive": None,
+                "allowScaleDownActive": None,
+                "detail": self.__detail,
+                "freeFormDetails": self.__detail,
+                "account": self.ACCOUNT,
+                "selectedProvider": "azure",
+                "vnet": self.__vnet_name,
+                "subnet": self.__subnets[0],
+                "useSourceCapacity": False,
+                "capacity": {"min": 1, "max": 1},
+                "region": self.__rg_location,
+                "loadBalancerName": self.__full_lb_name,
+                "user": "[anonymous]",
+                "upgradePolicy": "Manual",
+                "type": "createServerGroup",
+                "image": image,
+                "sku": self.__sku,
+                "instanceTags": {},
+                "viewState": {
+                    "instanceProfile": "custom",
+                    "allImageSelection": None,
+                    "useAllImageSelection": False,
+                    "useSimpleCapacity": True,
+                    "usePreferredZones": True,
+                    "mode": "createPipeline",
+                    "disableStrategySelection": True,
+                    "loadBalancersConfigured": True,
+                    "networkSettingsConfigured": True,
+                    "securityGroupsConfigured": True,
+                    "disableImageSelection": True,
+                    "showImageSourceSelector": True,
+                    "expectedArtifacts": [],
+                    "imageId": None,
+                    "readOnlyFields": {},
+                    "submitButtonLabel": "Add",
+                    "hideClusterNamePreview": False,
+                    "templatingEnabled": True,
+                },
+                "osConfig": {"customData": None},
+                "customScriptsSettings": {"fileUris": None, "commandToExecute": ""},
+                "zonesEnabled": False,
+                "zones": [],
+                "enableInboundNAT": False,
+                "instanceType": self.__sku["name"],
+                "interestingHealthProviderNames": [],
+            }
+        ]
+
         stage = {
             "refId": "DEPLOY",
             "requisiteStageRefIds": requisiteStage,
             "type": "deploy",
             "name": "Deploy",
-            "clusters": clusters
+            "clusters": clusters,
         }
         stage.update(kwargs)
         return stage
@@ -408,7 +461,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
             "app": self.TEST_APP,
             "cluster": self.__full_lb_name,
             "detail": self.__detail,
-            "stack": self.__stack
+            "stack": self.__stack,
         }
         stage = {
             "cloudProvider": "azure",
@@ -421,8 +474,8 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
             "regions": [self.__rg_location],
             "requisiteStageRefIds": requisiteStage,
             "target": "current_asg_dynamic",
-            "type": "disableServerGroup"
-		}
+            "type": "disableServerGroup",
+        }
         stage.update(kwargs)
         return stage
 
@@ -431,7 +484,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
             "app": self.TEST_APP,
             "cluster": self.__full_lb_name,
             "detail": self.__detail,
-            "stack": self.__stack
+            "stack": self.__stack,
         }
         stage = {
             "cloudProvider": "azure",
@@ -445,8 +498,8 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
             "regions": [self.__rg_location],
             "requisiteStageRefIds": requisiteStage,
             "target": "current_asg_dynamic",
-            "type": "destroyServerGroup"
-		}
+            "type": "destroyServerGroup",
+        }
         stage.update(kwargs)
         return stage
 
@@ -457,10 +510,10 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         with the default name was created.
         """
 
-        name = 'BakeAndDeploy'
+        name = "BakeAndDeploy"
         self.bake_pipeline_id = name
-        bake_stage = self.make_bake_stage(providerType='azure')
-        deploy_stage = self.make_azure_deploy_stage(requisiteStage=['BAKE'])
+        bake_stage = self.make_bake_stage(providerType="azure")
+        deploy_stage = self.make_azure_deploy_stage(requisiteStage=["BAKE"])
 
         pipeline_spec = dict(
             stages=[bake_stage, deploy_stage],
@@ -469,23 +522,29 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
             limitConcurrent=True,
             keepWaitingPipelines=False,
             name=name,
-            application=self.TEST_APP
+            application=self.TEST_APP,
         )
 
         payload = self.agent.make_json_payload_from_kwargs(**pipeline_spec)
 
         builder = st.HttpContractBuilder(self.agent)
-        (builder.new_clause_builder('Has Pipeline')
+        (
+            builder.new_clause_builder("Has Pipeline")
             .get_url_path(
-                'applications/{app}/pipelineConfigs'.format(app=self.TEST_APP))
+                "applications/{app}/pipelineConfigs".format(app=self.TEST_APP)
+            )
             .contains_path_value(None, {"name": name})
         )
 
         return st.OperationContract(
             self.new_post_operation(
-                title="create bake pipeline", data=payload, path='pipelines',
-                status_class=st.SynchronousHttpOperationStatus),
-            contract=builder.build())
+                title="create bake pipeline",
+                data=payload,
+                path="pipelines",
+                status_class=st.SynchronousHttpOperationStatus,
+            ),
+            contract=builder.build(),
+        )
 
     def create_disable_and_destroy_pipeline(self):
         """Create OperationContract that create the disable and destroy pipeline
@@ -494,7 +553,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         with the default name was created.
         """
 
-        name = 'DisableAndDestroy'
+        name = "DisableAndDestroy"
         self.destroy_pipeline_id = name
         disable_stage = self.make_azure_disable_group_stage()
         destroy_stage = self.make_azure_destroy_group_stage(requisiteStage=["DISABLE"])
@@ -506,24 +565,30 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
             limitConcurrent=True,
             keepWaitingPipelines=False,
             name=name,
-            application=self.TEST_APP
+            application=self.TEST_APP,
         )
 
         payload = self.agent.make_json_payload_from_kwargs(**pipeline_spec)
 
         builder = st.HttpContractBuilder(self.agent)
-        (builder.new_clause_builder('Has Pipeline')
+        (
+            builder.new_clause_builder("Has Pipeline")
             .get_url_path(
-                'applications/{app}/pipelineConfigs'.format(app=self.TEST_APP))
+                "applications/{app}/pipelineConfigs".format(app=self.TEST_APP)
+            )
             .contains_path_value(None, {"name": name})
         )
 
         return st.OperationContract(
             self.new_post_operation(
-                title="create destroy pipeline", data=payload, path='pipelines',
-                status_class=st.SynchronousHttpOperationStatus),
-            contract=builder.build())
-    
+                title="create destroy pipeline",
+                data=payload,
+                path="pipelines",
+                status_class=st.SynchronousHttpOperationStatus,
+            ),
+            contract=builder.build(),
+        )
+
     def delete_pipeline(self, pipeline_id):
         """Create OperationContract that delete target pipeline
         Args:
@@ -534,20 +599,23 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         """
 
         builder = st.HttpContractBuilder(self.agent)
-        (builder.new_clause_builder('Has Pipeline', retryable_for_secs=5)
+        (
+            builder.new_clause_builder("Has Pipeline", retryable_for_secs=5)
             .get_url_path(
-                'applications/{app}/pipelineConfigs'.format(app=self.TEST_APP))
-            .excludes_path_value('name', pipeline_id))
+                "applications/{app}/pipelineConfigs".format(app=self.TEST_APP)
+            )
+            .excludes_path_value("name", pipeline_id)
+        )
 
         return st.OperationContract(
             self.new_delete_operation(
-                title="delete pipeline", data="",
-                path=('pipelines/{app}/{pl}'.format(
-                    app=self.TEST_APP,
-                    pl=pipeline_id
-                )),
-                status_class=st.SynchronousHttpOperationStatus),
-            contract=builder.build())
+                title="delete pipeline",
+                data="",
+                path=("pipelines/{app}/{pl}".format(app=self.TEST_APP, pl=pipeline_id)),
+                status_class=st.SynchronousHttpOperationStatus,
+            ),
+            contract=builder.build(),
+        )
 
     def trigger_bake_and_deploy_pipeline(self):
         """Create OperationContract that manually trigger the bake and deploy pipeline
@@ -559,46 +627,58 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
 
         pipeline_id = self.bake_pipeline_id
         payload = self.agent.make_json_payload_from_kwargs(
-            job=[{
-                "dryRun": False,
-                "type": "manual",
-                "user": "[anonymous]"
-            }],
-            description="Test - begin bake and deploy: {pl}".format(
-                pl=pipeline_id),
-            application=self.TEST_APP)
+            job=[{"dryRun": False, "type": "manual", "user": "[anonymous]"}],
+            description="Test - begin bake and deploy: {pl}".format(pl=pipeline_id),
+            application=self.TEST_APP,
+        )
 
         builder = az.AzContractBuilder(self.az_observer)
-        (builder.new_clause_builder(
-            "Has Virtual Machine Scale Set", retryable_for_secs=30)
-        .collect_resources(
-            az_resource='vmss',
-            command='list',
-            args=['--resource-group', 
-            '{app}-{rg}'.format(app=self.TEST_APP, rg=self.__rg_location)])
-        .EXPECT(ov_factory.value_list_contains(
-            jp.DICT_MATCHES({
-                "name": jp.STR_EQ('{lb}-v000'.format(lb=self.__full_lb_name)),
-                "provisioningState": jp.STR_EQ('Succeeded'),
-                "tags": jp.DICT_MATCHES({
-                    "appGatewayName": jp.STR_EQ(self.__full_lb_name)
-                }),
-                "sku": jp.DICT_MATCHES({
-                    "name": jp.STR_EQ(self.__sku['name']),
-                    "tier": jp.STR_EQ(self.__sku['tier']),
-                    "capacity": jp.NUM_EQ(self.__sku['capacity'])
-                })
-            })
-        )))
+        (
+            builder.new_clause_builder(
+                "Has Virtual Machine Scale Set", retryable_for_secs=30
+            )
+            .collect_resources(
+                az_resource="vmss",
+                command="list",
+                args=[
+                    "--resource-group",
+                    "{app}-{rg}".format(app=self.TEST_APP, rg=self.__rg_location),
+                ],
+            )
+            .EXPECT(
+                ov_factory.value_list_contains(
+                    jp.DICT_MATCHES(
+                        {
+                            "name": jp.STR_EQ(
+                                "{lb}-v000".format(lb=self.__full_lb_name)
+                            ),
+                            "provisioningState": jp.STR_EQ("Succeeded"),
+                            "tags": jp.DICT_MATCHES(
+                                {"appGatewayName": jp.STR_EQ(self.__full_lb_name)}
+                            ),
+                            "sku": jp.DICT_MATCHES(
+                                {
+                                    "name": jp.STR_EQ(self.__sku["name"]),
+                                    "tier": jp.STR_EQ(self.__sku["tier"]),
+                                    "capacity": jp.NUM_EQ(self.__sku["capacity"]),
+                                }
+                            ),
+                        }
+                    )
+                )
+            )
+        )
 
         return st.OperationContract(
             self.new_post_operation(
-                title='bake and deploy', data=payload,
+                title="bake and deploy",
+                data=payload,
                 # TODO: cannot use v2 url: pipelines/v2/{app}/{pl}
-                path='pipelines/{app}/{pl}'.format(
-                    app=self.TEST_APP, pl=pipeline_id),
-                max_wait_secs=3600),
-            contract=builder.build())
+                path="pipelines/{app}/{pl}".format(app=self.TEST_APP, pl=pipeline_id),
+                max_wait_secs=3600,
+            ),
+            contract=builder.build(),
+        )
 
     def trigger_disable_and_destroy(self):
         """Create OperationContract that manually trigger the disable and destroy pipeline
@@ -609,39 +689,51 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
 
         pipeline_id = self.destroy_pipeline_id
         payload = self.agent.make_json_payload_from_kwargs(
-            job=[{
-                "dryRun": False,
-                "type": "manual",
-                "user": "[anonymous]"
-            }],
+            job=[{"dryRun": False, "type": "manual", "user": "[anonymous]"}],
             description="Test - begin disable and destroy server group: {pl}".format(
-                pl=pipeline_id),
-            application=self.TEST_APP)
+                pl=pipeline_id
+            ),
+            application=self.TEST_APP,
+        )
 
         builder = az.AzContractBuilder(self.az_observer)
-        (builder.new_clause_builder(
-            "Has No Virtual Machine Scale Set", retryable_for_secs=30)
-        .collect_resources(
-            az_resource='vmss',
-            command='list',
-            args=['--resource-group', 
-            '{app}-{rg}'.format(app=self.TEST_APP, rg=self.__rg_location)])
-        .EXPECT(ov_factory.error_list_contains(
-            jp.ExceptionMatchesPredicate(
-                klass=st.CliAgentRunError,
-                regex=r'(?:.* operation: Cannot find .*)|(?:.*\(.*could not be found.\).*)')))
-        .OR(ov_factory.value_list_path_excludes(
-            "name", jp.STR_EQ("{lb}-v000".format(lb=self.__full_lb_name))))
+        (
+            builder.new_clause_builder(
+                "Has No Virtual Machine Scale Set", retryable_for_secs=30
+            )
+            .collect_resources(
+                az_resource="vmss",
+                command="list",
+                args=[
+                    "--resource-group",
+                    "{app}-{rg}".format(app=self.TEST_APP, rg=self.__rg_location),
+                ],
+            )
+            .EXPECT(
+                ov_factory.error_list_contains(
+                    jp.ExceptionMatchesPredicate(
+                        klass=st.CliAgentRunError,
+                        regex=r"(?:.* operation: Cannot find .*)|(?:.*\(.*could not be found.\).*)",
+                    )
+                )
+            )
+            .OR(
+                ov_factory.value_list_path_excludes(
+                    "name", jp.STR_EQ("{lb}-v000".format(lb=self.__full_lb_name))
+                )
+            )
         )
 
         return st.OperationContract(
             self.new_post_operation(
-                title='disable and destroy', data=payload,
+                title="disable and destroy",
+                data=payload,
                 # TODO: cannot use v2 url: pipelines/v2/{app}/{pl}
-                path='pipelines/{app}/{pl}'.format(
-                    app=self.TEST_APP, pl=pipeline_id),
-                max_wait_secs=3600),
-            contract=builder.build())
+                path="pipelines/{app}/{pl}".format(app=self.TEST_APP, pl=pipeline_id),
+                max_wait_secs=3600,
+            ),
+            contract=builder.build(),
+        )
 
 
 class AzureTest(st.AgentTestCase):
@@ -650,10 +742,12 @@ class AzureTest(st.AgentTestCase):
     This is implemented using citest OperationContract instances that are
     created by the AzureBakeAndDeployTestScenario.
     """
+
     @property
     def scenario(self):
         return citest.base.TestRunner.global_runner().get_shared_data(
-            AzureBakeAndDeployTestScenario)
+            AzureBakeAndDeployTestScenario
+        )
 
     def test_a_create_app(self):
         self.run_test_case(self.scenario.create_app())
@@ -674,36 +768,38 @@ class AzureTest(st.AgentTestCase):
         self.run_test_case(self.scenario.trigger_disable_and_destroy())
 
     def test_x1_delete_bake_and_deploy_pipeline(self):
-        self.run_test_case(self.scenario.delete_pipeline(
-            self.scenario.bake_pipeline_id
-        ))
+        self.run_test_case(
+            self.scenario.delete_pipeline(self.scenario.bake_pipeline_id)
+        )
 
     def test_x2_delete_disable_and_destroy_pipeline(self):
-        self.run_test_case(self.scenario.delete_pipeline(
-            self.scenario.destroy_pipeline_id
-        ))
+        self.run_test_case(
+            self.scenario.delete_pipeline(self.scenario.destroy_pipeline_id)
+        )
 
     def test_y_delete_load_balancer(self):
-        self.run_test_case(self.scenario.delete_load_balancer(),
-                            max_retries=1)
+        self.run_test_case(self.scenario.delete_load_balancer(), max_retries=1)
 
     def test_z_delete_app(self):
-        self.run_test_case(self.scenario.delete_app(),
-                            retry_interval_secs=8, max_retries=8)                    
+        self.run_test_case(
+            self.scenario.delete_app(), retry_interval_secs=8, max_retries=8
+        )
 
 
 def main():
     """Implements the main method running this smoke test."""
 
     defaults = {
-        'TEST_STACK': 'st',
-        'TEST_APP': 'azurebaketest' + AzureBakeAndDeployTestScenario.DEFAULT_TEST_ID
+        "TEST_STACK": "st",
+        "TEST_APP": "azurebaketest" + AzureBakeAndDeployTestScenario.DEFAULT_TEST_ID,
     }
 
     return citest.base.TestRunner.main(
         parser_inits=[AzureBakeAndDeployTestScenario.initArgumentParser],
         default_binding_overrides=defaults,
-        test_case_list=[AzureTest])
+        test_case_list=[AzureTest],
+    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     sys.exit(main())

@@ -16,33 +16,36 @@
 
 import buildtool.command
 
-COMMAND = 'test_command_example'
-CUSTOM_ARG_NAME = 'custom_test_arg'
-CUSTOM_ARG_DEFAULT_VALUE = 'Custom Default Value'
+COMMAND = "test_command_example"
+CUSTOM_ARG_NAME = "custom_test_arg"
+CUSTOM_ARG_DEFAULT_VALUE = "Custom Default Value"
 
 
 class TestCommand(buildtool.command.CommandProcessor):
-  @property
-  def calls(self):
-    return self.__calls
+    @property
+    def calls(self):
+        return self.__calls
 
-  def __init__(self, factory, options):
-    super(TestCommand, self).__init__(factory, options)
-    self.__calls = 0
+    def __init__(self, factory, options):
+        super(TestCommand, self).__init__(factory, options)
+        self.__calls = 0
 
-  def _do_command(self):
-    self.__calls += 1
+    def _do_command(self):
+        self.__calls += 1
 
 
 class TestCommandFactory(buildtool.command.CommandFactory):
-  def __init__(self):
-    super(TestCommandFactory, self).__init__(
-        COMMAND, TestCommand, 'My Test Command')
+    def __init__(self):
+        super(TestCommandFactory, self).__init__(
+            COMMAND, TestCommand, "My Test Command"
+        )
 
-  def init_argparser(self, parser, defaults):
-    super(TestCommandFactory, self).init_argparser(parser, defaults)
-    TestCommandFactory.add_argument(
-        parser, CUSTOM_ARG_NAME, defaults, CUSTOM_ARG_DEFAULT_VALUE)
+    def init_argparser(self, parser, defaults):
+        super(TestCommandFactory, self).init_argparser(parser, defaults)
+        TestCommandFactory.add_argument(
+            parser, CUSTOM_ARG_NAME, defaults, CUSTOM_ARG_DEFAULT_VALUE
+        )
+
 
 def register_commands(registry, subparsers, defaults):
-  TestCommandFactory().register(registry, subparsers, defaults)
+    TestCommandFactory().register(registry, subparsers, defaults)
