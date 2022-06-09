@@ -34,48 +34,45 @@ from google_http_lb_upsert_test import GoogleHttpLoadBalancerTest
 
 # pylint: disable=too-many-public-methods
 class GoogleHttpLoadBalancerServerTest(GoogleHttpLoadBalancerTest):
-  '''Test fixture for Http LB test.
-  '''
+    """Test fixture for Http LB test."""
 
+    @classmethod
+    def setUpClass(cls):
+        super(GoogleHttpLoadBalancerServerTest, cls).setUpClass()
 
-  @classmethod
-  def setUpClass(cls):
-    super(GoogleHttpLoadBalancerServerTest, cls).setUpClass()
+    @classmethod
+    def tearDownClass(cls):
+        super(GoogleHttpLoadBalancerServerTest, cls).tearDownClass()
 
+    @property
+    def scenario(self):
+        return citest.base.TestRunner.global_runner().get_shared_data(
+            GoogleHttpLoadBalancerTestScenario
+        )
 
-  @classmethod
-  def tearDownClass(cls):
-    super(GoogleHttpLoadBalancerServerTest, cls).tearDownClass()
+    def test_f_add_server_group(self):
+        self.run_test_case(self.scenario.add_server_group(), poll_every_secs=5)
 
-
-  @property
-  def scenario(self):
-    return citest.base.TestRunner.global_runner().get_shared_data(
-      GoogleHttpLoadBalancerTestScenario)
-
-  def test_f_add_server_group(self):
-    self.run_test_case(self.scenario.add_server_group(),
-                       poll_every_secs=5)
-
-  def test_n_delete_server_group(self):
-    self.run_test_case(self.scenario.delete_server_group(),
-                       poll_every_secs=5)
+    def test_n_delete_server_group(self):
+        self.run_test_case(self.scenario.delete_server_group(), poll_every_secs=5)
 
 
 def main():
-  """Implements the main method running this http lb test."""
+    """Implements the main method running this http lb test."""
 
-  defaults = {
-      'TEST_STACK': str(GoogleHttpLoadBalancerTestScenario.DEFAULT_TEST_ID),
-      'TEST_APP': ('gcphttplbservertest' +
-                   GoogleHttpLoadBalancerTestScenario.DEFAULT_TEST_ID)
-  }
+    defaults = {
+        "TEST_STACK": str(GoogleHttpLoadBalancerTestScenario.DEFAULT_TEST_ID),
+        "TEST_APP": (
+            "gcphttplbservertest" + GoogleHttpLoadBalancerTestScenario.DEFAULT_TEST_ID
+        ),
+    }
 
-  return citest.base.TestRunner.main(
-      parser_inits=[GoogleHttpLoadBalancerTestScenario.initArgumentParser],
-      default_binding_overrides=defaults,
-      test_case_list=[GoogleHttpLoadBalancerServerTest])
+    return citest.base.TestRunner.main(
+        parser_inits=[GoogleHttpLoadBalancerTestScenario.initArgumentParser],
+        default_binding_overrides=defaults,
+        test_case_list=[GoogleHttpLoadBalancerServerTest],
+    )
 
 
-if __name__ == '__main__':
-  sys.exit(main())
+if __name__ == "__main__":
+    sys.exit(main())

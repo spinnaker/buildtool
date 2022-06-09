@@ -75,46 +75,47 @@ import sys
 import urllib2
 
 
-GOOGLE_METADATA_URL = 'http://metadata.google.internal/computeMetadata/v1'
-GOOGLE_INSTANCE_METADATA_URL = '{url}/instance'.format(url=GOOGLE_METADATA_URL)
+GOOGLE_METADATA_URL = "http://metadata.google.internal/computeMetadata/v1"
+GOOGLE_INSTANCE_METADATA_URL = "{url}/instance".format(url=GOOGLE_METADATA_URL)
 _MY_ZONE = None
 
 
 def fetch(url, google=False):
     request = urllib2.Request(url)
     if google:
-      request.add_header('Metadata-Flavor', 'Google')
+        request.add_header("Metadata-Flavor", "Google")
     try:
-      response = urllib2.urlopen(request)
-      return response.getcode(), response.read()
+        response = urllib2.urlopen(request)
+        return response.getcode(), response.read()
     except urllib2.HTTPError as e:
-      return e.code, str(e.reason)
+        return e.code, str(e.reason)
     except urllib2.URLError as e:
-      return -1, str(e.reason)
+        return -1, str(e.reason)
 
 
 def get_zone():
     global _MY_ZONE
-    if _MY_ZONE != None:
+    if _MY_ZONE is not None:
         return _MY_ZONE
-    code, output = fetch('{url}/zone'.format(url=GOOGLE_INSTANCE_METADATA_URL),
-                         google=True)
+    code, output = fetch(
+        "{url}/zone".format(url=GOOGLE_INSTANCE_METADATA_URL), google=True
+    )
     if code == 200:
-       _MY_ZONE = os.path.basename(output)
+        _MY_ZONE = os.path.basename(output)
     else:
-       _MY_ZONE = ''
+        _MY_ZONE = ""
     return _MY_ZONE
 
 
 def running_on_gce():
-    return get_zone() != ''
+    return get_zone() != ""
 
 
 def get_instance_metadata_attribute(name):
     code, output = fetch(
-        '{url}/attributes/{name}'.format(url=GOOGLE_INSTANCE_METADATA_URL,
-                                         name=name),
-        google=True)
+        "{url}/attributes/{name}".format(url=GOOGLE_INSTANCE_METADATA_URL, name=name),
+        google=True,
+    )
     if code == 200:
         return output
     else:
@@ -123,32 +124,36 @@ def get_instance_metadata_attribute(name):
 
 def clear_metadata_to_file(name, path):
     value = get_instance_metadata_attribute(name)
-    if value != None:
-      with open(os.path.join('/opt/spinnaker/install', path), 'w') as f:
-        f.write(value)
-      clear_instance_metadata(name)
+    if value is not None:
+        with open(os.path.join("/opt/spinnaker/install", path), "w") as f:
+            f.write(value)
+        clear_instance_metadata(name)
 
 
 def clear_instance_metadata(name):
-    p = subprocess.Popen('gcloud compute instances remove-metadata'
-                         ' {hostname} --zone={zone} --keys={name}'
-                         .format(hostname=socket.gethostname(),
-                                 zone=get_zone(),
-                                 name=name),
-                         shell=True, close_fds=True)
+    p = subprocess.Popen(
+        "gcloud compute instances remove-metadata"
+        " {hostname} --zone={zone} --keys={name}".format(
+            hostname=socket.gethostname(), zone=get_zone(), name=name
+        ),
+        shell=True,
+        close_fds=True,
+    )
     if p.wait():
-        raise SystemExit('Unexpected failure clearing metadata.')
+        raise SystemExit("Unexpected failure clearing metadata.")
 
 
 def write_instance_metadata(name, value):
-    p = subprocess.Popen('gcloud compute instances add-metadata'
-                         ' {hostname} --zone={zone} --metadata={name}={value}'
-                         .format(hostname=socket.gethostname(),
-                                 zone=get_zone(),
-                                 name=name, value=value),
-                         shell=True, close_fds=True)
+    p = subprocess.Popen(
+        "gcloud compute instances add-metadata"
+        " {hostname} --zone={zone} --metadata={name}={value}".format(
+            hostname=socket.gethostname(), zone=get_zone(), name=name, value=value
+        ),
+        shell=True,
+        close_fds=True,
+    )
     if p.wait():
-        raise SystemExit('Unexpected failure writing metadata.')
+        raise SystemExit("Unexpected failure writing metadata.")
 
 
 def unpack_files(key_list):
@@ -166,14 +171,14 @@ def unpack_files(key_list):
     """
 
     for key in key_list:
-      underscore = key.find('_')
-      if underscore <= 0:
-          filename = key if underscore < 0 else key[1:]
-      else:
-        filename = '{basename}.{ext}'.format(
-            basename = key[underscore + 1:],
-            ext=key[:underscore])
-      clear_metadata_to_file(key, filename)
+        underscore = key.find("_")
+        if underscore <= 0:
+            filename = key if underscore < 0 else key[1:]
+        else:
+            filename = "{basename}.{ext}".format(
+                basename=key[underscore + 1 :], ext=key[:underscore]
+            )
+        clear_metadata_to_file(key, filename)
 
 
 def __unpack_and_run():
@@ -199,13 +204,13 @@ def __unpack_and_run():
     unpacked. The python command itself is ommited and will be added here.
     """
 
-    script_keys = get_instance_metadata_attribute('startup_loader_files')
-    key_list = script_keys.split('+') if script_keys else []
+    script_keys = get_instance_metadata_attribute("startup_loader_files")
+    key_list = script_keys.split("+") if script_keys else []
     unpack_files(key_list)
     if script_keys:
-      clear_instance_metadata('startup_loader_files')
+        clear_instance_metadata("startup_loader_files")
 
-    startup_command = get_instance_metadata_attribute('startup_command')
+    startup_command = get_instance_metadata_attribute("startup_command")
     if not startup_command:
         sys.stderr.write('No "startup_command" metadata key.\n')
         raise SystemExit('No "startup_command" metadata key.')
@@ -213,17 +218,22 @@ def __unpack_and_run():
     # Change the startup script to the final command that we run
     # so that future boots will just run that command. And take down
     # the rest of the boostrap metadata since we dont need it anymore.
-    command = ('chmod gou+rx /opt/spinnaker/install/*.sh; '
-               + startup_command.replace('+', ' '))
+    command = "chmod gou+rx /opt/spinnaker/install/*.sh; " + startup_command.replace(
+        "+", " "
+    )
 
-    with open('__startup_script__.sh', 'w') as f:
-        f.write('#!/bin/bash\ncd /opt/spinnaker/install\n{command}\n'
-                .format(command=command))
+    with open("__startup_script__.sh", "w") as f:
+        f.write(
+            "#!/bin/bash\ncd /opt/spinnaker/install\n{command}\n".format(
+                command=command
+            )
+        )
 
-    os.chmod('__startup_script__.sh', 0555)
-    write_instance_metadata('startup-script',
-                            '/opt/spinnaker/install/__startup_script__.sh')
-    clear_instance_metadata('startup_command')
+    os.chmod("__startup_script__.sh", 0o555)
+    write_instance_metadata(
+        "startup-script", "/opt/spinnaker/install/__startup_script__.sh"
+    )
+    clear_instance_metadata("startup_command")
 
     # Now run the command (which is also the future startup script).
     p = subprocess.Popen(command, shell=True, close_fds=True)
@@ -231,23 +241,25 @@ def __unpack_and_run():
     return p.returncode
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if not running_on_gce():
-        sys.stderr.write('You do not appear to be on Google Compute Engine.\n')
+        sys.stderr.write("You do not appear to be on Google Compute Engine.\n")
         sys.exit(-1)
 
     try:
-      os.makedirs('/opt/spinnaker/install')
-      os.chdir('/opt/spinnaker/install')
+        os.makedirs("/opt/spinnaker/install")
+        os.chdir("/opt/spinnaker/install")
     except OSError as e:
-      sys.stderr.write('Startup mkdir failed: {e}'.format(e=e))
+        sys.stderr.write("Startup mkdir failed: {e}".format(e=e))
 
     # Copy this script to /opt/spinnaker/install as install_loader.py
     # since other scripts will reference it that way.
-    try :
-      shutil.copyfile('/var/run/google.startup.script',
-                      '/opt/spinnaker/install/google_install_loader.py')
+    try:
+        shutil.copyfile(
+            "/var/run/google.startup.script",
+            "/opt/spinnaker/install/google_install_loader.py",
+        )
     except IOError as e:
-      sys.stderr.write('Startup script copy failed: {e}'.format(e=e))
+        sys.stderr.write("Startup script copy failed: {e}".format(e=e))
 
     sys.exit(__unpack_and_run())

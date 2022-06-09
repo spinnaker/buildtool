@@ -19,60 +19,58 @@ import argparse
 import os
 import unittest
 
-from buildtool import (
-    GitRunner,
-    BomSourceCodeManager,
-    SemanticVersion)
+from buildtool import GitRunner, BomSourceCodeManager, SemanticVersion
 
 from test_util import (
     ALL_STANDARD_TEST_BOM_REPO_NAMES,
     BASE_VERSION_TAG,
     PATCH_BRANCH,
     BaseGitRepoTestFixture,
-    init_runtime)
+    init_runtime,
+)
 
 
 def _foreach_func(repository, *pos_args, **kwargs):
-  return (repository, list(pos_args), dict(kwargs))
+    return (repository, list(pos_args), dict(kwargs))
 
 
 class TestBomSourceCodeManager(BaseGitRepoTestFixture):
-  def make_test_options(self):
-    options = super(TestBomSourceCodeManager, self).make_test_options()
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--output_dir', default=options.output_dir)
-    GitRunner.add_parser_args(parser, {'github_owner': 'test_github_owner'})
-    return parser.parse_args()
+    def make_test_options(self):
+        options = super(TestBomSourceCodeManager, self).make_test_options()
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--output_dir", default=options.output_dir)
+        GitRunner.add_parser_args(parser, {"github_owner": "test_github_owner"})
+        return parser.parse_args()
 
-  def test_pull_bom(self):
-    input_dir = self.test_root
-    scm = BomSourceCodeManager(self.options, input_dir, bom=self.golden_bom)
-    for repo_name in ALL_STANDARD_TEST_BOM_REPO_NAMES:
-      repository = scm.make_repository_spec(repo_name)
-      self.assertFalse(os.path.exists(repository.git_dir))
-      scm.ensure_local_repository(repository)
-      self.assertTrue(os.path.exists(repository.git_dir))
+    def test_pull_bom(self):
+        input_dir = self.test_root
+        scm = BomSourceCodeManager(self.options, input_dir, bom=self.golden_bom)
+        for repo_name in ALL_STANDARD_TEST_BOM_REPO_NAMES:
+            repository = scm.make_repository_spec(repo_name)
+            self.assertFalse(os.path.exists(repository.git_dir))
+            scm.ensure_local_repository(repository)
+            self.assertTrue(os.path.exists(repository.git_dir))
 
-      git_dir = repository.git_dir
-      spec = scm.git.determine_git_repository_spec(git_dir)
-      self.assertEqual(repository.name, spec.name)
-      self.assertEqual(repository.git_dir, spec.git_dir)
-      self.assertEqual(repository.origin, spec.origin)
-      self.assertIsNone(spec.upstream_or_none())
+            git_dir = repository.git_dir
+            spec = scm.git.determine_git_repository_spec(git_dir)
+            self.assertEqual(repository.name, spec.name)
+            self.assertEqual(repository.git_dir, spec.git_dir)
+            self.assertEqual(repository.origin, spec.origin)
+            self.assertIsNone(spec.upstream_or_none())
 
-      repo_name = repository.name
-      at_commit = scm.git.query_local_repository_commit_id(git_dir)
-      self.assertEqual(
-          self.repo_commit_map[repo_name]['ORIGIN'], repository.origin)
-      self.assertEqual(
-          self.repo_commit_map[repo_name][PATCH_BRANCH], at_commit)
+            repo_name = repository.name
+            at_commit = scm.git.query_local_repository_commit_id(git_dir)
+            self.assertEqual(
+                self.repo_commit_map[repo_name]["ORIGIN"], repository.origin
+            )
+            self.assertEqual(self.repo_commit_map[repo_name][PATCH_BRANCH], at_commit)
 
-      summary = scm.git.collect_repository_summary(git_dir)
-      semver = SemanticVersion.make(BASE_VERSION_TAG)
-      expect_version = semver.to_version()
-      self.assertEqual(expect_version, summary.version)
+            summary = scm.git.collect_repository_summary(git_dir)
+            semver = SemanticVersion.make(BASE_VERSION_TAG)
+            expect_version = semver.to_version()
+            self.assertEqual(expect_version, summary.version)
 
 
-if __name__ == '__main__':
-  init_runtime()
-  unittest.main(verbosity=2)
+if __name__ == "__main__":
+    init_runtime()
+    unittest.main(verbosity=2)

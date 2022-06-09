@@ -15,29 +15,31 @@
 
 """Implementation of Netflix's Frigga naming convention"""
 
+
 class Naming(object):
-  """Implementation of Netflix's Frigga naming convention"""
+    """Implementation of Netflix's Frigga naming convention"""
 
-  @staticmethod
-  def cluster(app=None, stack=None, detail=None):
-    if not app:
-      raise ValueError('`app` is required for generating names')
+    @staticmethod
+    def cluster(app=None, stack=None, detail=None):
+        if not app:
+            raise ValueError("`app` is required for generating names")
 
-    if not detail and not stack:
-      return app
+        if not detail and not stack:
+            return app
 
-    if not detail:
-      return '{0}-{1}'.format(app, stack)
+        if not detail:
+            return "{0}-{1}".format(app, stack)
 
-    return '{0}-{1}-{2}'.format(app, stack, detail)
+        return "{0}-{1}-{2}".format(app, stack, detail)
 
-  @staticmethod
-  def server_group(app=None, stack=None, detail=None, version='v000'):
-    if not app:
-      raise ValueError('`app` is required for generating names')
+    @staticmethod
+    def server_group(app=None, stack=None, detail=None, version="v000"):
+        if not app:
+            raise ValueError("`app` is required for generating names")
 
-    if not version:
-      raise ValueError('`version` is required for generating names')
+        if not version:
+            raise ValueError("`version` is required for generating names")
 
-    return '{0}-{1}'.format(
-            Naming.cluster(app=app, stack=stack, detail=detail), version)
+        return "{0}-{1}".format(
+            Naming.cluster(app=app, stack=stack, detail=detail), version
+        )

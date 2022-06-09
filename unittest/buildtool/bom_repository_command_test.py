@@ -22,77 +22,95 @@ from buildtool import (
     BomSourceCodeManager,
     RepositoryCommandProcessor,
     RepositoryCommandFactory,
-    write_to_path)
+    write_to_path,
+)
 
 from test_util import (
     BaseGitRepoTestFixture,
     ALL_STANDARD_TEST_BOM_REPO_NAMES,
     PATCH_BRANCH,
-    init_runtime)
+    init_runtime,
+)
 
 
 class TestBomRepositoryCommand(RepositoryCommandProcessor):
-  def __init__(self, *pos_args, **kwargs):
-    super(TestBomRepositoryCommand, self).__init__(*pos_args, **kwargs)
-    self.summary_info = {}
+    def __init__(self, *pos_args, **kwargs):
+        super(TestBomRepositoryCommand, self).__init__(*pos_args, **kwargs)
+        self.summary_info = {}
 
-  def _do_repository(self, repository):
-    name = repository.name
-    assert(name not in self.summary_info)
-    self.summary_info[name] = self.scm.git.collect_repository_summary(
-        repository.git_dir)
+    def _do_repository(self, repository):
+        name = repository.name
+        assert name not in self.summary_info
+        self.summary_info[name] = self.scm.git.collect_repository_summary(
+            repository.git_dir
+        )
 
 
 class TestBomRepositoryCommandProcessor(BaseGitRepoTestFixture):
-  def make_test_options(self):
-    options = super(TestBomRepositoryCommandProcessor, self).make_test_options()
-    options.bom_path = os.path.join(self.test_root, 'bom.yml')
-    options.one_at_a_time = False
-    options.only_repositories = None
-    options.exclude_repositories = None
-    options.github_disable_upstream_push = True
-    options.git_branch = PATCH_BRANCH
-    write_to_path(yaml.safe_dump(self.golden_bom), options.bom_path)
-    return options
+    def make_test_options(self):
+        options = super(TestBomRepositoryCommandProcessor, self).make_test_options()
+        options.bom_path = os.path.join(self.test_root, "bom.yml")
+        options.one_at_a_time = False
+        options.only_repositories = None
+        options.exclude_repositories = None
+        options.github_disable_upstream_push = True
+        options.git_branch = PATCH_BRANCH
+        write_to_path(yaml.safe_dump(self.golden_bom), options.bom_path)
+        return options
 
-  def test_repository_command(self):
-    options = self.options
+    def test_repository_command(self):
+        options = self.options
 
-    # Create a command referencing our test bom
-    # That will learn about our test service through that bom
-    factory = RepositoryCommandFactory(
-        'TestBomRepositoryCommand', TestBomRepositoryCommand,
-        'A test command.', BomSourceCodeManager)
-    command = factory.make_command(options)
+        # Create a command referencing our test bom
+        # That will learn about our test service through that bom
+        factory = RepositoryCommandFactory(
+            "TestBomRepositoryCommand",
+            TestBomRepositoryCommand,
+            "A test command.",
+            BomSourceCodeManager,
+        )
+        command = factory.make_command(options)
 
-    for repository in command.source_repositories:
-      self.assertEqual(repository.origin,
-                       self.repo_commit_map[repository.name]['ORIGIN'])
-      self.assertEqual(repository.git_dir,
-                       os.path.join(options.input_dir, options.command,
-                                     repository.name))
-      self.assertFalse(os.path.exists(repository.git_dir))
-    self.assertEqual(set(ALL_STANDARD_TEST_BOM_REPO_NAMES),
-                     set([repo.name for repo in command.source_repositories]))
-
-    # Now run the command and verify it instantiated the working dir
-    # as expected.
-    command()
-
-    for repository in command.source_repositories:
-      self.assertTrue(os.path.exists(repository.git_dir))
-      # gate and spinnaker-monitoring have extra commits after last tag so the
-      # repo_commit_map won't match the summary we get (which is up to last tag)
-      if repository.name in ['gate', 'spinnaker-monitoring']:
-        self.assertNotEqual(
-          command.summary_info[repository.name].commit_id,
-          self.repo_commit_map[repository.name][PATCH_BRANCH], msg='repository: {} - commit_id: {}'.format(repository,command.summary_info[repository.name].commit_id))
-      else:
+        for repository in command.source_repositories:
+            self.assertEqual(
+                repository.origin, self.repo_commit_map[repository.name]["ORIGIN"]
+            )
+            self.assertEqual(
+                repository.git_dir,
+                os.path.join(options.input_dir, options.command, repository.name),
+            )
+            self.assertFalse(os.path.exists(repository.git_dir))
         self.assertEqual(
-          command.summary_info[repository.name].commit_id,
-          self.repo_commit_map[repository.name][PATCH_BRANCH], msg='repository: {} - commit_id: {}'.format(repository,command.summary_info[repository.name].commit_id))
+            set(ALL_STANDARD_TEST_BOM_REPO_NAMES),
+            set([repo.name for repo in command.source_repositories]),
+        )
+
+        # Now run the command and verify it instantiated the working dir
+        # as expected.
+        command()
+
+        for repository in command.source_repositories:
+            self.assertTrue(os.path.exists(repository.git_dir))
+            # gate and spinnaker-monitoring have extra commits after last tag so the
+            # repo_commit_map won't match the summary we get (which is up to last tag)
+            if repository.name in ["gate", "spinnaker-monitoring"]:
+                self.assertNotEqual(
+                    command.summary_info[repository.name].commit_id,
+                    self.repo_commit_map[repository.name][PATCH_BRANCH],
+                    msg="repository: {} - commit_id: {}".format(
+                        repository, command.summary_info[repository.name].commit_id
+                    ),
+                )
+            else:
+                self.assertEqual(
+                    command.summary_info[repository.name].commit_id,
+                    self.repo_commit_map[repository.name][PATCH_BRANCH],
+                    msg="repository: {} - commit_id: {}".format(
+                        repository, command.summary_info[repository.name].commit_id
+                    ),
+                )
 
 
-if __name__ == '__main__':
-  init_runtime()
-  unittest.main(verbosity=2)
+if __name__ == "__main__":
+    init_runtime()
+    unittest.main(verbosity=2)

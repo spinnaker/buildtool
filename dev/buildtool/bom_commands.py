@@ -21,286 +21,339 @@ import yaml
 
 from buildtool import (
     DEFAULT_BUILD_NUMBER,
-
     SPINNAKER_BOM_REPOSITORY_NAMES,
     SPINNAKER_DEBIAN_REPOSITORY,
     SPINNAKER_DOCKER_REGISTRY,
     SPINNAKER_GOOGLE_IMAGE_PROJECT,
-
     BranchSourceCodeManager,
     RepositoryCommandFactory,
     RepositoryCommandProcessor,
-
     HalRunner,
     GitRunner,
-
     check_path_exists,
     raise_and_log_error,
     write_to_path,
-    ConfigError)
+    ConfigError,
+)
 
 
 def _determine_bom_path(command_processor):
-  if command_processor.options.bom_path:
-    return command_processor.options.bom_path
+    if command_processor.options.bom_path:
+        return command_processor.options.bom_path
 
-  options = command_processor.options
-  filename = '{branch}-{buildnum}.yml'.format(
-      branch=options.git_branch or 'NOBRANCH', buildnum=options.build_number)
-  return os.path.join(command_processor.get_output_dir(command='build_bom'),
-                      filename)
+    options = command_processor.options
+    filename = "{branch}-{buildnum}.yml".format(
+        branch=options.git_branch or "NOBRANCH", buildnum=options.build_number
+    )
+    return os.path.join(command_processor.get_output_dir(command="build_bom"), filename)
 
 
 def now():
-  """Hook for easier mocking."""
-  return datetime.datetime.utcnow()
+    """Hook for easier mocking."""
+    return datetime.datetime.utcnow()
 
 
 class BomBuilder(object):
-  """Helper class for BuildBomCommand that constructs the bom specification."""
+    """Helper class for BuildBomCommand that constructs the bom specification."""
 
-  @staticmethod
-  def new_from_bom(options, scm, metrics, bom):
-    return BomBuilder(options, scm, metrics, base_bom=bom)
+    @staticmethod
+    def new_from_bom(options, scm, metrics, bom):
+        return BomBuilder(options, scm, metrics, base_bom=bom)
 
-  @property
-  def base_bom(self):
-    return self.__base_bom
+    @property
+    def base_bom(self):
+        return self.__base_bom
 
-  def __init__(self, options, scm, metrics, base_bom=None):
-    """Construct new builder.
+    def __init__(self, options, scm, metrics, base_bom=None):
+        """Construct new builder.
 
-    Args:
-      base_bom[dict]: If defined, this is a bom to start with.
-                      It is intended to support a "refresh" use case where
-                      only a subset of entires are updated within it.
-    """
-    self.__options = options
-    self.__scm = scm
-    self.__metrics = metrics
-    self.__services = {}
-    self.__repositories = {}
-    self.__base_bom = base_bom or {}
-    if not base_bom and not options.bom_dependencies_path:
-      self.__bom_dependencies_path = os.path.join(
-          os.path.dirname(__file__), 'bom_dependencies.yml')
-    else:
-      self.__bom_dependencies_path = options.bom_dependencies_path
-
-    if self.__bom_dependencies_path:
-      check_path_exists(self.__bom_dependencies_path, "bom_dependencies_path")
-
-  def to_git_url_prefix(self, url):
-    """Determine url up to the terminal path component."""
-    if url.startswith('git@'):
-      parts = GitRunner.normalize_repo_url(url)
-      url = GitRunner.make_https_url(*parts)
-
-    # We're assuming no query parameter/fragment since these are git URLs.
-    # otherwise we need to parse the url and extract the path
-    return url[:url.rfind('/')]
-
-  def add_repository(self, repository, source_info):
-    """Helper function for determining the repository's BOM entry."""
-    version_info = {
-        'commit': source_info.summary.commit_id,
-        'version': source_info.to_build_version()
-    }
-
-    service_name = self.__scm.repository_name_to_service_name(repository.name)
-    self.__services[service_name] = version_info
-    self.__repositories[service_name] = repository
-    if service_name == 'monitoring-daemon':
-      # Dont use the same actual object because having the repeated
-      # value reference causes the generated yaml to be invalid.
-      self.__services['monitoring-third-party'] = dict(version_info)
-      self.__repositories['monitoring-third-party'] = repository
-
-  def determine_most_common_prefix(self):
-    """Determine which of repositories url's is most commonly used."""
-    prefix_count = {}
-    for repository in self.__repositories.values():
-      url_prefix = self.to_git_url_prefix(repository.origin)
-      prefix_count[url_prefix] = prefix_count.get(url_prefix, 0) + 1
-    default_prefix = None
-    max_count = 0
-    for prefix, count in prefix_count.items():
-      if count > max_count:
-        default_prefix, max_count = prefix, count
-    return default_prefix
-
-  def build(self):
-    options = self.__options
-
-    if self.__bom_dependencies_path:
-      logging.debug('Loading bom dependencies from %s',
-                    self.__bom_dependencies_path)
-      with open(self.__bom_dependencies_path, 'r') as stream:
-        dependencies = yaml.safe_load(stream.read())
-        logging.debug('Loaded %s', dependencies)
-    else:
-      dependencies = None
-    if not dependencies:
-      dependencies = self.__base_bom.get('dependencies')
-
-    if not dependencies:
-      raise_and_log_error(ConfigError('No BOM dependencies found'))
-
-    base_sources = self.__base_bom.get('artifactSources', {})
-    default_source_prefix = (base_sources.get('gitPrefix', None)
-                             or self.determine_most_common_prefix())
-    for name, version_info in self.__services.items():
-      repository = self.__repositories[name]
-      origin = repository.origin
-      source_prefix = self.to_git_url_prefix(origin)
-      if source_prefix != default_source_prefix:
-        version_info['gitPrefix'] = source_prefix
-
-    artifact_sources = {
-        'gitPrefix': default_source_prefix,
-        'debianRepository': SPINNAKER_DEBIAN_REPOSITORY,
-        'dockerRegistry': SPINNAKER_DOCKER_REGISTRY,
-        'googleImageProject': SPINNAKER_GOOGLE_IMAGE_PROJECT
-    }
-
-    services = dict(self.__base_bom.get('services', {}))
-    changed = False
-    def to_semver(build_version):
-      index = build_version.find('-')
-      return build_version[:index] if index >= 0 else build_version
-
-    for name, info in self.__services.items():
-      labels = {'repostiory': name, 'branch': options.git_branch, 'updated': True}
-      if info['commit'] == services.get(name, {}).get('commit', None):
-        if to_semver(info['version']) == to_semver(services.get(name, {}).get('version', '')):
-          logging.debug('%s commit hasnt changed -- keeping existing %s',
-                        name, info)
-          labels['updated'] = False
-          labels['reason'] = 'same commit'
-          self.__metrics.inc_counter('UpdateBomEntry', labels)
-          continue
+        Args:
+          base_bom[dict]: If defined, this is a bom to start with.
+                          It is intended to support a "refresh" use case where
+                          only a subset of entires are updated within it.
+        """
+        self.__options = options
+        self.__scm = scm
+        self.__metrics = metrics
+        self.__services = {}
+        self.__repositories = {}
+        self.__base_bom = base_bom or {}
+        if not base_bom and not options.bom_dependencies_path:
+            self.__bom_dependencies_path = os.path.join(
+                os.path.dirname(__file__), "bom_dependencies.yml"
+            )
         else:
-          # An earlier branch was patched since our base bom.
-          labels['reason'] = 'different version'
-          logging.debug('%s version changed to %s even though commit has not',
-                        name, info)
-      else:
-        labels['reason'] = 'different commit'
-      self.__metrics.inc_counter('UpdateBomEntry', labels)
+            self.__bom_dependencies_path = options.bom_dependencies_path
 
-      changed = True
-      services[name] = info
+        if self.__bom_dependencies_path:
+            check_path_exists(self.__bom_dependencies_path, "bom_dependencies_path")
 
-    if (self.__base_bom.get('artifactSources') != artifact_sources
-        or self.__base_bom.get('dependencies') != dependencies):
-      changed = True
+    def to_git_url_prefix(self, url):
+        """Determine url up to the terminal path component."""
+        if url.startswith("git@"):
+            parts = GitRunner.normalize_repo_url(url)
+            url = GitRunner.make_https_url(*parts)
 
-    if not changed:
-      return self.__base_bom
+        # We're assuming no query parameter/fragment since these are git URLs.
+        # otherwise we need to parse the url and extract the path
+        return url[: url.rfind("/")]
 
-    return {
-        'artifactSources': artifact_sources,
-        'dependencies': dependencies,
-        'services': services,
-        'version': options.build_number,
-        'timestamp': '{:%Y-%m-%d %H:%M:%S}'.format(now())
-    }
+    def add_repository(self, repository, source_info):
+        """Helper function for determining the repository's BOM entry."""
+        version_info = {
+            "commit": source_info.summary.commit_id,
+            "version": source_info.to_build_version(),
+        }
+
+        service_name = self.__scm.repository_name_to_service_name(repository.name)
+        self.__services[service_name] = version_info
+        self.__repositories[service_name] = repository
+        if service_name == "monitoring-daemon":
+            # Dont use the same actual object because having the repeated
+            # value reference causes the generated yaml to be invalid.
+            self.__services["monitoring-third-party"] = dict(version_info)
+            self.__repositories["monitoring-third-party"] = repository
+
+    def determine_most_common_prefix(self):
+        """Determine which of repositories url's is most commonly used."""
+        prefix_count = {}
+        for repository in self.__repositories.values():
+            url_prefix = self.to_git_url_prefix(repository.origin)
+            prefix_count[url_prefix] = prefix_count.get(url_prefix, 0) + 1
+        default_prefix = None
+        max_count = 0
+        for prefix, count in prefix_count.items():
+            if count > max_count:
+                default_prefix, max_count = prefix, count
+        return default_prefix
+
+    def build(self):
+        options = self.__options
+
+        if self.__bom_dependencies_path:
+            logging.debug(
+                "Loading bom dependencies from %s", self.__bom_dependencies_path
+            )
+            with open(self.__bom_dependencies_path, "r") as stream:
+                dependencies = yaml.safe_load(stream.read())
+                logging.debug("Loaded %s", dependencies)
+        else:
+            dependencies = None
+        if not dependencies:
+            dependencies = self.__base_bom.get("dependencies")
+
+        if not dependencies:
+            raise_and_log_error(ConfigError("No BOM dependencies found"))
+
+        base_sources = self.__base_bom.get("artifactSources", {})
+        default_source_prefix = (
+            base_sources.get("gitPrefix", None) or self.determine_most_common_prefix()
+        )
+        for name, version_info in self.__services.items():
+            repository = self.__repositories[name]
+            origin = repository.origin
+            source_prefix = self.to_git_url_prefix(origin)
+            if source_prefix != default_source_prefix:
+                version_info["gitPrefix"] = source_prefix
+
+        artifact_sources = {
+            "gitPrefix": default_source_prefix,
+            "debianRepository": SPINNAKER_DEBIAN_REPOSITORY,
+            "dockerRegistry": SPINNAKER_DOCKER_REGISTRY,
+            "googleImageProject": SPINNAKER_GOOGLE_IMAGE_PROJECT,
+        }
+
+        services = dict(self.__base_bom.get("services", {}))
+        changed = False
+
+        def to_semver(build_version):
+            index = build_version.find("-")
+            return build_version[:index] if index >= 0 else build_version
+
+        for name, info in self.__services.items():
+            labels = {"repostiory": name, "branch": options.git_branch, "updated": True}
+            if info["commit"] == services.get(name, {}).get("commit", None):
+                if to_semver(info["version"]) == to_semver(
+                    services.get(name, {}).get("version", "")
+                ):
+                    logging.debug(
+                        "%s commit hasnt changed -- keeping existing %s", name, info
+                    )
+                    labels["updated"] = False
+                    labels["reason"] = "same commit"
+                    self.__metrics.inc_counter("UpdateBomEntry", labels)
+                    continue
+                else:
+                    # An earlier branch was patched since our base bom.
+                    labels["reason"] = "different version"
+                    logging.debug(
+                        "%s version changed to %s even though commit has not",
+                        name,
+                        info,
+                    )
+            else:
+                labels["reason"] = "different commit"
+            self.__metrics.inc_counter("UpdateBomEntry", labels)
+
+            changed = True
+            services[name] = info
+
+        if (
+            self.__base_bom.get("artifactSources") != artifact_sources
+            or self.__base_bom.get("dependencies") != dependencies
+        ):
+            changed = True
+
+        if not changed:
+            return self.__base_bom
+
+        return {
+            "artifactSources": artifact_sources,
+            "dependencies": dependencies,
+            "services": services,
+            "version": options.build_number,
+            "timestamp": "{:%Y-%m-%d %H:%M:%S}".format(now()),
+        }
 
 
 class BuildBomCommand(RepositoryCommandProcessor):
-  """Implements build_bom."""
+    """Implements build_bom."""
 
-  def __init__(self, factory, options, *pos_args, **kwargs):
-    super(BuildBomCommand, self).__init__(factory, options, *pos_args, **kwargs)
+    def __init__(self, factory, options, *pos_args, **kwargs):
+        super(BuildBomCommand, self).__init__(factory, options, *pos_args, **kwargs)
 
-    if options.refresh_from_bom_path and options.refresh_from_bom_version:
-      raise_and_log_error(
-          ConfigError('Cannot specify both --refresh_from_bom_path="{0}"'
-                      ' and --refresh_from_bom_version="{1}"'
-                      .format(options.refresh_from_bom_path,
-                              options.refresh_from_bom_version)))
-    if options.refresh_from_bom_path:
-      logging.debug('Using base bom from path "%s"',
-                    options.refresh_from_bom_path)
-      check_path_exists(options.refresh_from_bom_path,
-                        "refresh_from_bom_path")
-      with open(options.refresh_from_bom_path, 'r') as stream:
-        base_bom = yaml.safe_load(stream.read())
-    elif options.refresh_from_bom_version:
-      logging.debug('Using base bom version "%s"',
-                    options.refresh_from_bom_version)
-      base_bom = HalRunner(options).retrieve_bom_version(
-          options.refresh_from_bom_version)
-    else:
-      base_bom = None
-    if base_bom:
-      logging.info('Creating new bom based on version "%s"',
-                   base_bom.get('version', 'UNKNOWN'))
-    self.__builder = BomBuilder(self.options, self.scm, self.metrics, base_bom=base_bom)
+        if options.refresh_from_bom_path and options.refresh_from_bom_version:
+            raise_and_log_error(
+                ConfigError(
+                    'Cannot specify both --refresh_from_bom_path="{0}"'
+                    ' and --refresh_from_bom_version="{1}"'.format(
+                        options.refresh_from_bom_path, options.refresh_from_bom_version
+                    )
+                )
+            )
+        if options.refresh_from_bom_path:
+            logging.debug(
+                'Using base bom from path "%s"', options.refresh_from_bom_path
+            )
+            check_path_exists(options.refresh_from_bom_path, "refresh_from_bom_path")
+            with open(options.refresh_from_bom_path, "r") as stream:
+                base_bom = yaml.safe_load(stream.read())
+        elif options.refresh_from_bom_version:
+            logging.debug(
+                'Using base bom version "%s"', options.refresh_from_bom_version
+            )
+            base_bom = HalRunner(options).retrieve_bom_version(
+                options.refresh_from_bom_version
+            )
+        else:
+            base_bom = None
+        if base_bom:
+            logging.info(
+                'Creating new bom based on version "%s"',
+                base_bom.get("version", "UNKNOWN"),
+            )
+        self.__builder = BomBuilder(
+            self.options, self.scm, self.metrics, base_bom=base_bom
+        )
 
-  def _do_repository(self, repository):
-    source_info = self.scm.refresh_source_info(
-        repository, self.options.build_number)
-    self.__builder.add_repository(repository, source_info)
+    def _do_repository(self, repository):
+        source_info = self.scm.refresh_source_info(
+            repository, self.options.build_number
+        )
+        self.__builder.add_repository(repository, source_info)
 
-  def _do_postprocess(self, _):
-    """Construct BOM and write it to the configured path."""
-    bom = self.__builder.build()
-    if bom == self.__builder.base_bom:
-      logging.info('Bom has not changed from version %s @ %s',
-                   bom['version'], bom['timestamp'])
+    def _do_postprocess(self, _):
+        """Construct BOM and write it to the configured path."""
+        bom = self.__builder.build()
+        if bom == self.__builder.base_bom:
+            logging.info(
+                "Bom has not changed from version %s @ %s",
+                bom["version"],
+                bom["timestamp"],
+            )
 
-    bom_text = yaml.safe_dump(bom, default_flow_style=False)
+        bom_text = yaml.safe_dump(bom, default_flow_style=False)
 
-    path = _determine_bom_path(self)
-    write_to_path(bom_text, path)
-    logging.info('Wrote bom to %s', path)
+        path = _determine_bom_path(self)
+        write_to_path(bom_text, path)
+        logging.info("Wrote bom to %s", path)
 
 
 class BuildBomCommandFactory(RepositoryCommandFactory):
-  def __init__(self, **kwargs):
-    super(BuildBomCommandFactory, self).__init__(
-        'build_bom', BuildBomCommand, 'Build a BOM file.',
-        BranchSourceCodeManager,
-        source_repository_names=SPINNAKER_BOM_REPOSITORY_NAMES,
-        **kwargs)
+    def __init__(self, **kwargs):
+        super(BuildBomCommandFactory, self).__init__(
+            "build_bom",
+            BuildBomCommand,
+            "Build a BOM file.",
+            BranchSourceCodeManager,
+            source_repository_names=SPINNAKER_BOM_REPOSITORY_NAMES,
+            **kwargs
+        )
 
-  def init_argparser(self, parser, defaults):
-    super(BuildBomCommandFactory, self).init_argparser(parser, defaults)
-    HalRunner.add_parser_args(parser, defaults)
+    def init_argparser(self, parser, defaults):
+        super(BuildBomCommandFactory, self).init_argparser(parser, defaults)
+        HalRunner.add_parser_args(parser, defaults)
 
-    self.add_argument(
-        parser, 'publish_gce_image_project', defaults, None,
-        help='Project to publish images to.')
+        self.add_argument(
+            parser,
+            "publish_gce_image_project",
+            defaults,
+            None,
+            help="Project to publish images to.",
+        )
 
-    self.add_argument(
-        parser, 'build_number', defaults, DEFAULT_BUILD_NUMBER,
-        help='The build number for this specific bom.')
-    self.add_argument(
-        parser, 'bom_path', defaults, None,
-        help='The path to the local BOM file copy to write out.')
-    self.add_argument(
-        parser, 'bom_dependencies_path', defaults, None,
-        help='The path to YAML file specifying the BOM dependencies section'
-             ' if overriding.')
-    self.add_argument(
-        parser, 'refresh_from_bom_path', defaults, None,
-        help='If specified then use the existing bom_path as a prototype'
-             ' to refresh. Use with --only_repositories to create a new BOM.'
-             ' using only the new versions and build numbers for select repos'
-             ' while keeping the existing versions and build numbers for'
-             ' others.')
-    self.add_argument(
-        parser, 'refresh_from_bom_version', defaults, None,
-        help='Similar to refresh_from_bom_path but using a version obtained.'
-             ' from halyard.')
-    self.add_argument(
-        parser, 'git_fallback_branch', defaults, None,
-        help='The branch to pull for the BOM if --git_branch isnt found.'
-             ' This is intended only for speculative development where'
-             ' some repositories are being modified and the remaing are'
-             ' to come from a release branch.')
+        self.add_argument(
+            parser,
+            "build_number",
+            defaults,
+            DEFAULT_BUILD_NUMBER,
+            help="The build number for this specific bom.",
+        )
+        self.add_argument(
+            parser,
+            "bom_path",
+            defaults,
+            None,
+            help="The path to the local BOM file copy to write out.",
+        )
+        self.add_argument(
+            parser,
+            "bom_dependencies_path",
+            defaults,
+            None,
+            help="The path to YAML file specifying the BOM dependencies section"
+            " if overriding.",
+        )
+        self.add_argument(
+            parser,
+            "refresh_from_bom_path",
+            defaults,
+            None,
+            help="If specified then use the existing bom_path as a prototype"
+            " to refresh. Use with --only_repositories to create a new BOM."
+            " using only the new versions and build numbers for select repos"
+            " while keeping the existing versions and build numbers for"
+            " others.",
+        )
+        self.add_argument(
+            parser,
+            "refresh_from_bom_version",
+            defaults,
+            None,
+            help="Similar to refresh_from_bom_path but using a version obtained."
+            " from halyard.",
+        )
+        self.add_argument(
+            parser,
+            "git_fallback_branch",
+            defaults,
+            None,
+            help="The branch to pull for the BOM if --git_branch isnt found."
+            " This is intended only for speculative development where"
+            " some repositories are being modified and the remaing are"
+            " to come from a release branch.",
+        )
 
 
 def register_commands(registry, subparsers, defaults):
-  BuildBomCommandFactory().register(registry, subparsers, defaults)
+    BuildBomCommandFactory().register(registry, subparsers, defaults)

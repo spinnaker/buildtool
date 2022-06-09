@@ -21,63 +21,61 @@ import shutil
 import tempfile
 import unittest
 
-from buildtool import (
-    ensure_dir_exists,
-    timedelta_string,
-    write_to_path)
+from buildtool import ensure_dir_exists, timedelta_string, write_to_path
 
 
 class TestRunner(unittest.TestCase):
-  @classmethod
-  def setUpClass(cls):
-    cls.base_temp_dir = tempfile.mkdtemp(prefix='buildtool.util_test')
+    @classmethod
+    def setUpClass(cls):
+        cls.base_temp_dir = tempfile.mkdtemp(prefix="buildtool.util_test")
 
-  @classmethod
-  def tearDownClass(cls):
-    shutil.rmtree(cls.base_temp_dir)
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.base_temp_dir)
 
-  def test_ensure_dir(self):
-    want = os.path.join(self.base_temp_dir, 'ensure', 'a', 'b', 'c')
-    self.assertFalse(os.path.exists(want))
-    ensure_dir_exists(want)
-    self.assertTrue(os.path.exists(want))
+    def test_ensure_dir(self):
+        want = os.path.join(self.base_temp_dir, "ensure", "a", "b", "c")
+        self.assertFalse(os.path.exists(want))
+        ensure_dir_exists(want)
+        self.assertTrue(os.path.exists(want))
 
-    # Ok if already exists
-    ensure_dir_exists(want)
-    self.assertTrue(os.path.exists(want))
+        # Ok if already exists
+        ensure_dir_exists(want)
+        self.assertTrue(os.path.exists(want))
 
-  def test_write_to_path_string(self):
-    path = os.path.join(self.base_temp_dir, 'test_write', 'file')
-    content = 'First Line\nSecond Line'
-    write_to_path(content, path)
-    with open(path, 'r') as f:
-      self.assertEqual(content, f.read())
+    def test_write_to_path_string(self):
+        path = os.path.join(self.base_temp_dir, "test_write", "file")
+        content = "First Line\nSecond Line"
+        write_to_path(content, path)
+        with open(path, "r") as f:
+            self.assertEqual(content, f.read())
 
-  def test_write_to_path_unicode(self):
-    path = os.path.join(self.base_temp_dir, 'test_write', 'file')
-    content = u'First Line\nSecond Line'
-    write_to_path(content, path)
-    with open(path, 'r') as f:
-      self.assertEqual(content, f.read())
+    def test_write_to_path_unicode(self):
+        path = os.path.join(self.base_temp_dir, "test_write", "file")
+        content = "First Line\nSecond Line"
+        write_to_path(content, path)
+        with open(path, "r") as f:
+            self.assertEqual(content, f.read())
 
-  def test_deltatime_string(self):
-    timedelta = datetime.timedelta
-    tests = [
-        (timedelta(1, 60 * 60 * 4 + 60 * 5 + 2, 123456), 'days=1 + 04:05:02'),
-        (timedelta(1, 60 * 5 + 2, 123456), 'days=1 + 00:05:02'),
-        (timedelta(1, 2, 123456), 'days=1 + 00:00:02'),
-        (timedelta(0, 60 * 60 * 4 + 60 * 5 + 2, 123456), '04:05:02'),
-        (timedelta(0, 60 * 5 + 2, 123456), '05:02'),
-        (timedelta(0, 2, 123456), '2.123 secs')
-    ]
-    for test in tests:
-      self.assertEqual(test[1], timedelta_string(test[0]))
+    def test_deltatime_string(self):
+        timedelta = datetime.timedelta
+        tests = [
+            (timedelta(1, 60 * 60 * 4 + 60 * 5 + 2, 123456), "days=1 + 04:05:02"),
+            (timedelta(1, 60 * 5 + 2, 123456), "days=1 + 00:05:02"),
+            (timedelta(1, 2, 123456), "days=1 + 00:00:02"),
+            (timedelta(0, 60 * 60 * 4 + 60 * 5 + 2, 123456), "04:05:02"),
+            (timedelta(0, 60 * 5 + 2, 123456), "05:02"),
+            (timedelta(0, 2, 123456), "2.123 secs"),
+        ]
+        for test in tests:
+            self.assertEqual(test[1], timedelta_string(test[0]))
 
 
-if __name__ == '__main__':
-  logging.basicConfig(
-      format='%(levelname).1s %(asctime)s.%(msecs)03d %(message)s',
-      datefmt='%H:%M:%S',
-      level=logging.DEBUG)
+if __name__ == "__main__":
+    logging.basicConfig(
+        format="%(levelname).1s %(asctime)s.%(msecs)03d %(message)s",
+        datefmt="%H:%M:%S",
+        level=logging.DEBUG,
+    )
 
-  unittest.main(verbosity=2)
+    unittest.main(verbosity=2)

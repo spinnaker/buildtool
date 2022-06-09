@@ -33,6 +33,7 @@ import citest.base
 import spinnaker_testing as sk
 import spinnaker_testing.gate as gate
 
+
 class PluginStageTestScenario(sk.SpinnakerTestScenario):
     """Defines the scenario for testing a stage implemented as a plugin."""
 
@@ -50,16 +51,19 @@ class PluginStageTestScenario(sk.SpinnakerTestScenario):
           parser: argparse.ArgumentParser
         """
         super(PluginStageTestScenario, cls).initArgumentParser(
-            parser, defaults=defaults)
+            parser, defaults=defaults
+        )
 
         defaults = defaults or {}
         parser.add_argument(
-            '--stage_name', default='randomWait',
-            help='The name of the plugin stage.')
+            "--stage_name", default="randomWait", help="The name of the plugin stage."
+        )
 
         parser.add_argument(
-            '--stage_params', default='{"maxWaitTime": 5}',
-            help='The stage params as a JSON-encoded string.')
+            "--stage_params",
+            default='{"maxWaitTime": 5}',
+            help="The stage params as a JSON-encoded string.",
+        )
 
     def __init__(self, bindings, agent=None):
         """Constructor.
@@ -70,26 +74,32 @@ class PluginStageTestScenario(sk.SpinnakerTestScenario):
         """
         super(PluginStageTestScenario, self).__init__(bindings, agent)
 
-        self.STAGE_NAME = bindings['STAGE_NAME']
-        self.STAGE_PARAMS = json.loads(bindings['STAGE_PARAMS'])
-        self.TEST_APP = 'app-{stage}'.format(stage=bindings['STAGE_NAME'])
+        self.STAGE_NAME = bindings["STAGE_NAME"]
+        self.STAGE_PARAMS = json.loads(bindings["STAGE_PARAMS"])
+        self.TEST_APP = "app-{stage}".format(stage=bindings["STAGE_NAME"])
 
     def run_stage_as_task(self):
         """Runs the configured stage as a Spinnaker task."""
         stage = {
-            'type': self.STAGE_NAME,
-            'user': '[anonymous]',
+            "type": self.STAGE_NAME,
+            "user": "[anonymous]",
         }
         stage.update(self.STAGE_PARAMS)
 
         payload = self.agent.make_json_payload_from_kwargs(
-            job=[stage], description='Execute plugin stage type {stage}'.format(
-                stage=self.STAGE_NAME), application=self.TEST_APP)
+            job=[stage],
+            description="Execute plugin stage type {stage}".format(
+                stage=self.STAGE_NAME
+            ),
+            application=self.TEST_APP,
+        )
 
         return st.OperationContract(
             self.new_post_operation(
-                title='execute_plugin_stage', data=payload, path='tasks'),
-            contract=jc.Contract())
+                title="execute_plugin_stage", data=payload, path="tasks"
+            ),
+            contract=jc.Contract(),
+        )
 
 
 class PluginStageTest(st.AgentTestCase):
@@ -102,13 +112,13 @@ class PluginStageTest(st.AgentTestCase):
     @property
     def scenario(self):
         return citest.base.TestRunner.global_runner().get_shared_data(
-            PluginStageTestScenario)
+            PluginStageTestScenario
+        )
 
     def test_run_stage(self):
         self.run_test_case(
-            self.scenario.run_stage_as_task(),
-            retry_interval_secs=5,
-            max_retries=5)
+            self.scenario.run_stage_as_task(), retry_interval_secs=5, max_retries=5
+        )
 
 
 def main():
@@ -117,7 +127,9 @@ def main():
     return citest.base.TestRunner.main(
         parser_inits=[PluginStageTestScenario.initArgumentParser],
         default_binding_overrides={},
-        test_case_list=[PluginStageTest])
+        test_case_list=[PluginStageTest],
+    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     sys.exit(main())
