@@ -26,7 +26,7 @@ import google.auth.iam
 import google.auth.impersonated_credentials
 import google.oauth2.credentials
 import google.oauth2.service_account
-import requests
+import requests_toolbelt
 
 
 from google.auth.transport.requests import Request

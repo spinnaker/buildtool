@@ -102,7 +102,7 @@ def __tag_images(versions_to_tag, project, account, project_images, bom_contents
 def __write_image_delete_script(possible_versions_to_delete, days_before, project,
                                 account, project_images, bom_contents_by_name):
   images_to_delete = set([])
-  print 'Calculating images for {} versions to delete.'.format(len(possible_versions_to_delete))
+  print('Calculating images for {} versions to delete.'.format(len(possible_versions_to_delete)))
   for bom_version in possible_versions_to_delete:
     deletable = [i for i in __derive_images_from_bom(bom_version, bom_contents_by_name) if i in project_images]
     images_to_delete.update(deletable)
@@ -131,7 +131,7 @@ def __write_image_delete_script(possible_versions_to_delete, days_before, projec
   script_name = 'delete-images-{}'.format(timestamp)
   with open(script_name, 'w') as script:
     script.write(delete_script)
-  print 'Wrote image janitor script to {}'.format(script_name)
+  print('Wrote image janitor script to {}'.format(script_name))
 
 
 def __derive_images_from_bom(bom_version, contents_by_name):

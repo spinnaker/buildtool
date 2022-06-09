@@ -220,7 +220,7 @@ def __unpack_and_run():
         f.write('#!/bin/bash\ncd /opt/spinnaker/install\n{command}\n'
                 .format(command=command))
 
-    os.chmod('__startup_script__.sh', 0555)
+    os.chmod('__startup_script__.sh', 0o555)
     write_instance_metadata('startup-script',
                             '/opt/spinnaker/install/__startup_script__.sh')
     clear_instance_metadata('startup_command')

@@ -277,11 +277,6 @@ class CommitTag(
     version = LooseVersion(tag)
     return CommitTag(line_id, tag, version)
 
-  @staticmethod
-  def compare_tags(first, second):
-    """Comparator for instances compares the lexical order of the tags."""
-    return cmp(first.version, second.version)
-
   # pylint: disable=multiple-statements
   def __cmp__(self, other): return self.version.__cmp__(other.version)
   def __lt__(self, other): return self.version < other.version

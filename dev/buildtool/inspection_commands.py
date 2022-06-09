@@ -84,7 +84,7 @@ def my_unicode_representer(self, data):
   return self.represent_str(data.encode('utf-8'))
 
 if sys.version_info[0] == 2:
-  yaml.representer.Representer.add_representer(unicode, my_unicode_representer)
+  yaml.representer.Representer.add_representer(str, my_unicode_representer)
 
 yaml.Dumper.ignore_aliases = lambda *args: True
 

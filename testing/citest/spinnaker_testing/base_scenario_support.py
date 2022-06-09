@@ -119,5 +119,4 @@ class BaseScenarioPlatformSupport(object):
     This method is called internally as needed when accessing the
     observer property.
     """
-    raise NotImplementedError('{0} not implemented'.format(cls))
-
+    raise NotImplementedError('not implemented')

@@ -66,7 +66,7 @@ class HalyardPublisher(object):
     """
     bucket_uri = self.__hal_nightly_bucket_uri
     local_bucket_name = os.path.basename(bucket_uri)
-    print 'cloning: {0}'.format(self.__halyard_repo_uri)
+    print('cloning: {0}'.format(self.__halyard_repo_uri))
     check_run_quick('git clone {0}'.format(self.__halyard_repo_uri))
 
     # Read the Halyard nightly bucket file.

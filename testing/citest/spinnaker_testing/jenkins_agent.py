@@ -222,9 +222,8 @@ class BaseJenkinsOperation(base_agent.AgentOperation):
     status = self._do_execute(agent)
     agent.logger.debug('Returning status %s', status)
     return status
-
   def _do_execute(self, agent):
-    raise UnimplementedError('{0}._do_execute'.format(type(self)))
+    raise NotImplementedError("{0}._do_execute".format(type(self)))
 
 
 class JenkinsTriggerOperation(BaseJenkinsOperation):

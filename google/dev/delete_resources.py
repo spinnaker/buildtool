@@ -285,9 +285,9 @@ def get_options():
 def delete(resource_obj, resource_instance, params, dry_run):
   """Delete the resource_instance."""
   decorator = '[dry run] ' if dry_run else ''
-  print '{decorator}DELETE {name} [{time}] FROM {params}'.format(
+  print('{decorator}DELETE {name} [{time}] FROM {params}'.format(
       decorator=decorator, name=resource_instance.get('name'),
-      time=determine_timestamp(resource_instance), params=params)
+      time=determine_timestamp(resource_instance), params=params))
   if dry_run:
     return
 
