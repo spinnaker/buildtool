@@ -1110,7 +1110,7 @@ class GitRunner(object):
         """
         # pylint: disable=too-many-arguments
 
-        if (commit != None) and (branch != None):
+        if (commit is not None) and (branch is not None):
             raise_and_log_error(
                 ConfigError("At most one of commit or branch can be specified.")
             )
@@ -1221,7 +1221,7 @@ class GitRunner(object):
         )
 
         msgs = []
-        if start_commit_id != None:
+        if start_commit_id is not None:
             msgs = self.query_local_repository_commits_between_two_commit_ids(
                 git_dir, start_commit_id, tag_commit_id
             )

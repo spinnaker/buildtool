@@ -25,7 +25,7 @@ Sample Usage:
     "--host_platform=native", \
     "--test_azure_rg_location=$TEST_AZURE_RG_LOCATION", \
     "--azure_storage_account_name=$AZURE_STORAGE_ACCOUNT_NAME", \
-    "--azure_storage_account_key=$AZURE_STORAGE_ACCOUNT_KEY", \        
+    "--azure_storage_account_key=$AZURE_STORAGE_ACCOUNT_KEY", \
 
 """
 # Standard python modules.

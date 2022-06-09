@@ -927,8 +927,8 @@ class AzureConfigurator(Configurator):
         if not options.azure_account_enabled:
             return
 
-        if (options.azure_account_packer_resource_group != None) != (
-            options.azure_account_packer_storage_account != None
+        if (options.azure_account_packer_resource_group is not None) != (
+            options.azure_account_packer_storage_account is not None
         ):
             raise ValueError(
                 "--azure_account_packer_resource_group"

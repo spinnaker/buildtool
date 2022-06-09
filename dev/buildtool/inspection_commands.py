@@ -129,7 +129,7 @@ class CollectBomVersions(CommandProcessor):
         return os.path.splitext(name)[0]
 
     def __init__(self, factory, options, **kwargs):
-        if options.bintray_org is None != options.bintray_debian_repository is None:
+        if (options.bintray_org is None) is not (options.bintray_debian_repository is None):
             raise_and_log_error(
                 ConfigError(
                     'Either neither or both "bintray_org"'

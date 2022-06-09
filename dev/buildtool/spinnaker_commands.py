@@ -429,7 +429,7 @@ class PublishSpinnakerCommand(CommandProcessor):
         )
 
         prior_version = get_prior_version(spinnaker_version)
-        if prior_version != None:
+        if prior_version is not None:
             self.__hal.deprecate_spinnaker_release(prior_version)
 
         logging.info("Publishing changelog")

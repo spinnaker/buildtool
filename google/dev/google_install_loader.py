@@ -95,7 +95,7 @@ def fetch(url, google=False):
 
 def get_zone():
     global _MY_ZONE
-    if _MY_ZONE != None:
+    if _MY_ZONE is not None:
         return _MY_ZONE
     code, output = fetch(
         "{url}/zone".format(url=GOOGLE_INSTANCE_METADATA_URL), google=True
@@ -124,7 +124,7 @@ def get_instance_metadata_attribute(name):
 
 def clear_metadata_to_file(name, path):
     value = get_instance_metadata_attribute(name)
-    if value != None:
+    if value is not None:
         with open(os.path.join("/opt/spinnaker/install", path), "w") as f:
             f.write(value)
         clear_instance_metadata(name)
