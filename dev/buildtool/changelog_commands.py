@@ -499,10 +499,6 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
         new_version = self.write_new_version(repository)
         updated_files.append(new_version)
 
-        old_version = self.deprecate_prior_version(repository)
-        if old_version is not None:
-            updated_files.append(old_version)
-
         return updated_files
 
     def write_new_version(self, repository):
@@ -540,31 +536,6 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
                 )
                 f.write("\n")
 
-        return target_path
-
-    def get_prior_version(self, version):
-        major, minor, patch = version.split(".")
-        patch = int(patch)
-        if patch == 0:
-            return None
-        return ".".join([major, minor, str(patch - 1)])
-
-    def deprecate_prior_version(self, repository):
-        priorVersion = self.get_prior_version(self.options.spinnaker_version)
-        if priorVersion is None:
-            return None
-
-        changelog_filename = "{version}-changelog.md".format(version=priorVersion)
-        target_path = os.path.join(
-            repository.git_dir, "content", "en", "changelogs", changelog_filename
-        )
-
-        logging.debug("Deprecating prior version %s", target_path)
-        for line in fileinput.input(target_path, inplace=True):
-            line = line.rstrip()
-            if line.startswith("tags: "):
-                line = line + " deprecated"
-            print(line)
         return target_path
 
 
