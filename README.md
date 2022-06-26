@@ -329,7 +329,7 @@ and push up to GitHub. Once complete raise a PR to
 ```
 changelog_gist_url=<created_above>
 git_branch=master
-spinnaker_version=1.27.0
+version=1.27.0
 fork_owner=<you>
 
 ./dev/buildtool.sh publish_changelog \
@@ -346,7 +346,7 @@ fork:
 ```
 changelog_gist_url=<created_above>
 git_branch=master
-spinnaker_version=1.27.0
+version=1.27.0
 fork_owner=<you>
 
 ./dev/buildtool.sh \

@@ -465,7 +465,8 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
             branch_flag = "-B"
             head_branch = version + "-changelog"
 
-        files_added = self.prepare_local_repository_files(repository)
+        new_changelog = self.write_new_version(repository)
+
         git_dir = repository.git_dir
         message = "doc(changelog): Spinnaker Version " + version
 
@@ -477,7 +478,7 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
             "fetch origin " + base_branch,
             "checkout " + base_branch,
             "checkout {flag} {branch}".format(flag=branch_flag, branch=head_branch),
-            "add " + " ".join([os.path.abspath(path) for path in files_added]),
+            "add {file}".format(file=(os.path.abspath(new_changelog))),
         ]
         logging.debug(
             'Commiting changes into local repository "%s" branch=%s',
@@ -491,17 +492,10 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
         logging.info('Pushing branch="%s" into "%s"', head_branch, repository.origin)
         git.push_branch_to_origin(git_dir, branch=head_branch)
 
-    def prepare_local_repository_files(self, repository):
+    def write_new_version(self, repository):
         if repository.name != SPINNAKER_IO_REPOSITORY_NAME:
             raise_and_log_error(UnexpectedError('Got "%s"' % repository.name))
 
-        updated_files = []
-        new_version = self.write_new_version(repository)
-        updated_files.append(new_version)
-
-        return updated_files
-
-    def write_new_version(self, repository):
         timestamp = "{:%Y-%m-%d %H:%M:%S +0000}".format(datetime.datetime.utcnow())
         version = self.options.spinnaker_version
         changelog_filename = "{version}-changelog.md".format(version=version)
