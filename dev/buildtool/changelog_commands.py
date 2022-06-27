@@ -17,21 +17,12 @@
 import collections
 import copy
 import datetime
-import fileinput
 import logging
 import os
 import re
 import shutil
 import textwrap
 import yaml
-
-try:
-    from urllib2 import urlopen, HTTPError
-except ImportError:
-    from urllib.request import urlopen
-    from urllib.error import HTTPError
-
-from retrying import retry
 
 from buildtool import (
     SPINNAKER_IO_REPOSITORY_NAME,
@@ -310,7 +301,7 @@ class BuildChangelogCommand(RepositoryCommandProcessor):
         options_copy.github_disable_upstream_push = True
 
         if options.relative_to_bom_path:
-            with open(options.relative_to_bom_path, "r") as stream:
+            with open(options.relative_to_bom_path, "r", encoding="utf-8") as stream:
                 self.__relative_bom = yaml.safe_load(stream.read())
         elif options.relative_to_bom_version:
             self.__relative_bom = HalRunner(options).retrieve_bom_version(
@@ -418,10 +409,10 @@ class PublishChangelogFactory(RepositoryCommandFactory):
         )
         self.add_argument(
             parser,
-            "changelog_gist_url",
+            "changelog_path",
             defaults,
             None,
-            help="The gist to the existing changelog content being published.",
+            help="The path to the changelog to push.",
         )
 
 
@@ -429,26 +420,15 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
     """Implements publish_changelog."""
 
     def __init__(self, factory, options, **kwargs):
+        check_options_set(options, ["spinnaker_version", "changelog_path"])
+        check_path_exists(options.changelog_path, why="changelog_path")
+
         super(PublishChangelogCommand, self).__init__(
             factory,
             make_options_with_fallback(options),
             source_repository_names=[SPINNAKER_IO_REPOSITORY_NAME],
             **kwargs
         )
-        check_options_set(options, ["spinnaker_version", "changelog_gist_url"])
-        try:
-            logging.debug(
-                'Verifying changelog gist exists at "%s"', options.changelog_gist_url
-            )
-            urlopen(options.changelog_gist_url)
-        except HTTPError as error:
-            raise_and_log_error(
-                ConfigError(
-                    'Changelog gist "{url}": {error}'.format(
-                        url=options.changelog_gist_url, error=error.message
-                    )
-                )
-            )
 
     def _do_repository(self, repository):
         if repository.name != SPINNAKER_IO_REPOSITORY_NAME:
@@ -498,14 +478,21 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
 
         timestamp = "{:%Y-%m-%d %H:%M:%S +0000}".format(datetime.datetime.utcnow())
         version = self.options.spinnaker_version
+
         changelog_filename = "{version}-changelog.md".format(version=version)
         target_path = os.path.join(
             repository.git_dir, "content", "en", "changelogs", changelog_filename
         )
         major, minor, patch = version.split(".")
         patch = int(patch)
-        logging.debug("Adding changelog file %s", target_path)
-        with open(target_path, "w") as f:
+        logging.debug(
+            "Adding changelog from file %s to file %s",
+            self.options.changelog_path,
+            target_path,
+        )
+        with open(self.options.changelog_path, "r", encoding="utf-8") as source:
+            body = source.read()
+        with open(target_path, "w", encoding="utf-8") as f:
             # pylint: disable=trailing-whitespace
             header = textwrap.dedent(
                 """\
@@ -523,14 +510,8 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
                 )
             )
             f.write(header)
-            for i in reversed(range(patch + 1)):
-                patchVersion = ".".join([major, minor, str(i)])
-                f.write(
-                    '<script src="{gist_url}.js?file={version}.md"></script>'.format(
-                        gist_url=self.options.changelog_gist_url, version=patchVersion
-                    )
-                )
-                f.write("\n")
+            f.write("\n")
+            f.write(body)
 
         return target_path
 
