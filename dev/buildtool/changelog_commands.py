@@ -513,7 +513,9 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
           title: Version {major}.{minor}
           changelog_title: Version {version}
           date: {timestamp}
-          tags: changelogs {major}.{minor}
+          tags:
+            - changelogs
+            - {major}.{minor}
           version: {version}
           ---
           """.format(
