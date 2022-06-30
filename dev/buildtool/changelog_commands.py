@@ -17,21 +17,12 @@
 import collections
 import copy
 import datetime
-import fileinput
 import logging
 import os
 import re
-import shutil
 import textwrap
 import yaml
 
-try:
-    from urllib2 import urlopen, HTTPError
-except ImportError:
-    from urllib.request import urlopen
-    from urllib.error import HTTPError
-
-from retrying import retry
 
 from buildtool import (
     SPINNAKER_IO_REPOSITORY_NAME,
@@ -310,7 +301,7 @@ class BuildChangelogCommand(RepositoryCommandProcessor):
         options_copy.github_disable_upstream_push = True
 
         if options.relative_to_bom_path:
-            with open(options.relative_to_bom_path, "r") as stream:
+            with open(options.relative_to_bom_path, "r", encoding="utf-8") as stream:
                 self.__relative_bom = yaml.safe_load(stream.read())
         elif options.relative_to_bom_version:
             self.__relative_bom = HalRunner(options).retrieve_bom_version(
@@ -418,10 +409,10 @@ class PublishChangelogFactory(RepositoryCommandFactory):
         )
         self.add_argument(
             parser,
-            "changelog_gist_url",
+            "changelog_path",
             defaults,
             None,
-            help="The gist to the existing changelog content being published.",
+            help="The path to the changelog to push.",
         )
 
 
@@ -429,26 +420,15 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
     """Implements publish_changelog."""
 
     def __init__(self, factory, options, **kwargs):
+        check_options_set(options, ["spinnaker_version", "changelog_path"])
+        check_path_exists(options.changelog_path, why="changelog_path")
+
         super(PublishChangelogCommand, self).__init__(
             factory,
             make_options_with_fallback(options),
             source_repository_names=[SPINNAKER_IO_REPOSITORY_NAME],
             **kwargs
         )
-        check_options_set(options, ["spinnaker_version", "changelog_gist_url"])
-        try:
-            logging.debug(
-                'Verifying changelog gist exists at "%s"', options.changelog_gist_url
-            )
-            urlopen(options.changelog_gist_url)
-        except HTTPError as error:
-            raise_and_log_error(
-                ConfigError(
-                    'Changelog gist "{url}": {error}'.format(
-                        url=options.changelog_gist_url, error=error.message
-                    )
-                )
-            )
 
     def _do_repository(self, repository):
         if repository.name != SPINNAKER_IO_REPOSITORY_NAME:
@@ -465,7 +445,8 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
             branch_flag = "-B"
             head_branch = version + "-changelog"
 
-        files_added = self.prepare_local_repository_files(repository)
+        new_changelog = self.write_new_version(repository)
+
         git_dir = repository.git_dir
         message = "doc(changelog): Spinnaker Version " + version
 
@@ -477,7 +458,7 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
             "fetch origin " + base_branch,
             "checkout " + base_branch,
             "checkout {flag} {branch}".format(flag=branch_flag, branch=head_branch),
-            "add " + " ".join([os.path.abspath(path) for path in files_added]),
+            "add {file}".format(file=(os.path.abspath(new_changelog))),
         ]
         logging.debug(
             'Commiting changes into local repository "%s" branch=%s',
@@ -491,39 +472,34 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
         logging.info('Pushing branch="%s" into "%s"', head_branch, repository.origin)
         git.push_branch_to_origin(git_dir, branch=head_branch)
 
-    def prepare_local_repository_files(self, repository):
+    def write_new_version(self, repository):
         if repository.name != SPINNAKER_IO_REPOSITORY_NAME:
             raise_and_log_error(UnexpectedError('Got "%s"' % repository.name))
 
-        updated_files = []
-        new_version = self.write_new_version(repository)
-        updated_files.append(new_version)
-
-        old_version = self.deprecate_prior_version(repository)
-        if old_version is not None:
-            updated_files.append(old_version)
-
-        return updated_files
-
-    def write_new_version(self, repository):
         timestamp = "{:%Y-%m-%d %H:%M:%S +0000}".format(datetime.datetime.utcnow())
         version = self.options.spinnaker_version
+
         changelog_filename = "{version}-changelog.md".format(version=version)
         target_path = os.path.join(
             repository.git_dir, "content", "en", "changelogs", changelog_filename
         )
         major, minor, patch = version.split(".")
         patch = int(patch)
-        logging.debug("Adding changelog file %s", target_path)
-        with open(target_path, "w") as f:
+        logging.debug(
+            "Adding changelog from file %s to file %s",
+            self.options.changelog_path,
+            target_path,
+        )
+        with open(self.options.changelog_path, "r", encoding="utf-8") as source:
+            body = source.read()
+        with open(target_path, "w", encoding="utf-8") as f:
             # pylint: disable=trailing-whitespace
             header = textwrap.dedent(
                 """\
           ---
-          title: Version {major}.{minor}
-          changelog_title: Version {version}
+          title: Spinnaker Release {version}
           date: {timestamp}
-          tags: changelogs {major}.{minor}
+          major_minor: {major}.{minor}
           version: {version}
           ---
           """.format(
@@ -531,246 +507,13 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
                 )
             )
             f.write(header)
-            for i in reversed(range(patch + 1)):
-                patchVersion = ".".join([major, minor, str(i)])
-                f.write(
-                    '<script src="{gist_url}.js?file={version}.md"></script>'.format(
-                        gist_url=self.options.changelog_gist_url, version=patchVersion
-                    )
-                )
-                f.write("\n")
+            f.write("\n")
+            f.write(body)
 
         return target_path
-
-    def get_prior_version(self, version):
-        major, minor, patch = version.split(".")
-        patch = int(patch)
-        if patch == 0:
-            return None
-        return ".".join([major, minor, str(patch - 1)])
-
-    def deprecate_prior_version(self, repository):
-        priorVersion = self.get_prior_version(self.options.spinnaker_version)
-        if priorVersion is None:
-            return None
-
-        changelog_filename = "{version}-changelog.md".format(version=priorVersion)
-        target_path = os.path.join(
-            repository.git_dir, "content", "en", "changelogs", changelog_filename
-        )
-
-        logging.debug("Deprecating prior version %s", target_path)
-        for line in fileinput.input(target_path, inplace=True):
-            line = line.rstrip()
-            if line.startswith("tags: "):
-                line = line + " deprecated"
-            print(line)
-        return target_path
-
-
-class PushChangelogFactory(CommandFactory):
-    def __init__(self, **kwargs):
-        super(PushChangelogFactory, self).__init__(
-            "push_changelog_to_gist",
-            PushChangelogCommand,
-            "Push raw changelog to an existing gist, possibly overwriting what"
-            " was already there. This is intended for builds only, not publishing."
-            " The expectation is that these will be curated then published"
-            ' with the "publish_changelog" command.'
-            "\nThis will add (or overwrite) the changelog with the name"
-            ' "<branch>-raw-changelog.md".',
-            **kwargs
-        )
-
-    def init_argparser(self, parser, defaults):
-        super(PushChangelogFactory, self).init_argparser(parser, defaults)
-        GitRunner.add_parser_args(parser, defaults)
-
-        self.add_argument(
-            parser,
-            "changelog_path",
-            defaults,
-            None,
-            help="The path to the changelog to push.",
-        )
-        self.add_argument(
-            parser,
-            "git_branch",
-            defaults,
-            None,
-            help="The branch name that this changelog is for. Note that this does"
-            " not actually *use* any branches, rather the branch name is used"
-            " to decorates the changelog filename.",
-        )
-        self.add_argument(
-            parser,
-            "build_changelog_gist_url",
-            defaults,
-            None,
-            help="The gist to push the changelog into.",
-        )
-
-
-class CreateReleaseChangelogFactory(CommandFactory):
-    def __init__(self, **kwargs):
-        super(CreateReleaseChangelogFactory, self).__init__(
-            "create_release_changelog",
-            CreateReleaseChangelogCommand,
-            "Push a patch release changelog to the gist holding the changelogs for"
-            " that minor version.\nThis will add (or overwrite) the changelog with"
-            " the name 1.x.y.md in the supplied release changelog gist.",
-            **kwargs
-        )
-
-    def init_argparser(self, parser, defaults):
-        super(CreateReleaseChangelogFactory, self).init_argparser(parser, defaults)
-        GitRunner.add_parser_args(parser, defaults)
-
-        self.add_argument(
-            parser,
-            "spinnaker_version",
-            defaults,
-            None,
-            help="The Spinnaker version for which we are creating a changelog.",
-        )
-        self.add_argument(
-            parser,
-            "build_changelog_gist_url",
-            defaults,
-            None,
-            help="The gist containing the raw changelog.",
-        )
-        self.add_argument(
-            parser,
-            "changelog_gist_url",
-            defaults,
-            None,
-            help="The gist to which to push the release changelog.",
-        )
-
-
-class CreateReleaseChangelogCommand(CommandProcessor):
-    def __init__(self, factory, options, **kwargs):
-        super(CreateReleaseChangelogCommand, self).__init__(factory, options, **kwargs)
-        check_options_set(
-            options,
-            ["build_changelog_gist_url", "changelog_gist_url", "spinnaker_version"],
-        )
-        self.__git = GitRunner(options)
-
-    def _do_command(self):
-        options = self.options
-        version = options.spinnaker_version
-        raw_gist_path = ensure_gist_repo(
-            self.__git, self.get_input_dir(), options.build_changelog_gist_url
-        )
-        release_gist_path = ensure_gist_repo(
-            self.__git, self.get_input_dir(), options.changelog_gist_url
-        )
-
-        major, minor, patch = version.split(".")
-        if int(patch) == 0:
-            logging.debug(
-                "Not automatically creating release notes for non-patch release {version}".format(
-                    version=version
-                )
-            )
-            return
-
-        branch = "release-{major}.{minor}.x".format(major=major, minor=minor)
-
-        raw_changelog = os.path.join(
-            raw_gist_path, "{branch}-raw-changelog.md".format(branch=branch)
-        )
-        release_changelog = os.path.join(
-            release_gist_path, "{version}.md".format(version=version)
-        )
-
-        with open(release_changelog, "w") as output:
-            output.write("# Spinnaker Release {version}\n\n".format(version=version))
-            with open(raw_changelog, "r") as input:
-                for line in input:
-                    output.write(line)
-
-        git_run_with_retries(
-            self.__git, release_gist_path, "add " + os.path.basename(release_changelog)
-        )
-        self.__git.check_commit_or_no_changes(
-            release_gist_path,
-            '-a -m "Updated {file}"'.format(file=os.path.basename(release_changelog)),
-        )
-
-        logging.debug("Pushing back gist")
-        git_run_with_retries(self.__git, release_gist_path, "push origin main")
-
-
-class PushChangelogCommand(CommandProcessor):
-    """Implements push_changelog_to_gist."""
-
-    def __init__(self, factory, options, **kwargs):
-        super(PushChangelogCommand, self).__init__(factory, options, **kwargs)
-        check_options_set(options, ["build_changelog_gist_url", "git_branch"])
-
-        if not options.changelog_path:
-            options.changelog_path = os.path.join(
-                self.get_output_dir(command=BUILD_CHANGELOG_COMMAND), "changelog.md"
-            )
-        check_path_exists(options.changelog_path, why="changelog_path")
-
-        self.__git = GitRunner(options)
-
-    def _do_command(self):
-        options = self.options
-        git_dir = ensure_gist_repo(
-            self.__git, self.get_input_dir(), options.build_changelog_gist_url
-        )
-
-        dest_path = os.path.join(git_dir, "%s-raw-changelog.md" % options.git_branch)
-        logging.debug('Copying "%s" to "%s"', options.changelog_path, dest_path)
-        shutil.copyfile(options.changelog_path, dest_path)
-
-        git_run_with_retries(self.__git, git_dir, "add " + os.path.basename(dest_path))
-        self.__git.check_commit_or_no_changes(
-            git_dir, '-a -m "Updated %s"' % os.path.basename(dest_path)
-        )
-
-        logging.debug("Pushing back gist")
-        git_run_with_retries(self.__git, git_dir, "push origin main")
-
-
-def ensure_gist_repo(git, input_dir, gist_url):
-    index = gist_url.rfind("/")
-    if index < 0:
-        index = gist_url.rfind(":")  # ssh gist
-    gist_id = gist_url[index + 1 :]
-
-    git_dir = os.path.join(input_dir, gist_id)
-    if not os.path.exists(git_dir):
-        logging.debug("Cloning gist from %s", gist_url)
-        ensure_dir_exists(os.path.dirname(git_dir))
-        git_run_with_retries(git, os.path.dirname(git_dir), "clone " + gist_url)
-    else:
-        logging.debug('Updating gist in "%s"', git_dir)
-        git_run_with_retries(git, git_dir, "fetch origin main")
-        git_run_with_retries(git, git_dir, "checkout main")
-        git_run_with_retries(git, git_dir, "reset --hard origin/main")
-    return git_dir
-
-
-# For some reason gist.github.com seems to have a lot of connection timeout
-# errors, which we don't really see with normal github. I'm not sure why, but
-# let's just retry and see if that helps.
-# Retry every 2^n seconds (with a maximum of 16 seconds), giving up after 2 minutes.
-@retry(
-    stop_max_delay=120000, wait_exponential_multiplier=1000, wait_exponential_max=16000
-)
-def git_run_with_retries(git, git_dir, command, **kwargs):
-    git.check_run(git_dir, command, **kwargs)
 
 
 def register_commands(registry, subparsers, defaults):
     """Registers all the commands for this module."""
     BuildChangelogFactory().register(registry, subparsers, defaults)
-    PushChangelogFactory().register(registry, subparsers, defaults)
     PublishChangelogFactory().register(registry, subparsers, defaults)
-    CreateReleaseChangelogFactory().register(registry, subparsers, defaults)

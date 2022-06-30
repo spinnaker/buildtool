@@ -201,9 +201,9 @@ timestamp: '2022-04-19 04:18:35'
 version: 1.27.0
 ```
 
-### Build Raw Changelog
+### Build Changelog
 
-Build raw changelog of commits in release since previous BOM versions.
+Build changelog of commits in release since previous BOM versions.
 
 A previous BOM file must be provided otherwise `buildtool` will compare the new
 BOM tag to the previous tag in the same branch. Due to auto-bump PR's there may
@@ -231,109 +231,20 @@ wget "https://storage.googleapis.com/halconfig/bom/${previous_release}.yml" \
 
 ```
 
-### Push Raw Changelog to Gist
-
-#FIXME: Avoid pushing changelogs to gist, instead put them on spinnaker.io
-somewhere via PR.
-
-Create a GitHub [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) which is required to push via HTTPS to a `gist`. Potentially
-the code could be refactored to support `ssh` authentication.
-
-Manually create a [gist](https://gist.github.com/spinnaker-release/about) for
-raw changelog named after the release branch, eg: `release-1.27.x-raw-changelog.md`.
-You can put anything in the `contents`, it will be overwritten.
-
-Push branches raw changelog to new [spinnaker-release/about gists](https://gist.github.com/spinnaker-release/4f8cd09490870ae9ebf78be3be1763ee)
-
-```
-changelog_gist_url=<created_above>
-git_branch=release-1.27.x
-
-./dev/buildtool.sh push_changelog_to_gist \
-  --build_changelog_gist_url "${changelog_gist_url}" \
-  --changelog_path output/build_changelog/changelog.md \
-  --git_branch "${git_branch}"
-```
-
-To troubleshoot, try creating your own Gist and pushing the changelog to your
-fork:
-
-```
-changelog_gist_url=<created_above>
-git_branch=release-1.27.x
-fork_owner=<you>
-
-./dev/buildtool.sh \
-  --log_level debug \
-  push_changelog_to_gist \
-  --build_changelog_gist_url "${changelog_gist_url}" \
-  --changelog_path output/build_changelog/changelog.md \
-  --git_branch "${git_branch}" \
-  --github_owner "${fork_owner}"
-```
-
-### Create Release Changelog Gist
-
-Log into GitHub as spinnaker-release.
-The release-manager@spinnaker.io group has access to the
-[spinnaker-release GitHub account credentials](https://docs.google.com/document/d/1CFPP-QXV8lu9QR76B9V0W8TEtObOBv52UqohQ-ztH58/edit?usp=sharing).
-
-Create a public [gist](https://gist.github.com/spinnaker-release) following the
-format `M.m.p.md`, for example: `1.27.0.md`.
-
-1.  The description should be “Spinnaker 1.nn.x Release Notes” (e.g., Spinnaker
-    1.18.x Release Notes). The gist will eventually have a separate file with
-    the release notes for each patch release on this branch.
-
-1.  Add a file 1.nn.0.md (e.g., `1.27.0.md`) to hold the release notes for the
-    new release.
-
-    Use this template to build the file:
-
-    ```md
-    # Spinnaker Release ${nn.nn.nn}
-
-    **_Note: This release requires Halyard version ${nn.nn.nn} or later._**
-
-    This release includes fixes, features, and performance improvements across a wide feature set in Spinnaker. This section provides a summary of notable improvements followed by the comprehensive changelog.
-
-    ${CURATED_CHANGE_LOG}
-
-    # Changelog
-
-    ${RAW_CHANGE_LOG}
-    ```
-
-    1. Copy the contents from the [build-raw-changelog] curated above replacing
-       #{RAW_CHANGE_LOG}
-
-    1. Add the notes from the [curated changelog]({{< ref "next-release-preview" >}})
-       to the top of the gist ([sample 1.nn.0 release notes](https://gist.github.com/spinnaker-release/cc4410d674679c5765246a40f28e3cad)).
-
-    1. Reset the [curated changelog]({{< ref "next-release-preview" >}})
-       for the next release by removing all added notes and incrementing the
-       version number in the heading. Raise a PR to:
-       [github.com/spinnaker/spinnaker.io](https://github.com/spinnaker/spinnaker/io/pulls)
-
-1.  Save the gist and copy the URL for use in the next step.
-    For example, 1.27.0 URL is: https://gist.github.com/spinnaker-release/d00cb1268d2951862a7126bf6e43f058
-
 ### Publish Changelog
-
-WARNING: The following has not been tested with a new PATCH version, eg: 1.27.1
 
 `buildtool` will clone your fork, branch off master, commit new changelog file
 and push up to GitHub. Once complete raise a PR to
 [github.com/spinnaker/spinnaker.io](https://github.com/spinnaker/spinnaker/io/pulls)
 
 ```
-changelog_gist_url=<created_above>
+changelog_path=./output/build_changelog/changelog.md
 git_branch=master
-spinnaker_version=1.27.0
+version=1.27.0
 fork_owner=<you>
 
 ./dev/buildtool.sh publish_changelog \
-  --changelog_gist_url "${changelog_gist_url}" \
+  --changelog_path "${changelog_path}" \
   --git_branch "${git_branch}" \
   --spinnaker_version "${version}" \
   --git_allow_publish_master_branch false \
@@ -344,15 +255,15 @@ To troubleshoot, try creating your own Gist and pushing the changelog to your
 fork:
 
 ```
-changelog_gist_url=<created_above>
+changelog_path=./output/build_changelog/changelog.md
 git_branch=master
-spinnaker_version=1.27.0
+version=1.27.0
 fork_owner=<you>
 
 ./dev/buildtool.sh \
   --log_level debug \
   publish_changelog \
-  --changelog_gist_url "${changelog_gist_url}" \
+  --changelog_path "${changelog_path}" \
   --git_branch "${git_branch}" \
   --spinnaker_version "${version}" \
   --git_allow_publish_master_branch false \
@@ -366,3 +277,44 @@ git show
 
 # consider enabling git push and running again (remove: `--git_never_push true`)
 ```
+
+### For New Minor (x.y.0) Releases - Add Next Release Preview
+
+For new minor versions (eg: 1.28.0) we may need to add any notable changes to
+the generated changelog.
+
+The previous step created a branch in a local copy of your fork here:
+`./source_code/publish_changelog/spinnaker.io/`
+
+1.  Edit new changelog file 1.nn.0.md (e.g., `1.27.0.md`) in [fork](./source_code/publish_changelog/spinnaker.io/content/en/changelogs/`)
+
+1.  After the `frontmatter` section ends with `---` update the template with:
+
+    ```md
+    **_Note: This release requires Halyard version ${nn.nn.nn} or later._**
+
+    This release includes fixes, features, and performance improvements across a wide feature set in Spinnaker. This section provides a summary of notable improvements followed by the comprehensive changelog.
+
+    ${CURATED_RELEASE_NOTES}
+
+    # Changelog
+
+    ${GENERATED_CHANGELOG}
+    ```
+
+    1. Replace `${CURATED_RELEASE_NOTES}` with the notes from the
+       [next release preview]({{< ref "next-release-preview" >}}) to the top
+       of the file ([sample 1.nn.0 release notes](https://gist.github.com/spinnaker-release/cc4410d674679c5765246a40f28e3cad)).
+
+    1. Leave `${GENERATED_CHANGELOG}` as is.
+
+    1. Reset the [next release preview]({{< ref "next-release-preview" >}})
+       for the next release by removing all added notes and incrementing the
+       version number in the heading.
+
+    1. Commit the changes.
+
+    1. Push up to your GitHub fork.
+
+    1. Raise a PR to:
+       [github.com/spinnaker/spinnaker.io](https://github.com/spinnaker/spinnaker/io/pulls)
