@@ -499,9 +499,6 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
           ---
           title: Spinnaker Release {version}
           date: {timestamp}
-          tags:
-            - changelogs
-            - {major}.{minor}
           major_minor: {major}.{minor}
           version: {version}
           ---
