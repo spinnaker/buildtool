@@ -18,7 +18,7 @@ import logging
 import threading
 
 
-class BaseScenarioPlatformSupport(object):
+class BaseScenarioPlatformSupport:
     """Interface for adding a specific platform to SpinnakerTestScenario."""
 
     @property
@@ -77,7 +77,7 @@ class BaseScenarioPlatformSupport(object):
           defaults: [dict] Default binding value overrides.
              This is used to initialize the default commandline parameters.
         """
-        raise NotImplementedError("{0} not implemented".format(cls))
+        raise NotImplementedError(f"{cls} not implemented")
 
     def __init__(self, platform_name, scenario):
         """Constructor.
@@ -104,16 +104,16 @@ class BaseScenarioPlatformSupport(object):
 
         bindings = scenario.bindings
         agent = scenario.agent
-        account_key = "spinnaker_{0}_account".format(test_platform_key)
+        account_key = f"spinnaker_{test_platform_key}_account"
         if not bindings.get(account_key):
             bindings[account_key] = agent.deployed_config.get(
-                "providers.{0}.primaryCredentials.name".format(platform_name)
+                f"providers.{platform_name}.primaryCredentials.name"
             )
 
-        enabled_key = "spinnaker_{0}_enabled".format(test_platform_key)
+        enabled_key = f"spinnaker_{test_platform_key}_enabled"
         if bindings.get(enabled_key, None) is None:
             bindings[enabled_key] = agent.deployed_config.get(
-                "providers.{0}.enabled".format(platform_name)
+                f"providers.{platform_name}.enabled"
             )
 
     def _make_observer(self):

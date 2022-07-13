@@ -22,7 +22,7 @@ ov_factory = jc.ObservationPredicateFactory()
 dictionaries"""
 
 
-class KubernetesManifestFactory(object):
+class KubernetesManifestFactory:
     """Utilities for building Kubernetes Manifests"""
 
     def __init__(self, scenario):
@@ -112,7 +112,7 @@ class KubernetesManifestFactory(object):
         }
 
 
-class KubernetesManifestPredicateFactory(object):
+class KubernetesManifestPredicateFactory:
     def config_map_key_value_predicate(self, key, value):
         return ov_factory.value_list_contains(
             jp.DICT_MATCHES({"data": jp.DICT_MATCHES({key: jp.STR_EQ(value)})})

@@ -130,7 +130,7 @@ def _unused_port():
     return port
 
 
-class QuotaTracker(object):
+class QuotaTracker:
     """Manages quota for individual resources.
 
     Note that this quota tracker is purely logical. It does not relate to the
@@ -303,7 +303,7 @@ class QuotaTracker(object):
             )
 
 
-class ValidateBomTestController(object):
+class ValidateBomTestController:
     """The test controller runs integration tests against a deployment."""
 
     @property
@@ -431,7 +431,7 @@ class ValidateBomTestController(object):
         self.__passed = []  # Resulted in success
         self.__failed = []  # Resulted in failure
         self.__skipped = []  # Will not run at all
-        with open(options.test_profiles, "r") as fd:
+        with open(options.test_profiles) as fd:
             self.__test_suite = yaml.safe_load(fd)
         self.__extra_test_bindings = (
             self.__load_bindings(options.test_extra_profile_bindings)
@@ -513,7 +513,7 @@ class ValidateBomTestController(object):
         return transform_map.get(service, service)
 
     def __load_bindings(self, path):
-        with open(path, "r") as stream:
+        with open(path) as stream:
             content = stream.read()
         result = {}
         for line in content.split("\n"):
@@ -554,7 +554,7 @@ class ValidateBomTestController(object):
                 while True:
                     try:
                         urlopen(
-                            "http://localhost:{port}/health".format(port=local_port)
+                            f"http://localhost:{local_port}/health"
                         )
                     except Exception as ex:
                         logging.info("KeepAlive %s -> %s", service_name, ex)
@@ -585,9 +585,9 @@ class ValidateBomTestController(object):
             """Write out all the names from the test results."""
             if not entries:
                 return
-            summary.append("{0}:".format(name))
+            summary.append(f"{name}:")
             for entry in entries:
-                summary.append("  * {0}".format(entry[0]))
+                summary.append(f"  * {entry[0]}")
 
         options = self.options
         if not options.testing_enabled:
@@ -605,12 +605,12 @@ class ValidateBomTestController(object):
         summary.append("")
         if num_failed:
             summary.append(
-                "FAILED {0} of {1}, skipped {2}".format(
+                "FAILED {} of {}, skipped {}".format(
                     num_failed, (num_failed + num_passed), num_skipped
                 )
             )
         else:
-            summary.append("PASSED {0}, skipped {1}".format(num_passed, num_skipped))
+            summary.append(f"PASSED {num_passed}, skipped {num_skipped}")
         return "\n".join(summary)
 
     def wait_on_service(self, service_name, port=None, timeout=None):
@@ -655,7 +655,7 @@ class ValidateBomTestController(object):
                 # timeout=20 is to appease kubectl port forwarding, which will close
                 #            if left idle for 30s
                 urlopen(
-                    "http://localhost:{port}/health".format(port=forwarding.port),
+                    f"http://localhost:{forwarding.port}/health",
                     timeout=20,
                 )
                 logging.info(
@@ -685,7 +685,7 @@ class ValidateBomTestController(object):
         )
         raise_and_log_error(
             ResponseError(
-                "It appears that {0} failed".format(service_name), server="tunnel"
+                f"It appears that {service_name} failed", server="tunnel"
             )
         )
 
@@ -698,7 +698,7 @@ class ValidateBomTestController(object):
         logging.info('Validating base URL of "%s"...', service_name)
 
         try:
-            url = "{base_url}/health".format(base_url=base_url)
+            url = f"{base_url}/health"
             request = Request(url=url)
             if "bearer_auth_token" in service_config:
                 request.add_header(
@@ -715,14 +715,14 @@ class ValidateBomTestController(object):
             logging.error("%s service endpoint got %s.", service_name, error)
             raise_and_log_error(
                 ResponseError(
-                    "{0} service endpoint got {1}".format(service_name, error),
+                    f"{service_name} service endpoint got {error}",
                     server=base_url,
                 )
             )
         except Exception as error:
             raise_and_log_error(
                 ResponseError(
-                    "{0} service endpoint got {1}".format(service_name, error),
+                    f"{service_name} service endpoint got {error}",
                     server=base_url,
                 )
             )
@@ -820,7 +820,7 @@ class ValidateBomTestController(object):
                 "%s threw an exception:\n%s", test_name, traceback.format_exc()
             )
             with self.__lock:
-                self.__failed.append((test_name, "Caught exception {0}".format(ex)))
+                self.__failed.append((test_name, f"Caught exception {ex}"))
 
     def __record_skip_test(self, test_name, reason, skip_code, metric_labels):
         logging.warning(reason)
@@ -882,7 +882,7 @@ class ValidateBomTestController(object):
         if "api" not in spec:
             raise_and_log_error(
                 UnexpectedError(
-                    'Test "{name}" is missing an "api" spec.'.format(name=test_name)
+                    f'Test "{test_name}" is missing an "api" spec.'
                 )
             )
 
@@ -891,7 +891,7 @@ class ValidateBomTestController(object):
         our_config = vars(self.options)
         for key, value in configuration.items():
             if key not in our_config:
-                message = 'Unknown configuration key "{0}" for test "{1}"'.format(
+                message = 'Unknown configuration key "{}" for test "{}"'.format(
                     key, test_name
                 )
                 raise_and_log_error(ConfigError(message))
@@ -1017,7 +1017,7 @@ class ValidateBomTestController(object):
         options = self.options
         microservice_api = self.__replace_ha_api_service(spec.get("api"), options)
         test_rel_path = spec.pop("path", None) or os.path.join(
-            "citest", "tests", "{0}.py".format(test_name)
+            "citest", "tests", f"{test_name}.py"
         )
         args = spec.pop("args", {})
 
@@ -1081,7 +1081,7 @@ class ValidateBomTestController(object):
             logfile = os.path.join(
                 self.options.output_dir,
                 "citest_logs",
-                "%s-%s.console.log" % (test_name, os.getpid()),
+                f"{test_name}-{os.getpid()}.console.log",
             )
             logging.info('Logging test "%s" to %s', test_name, logfile)
             try:
@@ -1388,6 +1388,6 @@ def validate_options(options):
     if not os.path.exists(options.test_profiles):
         raise_and_log_error(
             ConfigError(
-                '--test_profiles "{0}" does not exist.'.format(options.test_profiles)
+                f'--test_profiles "{options.test_profiles}" does not exist.'
             )
         )

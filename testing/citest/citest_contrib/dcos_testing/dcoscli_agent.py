@@ -30,7 +30,7 @@ class DcosCliAgent(cli_agent.CliAgent):
           logger: The logger to inject if other than the default.
         """
         logger = logger or logging.getLogger(__name__)
-        super(DcosCliAgent, self).__init__(
+        super().__init__(
             "dcos", output_scrubber=JsonScrubber(), logger=logger
         )
 

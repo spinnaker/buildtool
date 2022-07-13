@@ -65,7 +65,7 @@ class KubeV2HelmTestScenario(sk.SpinnakerTestScenario):
         Args:
           parser: argparse.ArgumentParser
         """
-        super(KubeV2HelmTestScenario, cls).initArgumentParser(parser, defaults=defaults)
+        super().initArgumentParser(parser, defaults=defaults)
 
         defaults = defaults or {}
         parser.add_argument(
@@ -98,7 +98,7 @@ class KubeV2HelmTestScenario(sk.SpinnakerTestScenario):
           bindings: [dict] The data bindings to use to configure the scenario.
           agent: [GateAgent] The agent for invoking the test operations on Gate.
         """
-        super(KubeV2HelmTestScenario, self).__init__(bindings, agent)
+        super().__init__(bindings, agent)
         bindings = self.bindings
 
         # We'll call out the app name because it is widely used
@@ -145,7 +145,7 @@ class KubeV2HelmTestScenario(sk.SpinnakerTestScenario):
 
     def __create_helm_chart(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        command = "helm package {}/kube_v2_data/helm-test".format(dir_path)
+        command = f"helm package {dir_path}/kube_v2_data/helm-test"
         subprocess.Popen(command, stderr=sys.stderr, shell=True).wait()
         return os.getcwd() + "/helm-test-0.1.0.tgz"
 
@@ -157,7 +157,7 @@ class KubeV2HelmTestScenario(sk.SpinnakerTestScenario):
         artifact = {
             "type": "gcs/object",
             "name": path,
-            "reference": "gs://{}/{}".format(self.BUCKET, path),
+            "reference": f"gs://{self.BUCKET}/{path}",
         }
         return {
             "matchArtifact": artifact,
@@ -176,7 +176,7 @@ class KubeV2HelmTestScenario(sk.SpinnakerTestScenario):
         artifact = {
             "type": "gcs/object",
             "name": path,
-            "reference": "gs://{}/{}".format(self.BUCKET, path),
+            "reference": f"gs://{self.BUCKET}/{path}",
         }
         return {
             "matchArtifact": artifact,

@@ -71,7 +71,7 @@ class BuildGceComponentImages(RepositoryCommandProcessor):
         check_options_set(options, ["build_gce_service_account", "build_gce_project"])
 
         options.github_disable_upstream_push = True
-        super(BuildGceComponentImages, self).__init__(factory, options, **kwargs)
+        super().__init__(factory, options, **kwargs)
         artifact_sources = self.source_code_manager.bom["artifactSources"]
         self.__image_project = artifact_sources["googleImageProject"]
         if not self.__image_project:
@@ -149,7 +149,7 @@ class BuildGceComponentImages(RepositoryCommandProcessor):
             return True
         if not self.options.delete_existing:
             raise_and_log_error(
-                ConfigError('Already have image "{name}"'.format(name=image_name))
+                ConfigError(f'Already have image "{image_name}"')
             )
 
         delete_command = [
@@ -178,7 +178,7 @@ class BuildGceComponentImages(RepositoryCommandProcessor):
         """Local repositories are used to get version information."""
         if repository.name in EXTRA_REPO_NAMES:
             return None
-        return super(BuildGceComponentImages, self).ensure_local_repository(repository)
+        return super().ensure_local_repository(repository)
 
     def _do_can_skip_repository(self, repository):
         if repository.name not in SPINNAKER_RUNNABLE_REPOSITORY_NAMES:
@@ -246,14 +246,14 @@ class BuildGceComponentImages(RepositoryCommandProcessor):
             command_line.extend(
                 [
                     "--extra_install_script_args",
-                    '"{0}"'.format(" ".join(extra_install_args)),
+                    '"{}"'.format(" ".join(extra_install_args)),
                 ]
             )
 
         command = " ".join(command_line)
         logfile = self.get_logfile_path(name + "-gce-image")
 
-        what = "{name} component image".format(name=name)
+        what = f"{name} component image"
         check_subprocesses_to_logfile(what, logfile, [command])
         return what
 
@@ -262,7 +262,7 @@ class BuildGceComponentImagesFactory(RepositoryCommandFactory):
     """Builds GCE VM images for each of the runtime components."""
 
     def __init__(self):
-        super(BuildGceComponentImagesFactory, self).__init__(
+        super().__init__(
             "build_gce_component_images",
             BuildGceComponentImages,
             "Build Google Compute Engine VM Images For Each Service.",
@@ -270,7 +270,7 @@ class BuildGceComponentImagesFactory(RepositoryCommandFactory):
         )
 
     def init_argparser(self, parser, defaults):
-        super(BuildGceComponentImagesFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
         HalRunner.add_parser_args(parser, defaults)
 
         self.add_argument(

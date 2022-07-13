@@ -42,7 +42,7 @@ SUBSYSTEM_LIST = [
 ]
 
 
-class ComponentVmBuilder(object):
+class ComponentVmBuilder:
     def __init__(self, options):
         self.__account = options.account
         self.__build_failures = []
@@ -70,7 +70,7 @@ class ComponentVmBuilder(object):
             )
         ]
         try:
-            logfile = "{artifact}-vm-build.log".format(artifact=artifact)
+            logfile = f"{artifact}-vm-build.log"
             run_shell_and_log(
                 cmds, logfile, cwd=os.path.abspath(os.path.dirname(__file__))
             )

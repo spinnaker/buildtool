@@ -68,7 +68,7 @@ class AzureSmokeTestScenario(sk.SpinnakerTestScenario):
           bindings: [dict] The data bindings to use to configure the scenario.
           agent: [GateAgent] The agent for invoking the test operations on Gate.
         """
-        super(AzureSmokeTestScenario, self).__init__(bindings, agent)
+        super().__init__(bindings, agent)
         bindings = self.bindings
 
         # create default sec grp name
@@ -261,7 +261,7 @@ class AzureSmokeTestScenario(sk.SpinnakerTestScenario):
                 ov_factory.error_list_contains(
                     jp.ExceptionMatchesPredicate(
                         klass=st.CliAgentRunError,
-                        regex="(?:.* operation: Cannot find .*)|(?:.*\(.*NotFound\).*)",
+                        regex=r"(?:.* operation: Cannot find .*)|(?:.*\(.*NotFound\).*)",
                     )
                 )
             )
@@ -344,7 +344,7 @@ class AzureSmokeTestScenario(sk.SpinnakerTestScenario):
                 ov_factory.error_list_contains(
                     jp.ExceptionMatchesPredicate(
                         klass=st.CliAgentRunError,
-                        regex="(?:.* operation: Cannot find .*)|(?:.*\(.*NotFound\).*)",
+                        regex=r"(?:.* operation: Cannot find .*)|(?:.*\(.*NotFound\).*)",
                     )
                 )
             )

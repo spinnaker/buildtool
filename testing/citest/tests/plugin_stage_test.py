@@ -50,7 +50,7 @@ class PluginStageTestScenario(sk.SpinnakerTestScenario):
         Args:
           parser: argparse.ArgumentParser
         """
-        super(PluginStageTestScenario, cls).initArgumentParser(
+        super().initArgumentParser(
             parser, defaults=defaults
         )
 
@@ -72,7 +72,7 @@ class PluginStageTestScenario(sk.SpinnakerTestScenario):
           bindings: [dict] The data bindings to use to configure the scenario.
           agent: [GateAgent] The agent for invoking the test operations on Gate.
         """
-        super(PluginStageTestScenario, self).__init__(bindings, agent)
+        super().__init__(bindings, agent)
 
         self.STAGE_NAME = bindings["STAGE_NAME"]
         self.STAGE_PARAMS = json.loads(bindings["STAGE_PARAMS"])

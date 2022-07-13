@@ -47,14 +47,14 @@ class TestRunner(unittest.TestCase):
         path = os.path.join(self.base_temp_dir, "test_write", "file")
         content = "First Line\nSecond Line"
         write_to_path(content, path)
-        with open(path, "r") as f:
+        with open(path) as f:
             self.assertEqual(content, f.read())
 
     def test_write_to_path_unicode(self):
         path = os.path.join(self.base_temp_dir, "test_write", "file")
         content = "First Line\nSecond Line"
         write_to_path(content, path)
-        with open(path, "r") as f:
+        with open(path) as f:
             self.assertEqual(content, f.read())
 
     def test_deltatime_string(self):

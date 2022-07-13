@@ -27,7 +27,7 @@ class TestCommand(buildtool.command.CommandProcessor):
         return self.__calls
 
     def __init__(self, factory, options):
-        super(TestCommand, self).__init__(factory, options)
+        super().__init__(factory, options)
         self.__calls = 0
 
     def _do_command(self):
@@ -36,12 +36,12 @@ class TestCommand(buildtool.command.CommandProcessor):
 
 class TestCommandFactory(buildtool.command.CommandFactory):
     def __init__(self):
-        super(TestCommandFactory, self).__init__(
+        super().__init__(
             COMMAND, TestCommand, "My Test Command"
         )
 
     def init_argparser(self, parser, defaults):
-        super(TestCommandFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
         TestCommandFactory.add_argument(
             parser, CUSTOM_ARG_NAME, defaults, CUSTOM_ARG_DEFAULT_VALUE
         )

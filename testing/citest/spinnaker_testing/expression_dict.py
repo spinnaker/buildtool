@@ -52,7 +52,7 @@ class ExpressionDict(dict):
 
     def __init__(self, *args, **kwargs):
         """Overrides standard dictionary constructor."""
-        super(ExpressionDict, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.__default_value_interpreter = lambda x: x
 
     def get(self, key, default_value=None):
@@ -85,7 +85,7 @@ class ExpressionDict(dict):
           KeyError if the |key| is not in the dictionary.
           ValueError if a cycle is encountered.
         """
-        value = super(ExpressionDict, self).get(key, None)
+        value = super().get(key, None)
         if value is None and key not in self:
             raise KeyError(key)
 

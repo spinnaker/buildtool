@@ -85,13 +85,13 @@ class InfluxDbMetricsRegistry(InMemoryMetricsRegistry):
         )
 
     def __init__(self, *pos_args, **kwargs):
-        super(InfluxDbMetricsRegistry, self).__init__(*pos_args, **kwargs)
+        super().__init__(*pos_args, **kwargs)
         self.__export_func_map = {
             "COUNTER": self.__export_counter_points,
             "GAUGE": self.__export_gauge_points,
             "TIMER": self.__export_timer_points,
         }
-        self.__recent_gauges = set([])
+        self.__recent_gauges = set()
 
     def _do_flush_final_metrics(self):
         """Implements interface."""
@@ -105,11 +105,11 @@ class InfluxDbMetricsRegistry(InMemoryMetricsRegistry):
         just aggregates events. So we'll treat counter changes as events
         with delta values from the prior counter.
         """
-        super(InfluxDbMetricsRegistry, self)._do_flush_updated_metrics(updated_metrics)
+        super()._do_flush_updated_metrics(updated_metrics)
         payload = []
 
         recent_gauges = self.__recent_gauges
-        self.__recent_gauges = set([])
+        self.__recent_gauges = set()
         for metric in updated_metrics:
             name = metric.name
             label_text = self.__to_label_text(metric)
@@ -132,13 +132,13 @@ class InfluxDbMetricsRegistry(InMemoryMetricsRegistry):
         try:
             urlopen(request)
             logging.debug("Updated %d metrics to %s", len(payload), url)
-        except IOError as ioex:
+        except OSError as ioex:
             logging.error("Cannot write metrics to %s:\n%s", url, ioex)
 
     def __to_label_text(self, metric):
         return ",".join(
             [
-                "%s=%s" % (key, value)
+                f"{key}={value}"
                 for key, value in metric.labels.items()
                 if value != ""
             ]
@@ -172,7 +172,7 @@ class InfluxDbMetricsRegistry(InMemoryMetricsRegistry):
                 name=name, type=type_name, labels=labels
             )
         else:
-            series = "{name}__{type}".format(name=name, type=type_name)
+            series = f"{name}__{type_name}"
         return "{series} value={value} {time}".format(
             series=series, value=value, time=to_timestamp(utc)
         )

@@ -18,7 +18,7 @@ import os
 import tempfile
 import textwrap
 import unittest
-from mock import patch
+from unittest.mock import patch
 
 import yaml
 
@@ -57,7 +57,7 @@ def load_default_bom_dependencies():
     path = os.path.join(
         os.path.dirname(__file__), "../../dev/buildtool/bom_dependencies.yml"
     )
-    with open(path, "r") as stream:
+    with open(path) as stream:
         return yaml.safe_load(stream.read())
 
 
@@ -73,12 +73,12 @@ def make_default_options(options):
 
 class TestBuildBomCommand(BaseGitRepoTestFixture):
     def setUp(self):
-        super(TestBuildBomCommand, self).setUp()
+        super().setUp()
         self.parser = argparse.ArgumentParser()
         self.subparsers = self.parser.add_subparsers()
 
     def make_test_options(self):
-        options = super(TestBuildBomCommand, self).make_test_options()
+        options = super().make_test_options()
         return make_default_options(options)
 
     def test_default_bom_options(self):
@@ -171,7 +171,7 @@ class TestBuildBomCommand(BaseGitRepoTestFixture):
             GitRepositorySpec(
                 name,
                 git_dir=os.path.join("TestInputRoot", "build_bom", name),
-                origin="https://%s/TestOwner/%s" % (options.github_hostname, name),
+                origin=f"https://{options.github_hostname}/TestOwner/{name}",
                 upstream="https://github.com/spinnaker/" + name,
             )
             for name in sorted(
@@ -229,11 +229,11 @@ class TestBuildBomCommand(BaseGitRepoTestFixture):
 
 class TestBomBuilder(BaseGitRepoTestFixture):
     def make_test_options(self):
-        options = super(TestBomBuilder, self).make_test_options()
+        options = super().make_test_options()
         return make_default_options(options)
 
     def setUp(self):
-        super(TestBomBuilder, self).setUp()
+        super().setUp()
         self.test_root = os.path.join(self.base_temp_dir, self._testMethodName)
         self.scm = BranchSourceCodeManager(self.options, self.test_root)
 
@@ -314,13 +314,13 @@ class TestBomBuilder(BaseGitRepoTestFixture):
                 self.assertNotEqual(
                     value,
                     golden_bom["services"][key],
-                    msg="key: {} - value: {}".format(key, value),
+                    msg=f"key: {key} - value: {value}",
                 )
             else:
                 self.assertEqual(
                     value,
                     golden_bom["services"][key],
-                    msg="key: {} - value: {}".format(key, value),
+                    msg=f"key: {key} - value: {value}",
                 )
         for key, value in bom.items():
             if key != "services":
@@ -378,13 +378,13 @@ class TestBomBuilder(BaseGitRepoTestFixture):
                 self.assertNotEqual(
                     value,
                     updated_bom["services"][key],
-                    msg="key: {} - value: {}".format(key, value),
+                    msg=f"key: {key} - value: {value}",
                 )
             else:
                 self.assertEqual(
                     value,
                     updated_bom["services"][key],
-                    msg="key: {} - value: {}".format(key, value),
+                    msg=f"key: {key} - value: {value}",
                 )
         for key, value in bom.items():
             if key != "services":

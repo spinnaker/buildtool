@@ -56,7 +56,7 @@ class InitiateReleaseBranchFactory(RepositoryCommandFactory):
         repo_names.extend(SPINNAKER_PROCESS_REPOSITORY_NAMES)
         repo_names.extend(SPIN_REPOSITORY_NAMES)
         repo_names.append(SPINNAKER_IO_REPOSITORY_NAME)
-        super(InitiateReleaseBranchFactory, self).__init__(
+        super().__init__(
             "new_release_branch",
             InitiateReleaseBranchCommand,
             "Create a new spinnaker release branch in each of the repos.",
@@ -68,7 +68,7 @@ class InitiateReleaseBranchFactory(RepositoryCommandFactory):
     def init_argparser(self, parser, defaults):
         GitRunner.add_parser_args(parser, defaults)
         GitRunner.add_publishing_parser_args(parser, defaults)
-        super(InitiateReleaseBranchFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
         self.add_argument(
             parser,
             "skip_existing",
@@ -96,7 +96,7 @@ class InitiateReleaseBranchFactory(RepositoryCommandFactory):
 
 class InitiateReleaseBranchCommand(RepositoryCommandProcessor):
     def __init__(self, factory, options, **kwargs):
-        super(InitiateReleaseBranchCommand, self).__init__(factory, options, **kwargs)
+        super().__init__(factory, options, **kwargs)
         check_options_set(options, ["spinnaker_version"])
         self.__git = GitRunner(options)
 
@@ -146,12 +146,12 @@ class PublishSpinnakerFactory(CommandFactory):
     """ "Implements the publish_spinnaker command."""
 
     def __init__(self):
-        super(PublishSpinnakerFactory, self).__init__(
+        super().__init__(
             "publish_spinnaker", PublishSpinnakerCommand, "Publish a spinnaker release"
         )
 
     def init_argparser(self, parser, defaults):
-        super(PublishSpinnakerFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
         HalRunner.add_parser_args(parser, defaults)
         GitRunner.add_parser_args(parser, defaults)
         GitRunner.add_publishing_parser_args(parser, defaults)
@@ -191,14 +191,14 @@ class GetNextPatchParametersCommandFactory(CommandFactory):
     """ "Implements the get_next_patch_parameters command."""
 
     def __init__(self):
-        super(GetNextPatchParametersCommandFactory, self).__init__(
+        super().__init__(
             "get_next_patch_parameters",
             GetNextPatchParametersCommand,
             "Get the parameters for the next patch release.",
         )
 
     def init_argparser(self, parser, defaults):
-        super(GetNextPatchParametersCommandFactory, self).init_argparser(
+        super().init_argparser(
             parser, defaults
         )
 
@@ -215,7 +215,7 @@ class GetNextPatchParametersCommand(CommandProcessor):
     """ "Implements the get_next_patch_parameters command."""
 
     def __init__(self, factory, options, **kwargs):
-        super(GetNextPatchParametersCommand, self).__init__(factory, options, **kwargs)
+        super().__init__(factory, options, **kwargs)
         check_options_set(
             options,
             [
@@ -243,7 +243,7 @@ class GetNextPatchParametersCommand(CommandProcessor):
 
     def _output_as_property_file(self, result):
         for key, value in result.items():
-            print("{key}={value}".format(key=key.upper(), value=value))
+            print(f"{key.upper()}={value}")
 
     def _find_matching_version(self, major_minor_version):
         versions = self._get_versions()
@@ -276,7 +276,7 @@ class PublishSpinnakerCommand(CommandProcessor):
     # pylint: disable=too-few-public-methods
 
     def __init__(self, factory, options, **kwargs):
-        super(PublishSpinnakerCommand, self).__init__(factory, options, **kwargs)
+        super().__init__(factory, options, **kwargs)
         check_options_set(
             options,
             [
@@ -290,7 +290,7 @@ class PublishSpinnakerCommand(CommandProcessor):
         )
 
         major, minor, _ = self.options.spinnaker_version.split(".")
-        self.__branch = "release-{major}.{minor}.x".format(major=major, minor=minor)
+        self.__branch = f"release-{major}.{minor}.x"
 
         options_copy = copy.copy(options)
         self.__bom_scm = BomSourceCodeManager(options_copy, self.get_input_dir())
@@ -318,7 +318,7 @@ class PublishSpinnakerCommand(CommandProcessor):
         # in the tagging pass. Since we are spread against multiple repositiories,
         # we cannot do this atomically. The two passes gives us more protection
         # from a partial push due to errors in a repo.
-        names_to_push = set([])
+        names_to_push = set()
         for which in ["tag", "push"]:
             for name, spec in bom["services"].items():
                 if name in ["monitoring-third-party", "defaultArtifact"]:
@@ -452,7 +452,7 @@ def get_next_version(version):
 
 def get_major_minor_version(version):
     major, minor, _ = version.split(".")
-    return "{major}.{minor}".format(major=major, minor=minor)
+    return f"{major}.{minor}"
 
 
 def register_commands(registry, subparsers, defaults):

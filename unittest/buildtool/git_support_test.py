@@ -64,7 +64,7 @@ class TestGitRunner(unittest.TestCase):
     @classmethod
     def run_git(cls, command):
         return check_subprocess(
-            'git -C "{dir}" {command}'.format(dir=cls.git_dir, command=command)
+            f'git -C "{cls.git_dir}" {command}'
         )
 
     @classmethod
@@ -75,37 +75,37 @@ class TestGitRunner(unittest.TestCase):
         os.makedirs(cls.git_dir)
 
         git_dir = cls.git_dir
-        gitify = lambda args: 'git -C "{dir}" {args}'.format(dir=git_dir, args=args)
+        gitify = lambda args: f'git -C "{git_dir}" {args}'
         check_subprocess_sequence(
             [
                 gitify("init"),
-                'touch "{dir}/base_file"'.format(dir=git_dir),
-                gitify('add "{dir}/base_file"'.format(dir=git_dir)),
+                f'touch "{git_dir}/base_file"',
+                gitify(f'add "{git_dir}/base_file"'),
                 gitify('commit -a -m "feat(test): added file"'),
-                gitify("tag {base_version} HEAD".format(base_version=VERSION_BASE)),
-                gitify("checkout -b {base_branch}".format(base_branch=BRANCH_BASE)),
-                gitify("checkout -b {a_branch}".format(a_branch=BRANCH_A)),
-                'touch "{dir}/a_file"'.format(dir=git_dir),
-                gitify('add "{dir}/a_file"'.format(dir=git_dir)),
+                gitify(f"tag {VERSION_BASE} HEAD"),
+                gitify(f"checkout -b {BRANCH_BASE}"),
+                gitify(f"checkout -b {BRANCH_A}"),
+                f'touch "{git_dir}/a_file"',
+                gitify(f'add "{git_dir}/a_file"'),
                 gitify('commit -a -m "feat(test): added a_file"'),
-                gitify("tag {a_version} HEAD".format(a_version=VERSION_A)),
+                gitify(f"tag {VERSION_A} HEAD"),
                 gitify("checkout master"),
-                gitify("checkout -b {b_branch}".format(b_branch=BRANCH_B)),
-                'touch "{dir}/b_file"'.format(dir=git_dir),
-                gitify('add "{dir}/b_file"'.format(dir=git_dir)),
+                gitify(f"checkout -b {BRANCH_B}"),
+                f'touch "{git_dir}/b_file"',
+                gitify(f'add "{git_dir}/b_file"'),
                 gitify('commit -a -m "feat(test): added b_file"'),
-                gitify("tag {b_version} HEAD".format(b_version=VERSION_B)),
+                gitify(f"tag {VERSION_B} HEAD"),
                 gitify("checkout master"),
-                'touch "{dir}/master_file"'.format(dir=git_dir),
-                gitify('add "{dir}/master_file"'.format(dir=git_dir)),
+                f'touch "{git_dir}/master_file"',
+                gitify(f'add "{git_dir}/master_file"'),
                 gitify('commit -a -m "feat(test): added master_file"'),
-                gitify("checkout -b {c_branch}".format(c_branch=BRANCH_C)),
-                'touch "{dir}/c_file"'.format(dir=git_dir),
-                gitify('add "{dir}/c_file"'.format(dir=git_dir)),
+                gitify(f"checkout -b {BRANCH_C}"),
+                f'touch "{git_dir}/c_file"',
+                gitify(f'add "{git_dir}/c_file"'),
                 gitify('commit -a -m "feat(test): added c_file"'),
                 gitify("checkout master"),
-                'touch "{dir}/extra_file"'.format(dir=git_dir),
-                gitify('add "{dir}/extra_file"'.format(dir=git_dir)),
+                f'touch "{git_dir}/extra_file"',
+                gitify(f'add "{git_dir}/extra_file"'),
                 gitify('commit -a -m "feat(test): added extra_file"'),
                 gitify("tag v9.9.9 HEAD"),
             ]
@@ -116,7 +116,7 @@ class TestGitRunner(unittest.TestCase):
         shutil.rmtree(cls.base_temp_dir)
 
     def setUp(self):
-        self.run_git("checkout master".format(dir=self.git_dir))
+        self.run_git(f"checkout master")
 
     def test_query_local_repository_branch(self):
         initial_branch = self.git.query_local_repository_branch(self.git_dir)
@@ -180,17 +180,17 @@ class TestGitRunner(unittest.TestCase):
             new_version = str(version)
             new_version = new_version[:-1] + "1"
             self.run_git("checkout " + branch)
-            self.run_git("checkout -b {branch}-patch".format(branch=branch))
+            self.run_git(f"checkout -b {branch}-patch")
             start_commit_id = git.query_local_repository_commit_id(self.git_dir)
             new_messages = []
             for change in ["first", "second"]:
                 new_path = os.path.join(self.git_dir, change + "_file")
-                check_subprocess('touch "{path}"'.format(path=new_path))
-                self.run_git('add "{path}"'.format(path=new_path))
+                check_subprocess(f'touch "{new_path}"')
+                self.run_git(f'add "{new_path}"')
                 message = "fix(test): Made {change} change for testing.".format(
                     change=change
                 )
-                self.run_git('commit -a -m "{message}"'.format(message=message))
+                self.run_git(f'commit -a -m "{message}"')
                 new_messages.append(" " * 4 + message)
 
             # Clone the repo because the <test_method> only works on remote repositories
@@ -239,13 +239,13 @@ class TestGitRunner(unittest.TestCase):
         have_tags = git.query_tag_commits(test_dir, TAG_VERSION_PATTERN)
         self.assertEqual(want_tags, have_tags)
 
-        got = check_subprocess('git -C "{dir}" remote -v'.format(dir=test_dir))
+        got = check_subprocess(f'git -C "{test_dir}" remote -v')
         # Disable pushes to the origni
         # No upstream since origin is upstream
         self.assertEqual(
             "\n".join(
                 [
-                    "origin\t{origin} (fetch)".format(origin=self.git_dir),
+                    f"origin\t{self.git_dir} (fetch)",
                     "origin\tdisabled (push)",
                 ]
             ),
@@ -287,15 +287,15 @@ class TestGitRunner(unittest.TestCase):
         have_tags = git.query_tag_commits(test_dir, TAG_VERSION_PATTERN)
         self.assertEqual(want_tags, have_tags)
 
-        got = check_subprocess('git -C "{dir}" remote -v'.format(dir=test_dir))
+        got = check_subprocess(f'git -C "{test_dir}" remote -v')
 
         # Upstream repo is configured for pulls, but not for pushes.
         self.assertEqual(
             "\n".join(
                 [
-                    "origin\t{origin} (fetch)".format(origin=origin_dir),
-                    "origin\t{origin} (push)".format(origin=origin_dir),
-                    "upstream\t{upstream} (fetch)".format(upstream=self.git_dir),
+                    f"origin\t{origin_dir} (fetch)",
+                    f"origin\t{origin_dir} (push)",
+                    f"upstream\t{self.git_dir} (fetch)",
                     "upstream\tdisabled (push)",
                 ]
             ),
@@ -336,7 +336,7 @@ class TestGitRunner(unittest.TestCase):
         regexp = r"Branches \['{branch}'\] do not exist in {url}\.".format(
             branch=branch, url=self.git_dir
         )
-        with self.assertRaisesRegexp(Exception, regexp):
+        with self.assertRaisesRegex(Exception, regexp):
             self.git.clone_repository_to_path(repository, branch=branch)
         self.assertFalse(os.path.exists(test_dir))
 
@@ -350,7 +350,7 @@ class TestGitRunner(unittest.TestCase):
             TEST_REPO_NAME, git_dir=test_dir, origin=self.git_dir
         )
         regexp = ".* clone .*"
-        with self.assertRaisesRegexp(Exception, regexp):
+        with self.assertRaisesRegex(Exception, regexp):
             self.git.clone_repository_to_path(repository, branch="master")
 
     def test_default_branch(self):
@@ -467,7 +467,7 @@ class TestCommitMessage(unittest.TestCase):
     @classmethod
     def run_git(cls, command):
         return check_subprocess(
-            'git -C "{dir}" {command}'.format(dir=cls.git_dir, command=command)
+            f'git -C "{cls.git_dir}" {command}'
         )
 
     @classmethod
@@ -478,34 +478,34 @@ class TestCommitMessage(unittest.TestCase):
         os.makedirs(cls.git_dir)
 
         git_dir = cls.git_dir
-        gitify = lambda args: 'git -C "{dir}" {args}'.format(dir=git_dir, args=args)
+        gitify = lambda args: f'git -C "{git_dir}" {args}'
         check_subprocess_sequence(
             [
                 gitify("init"),
-                'touch "{dir}/base_file"'.format(dir=git_dir),
-                gitify('add "{dir}/base_file"'.format(dir=git_dir)),
+                f'touch "{git_dir}/base_file"',
+                gitify(f'add "{git_dir}/base_file"'),
                 gitify('commit -a -m "feat(test): added file"'),
-                gitify("tag {base_version} HEAD".format(base_version=VERSION_BASE)),
+                gitify(f"tag {VERSION_BASE} HEAD"),
                 # For testing patches
                 gitify(
-                    "checkout -b {patch_branch}".format(patch_branch=cls.PATCH_BRANCH)
+                    f"checkout -b {cls.PATCH_BRANCH}"
                 ),
-                'touch "{dir}/patch_file"'.format(dir=git_dir),
-                gitify('add "{dir}/patch_file"'.format(dir=git_dir)),
+                f'touch "{git_dir}/patch_file"',
+                gitify(f'add "{git_dir}/patch_file"'),
                 gitify('commit -a -m "fix(testA): added patch_file"'),
                 # For testing minor versions
                 gitify(
-                    "checkout -b {minor_branch}".format(minor_branch=cls.MINOR_BRANCH)
+                    f"checkout -b {cls.MINOR_BRANCH}"
                 ),
-                'touch "{dir}/minor_file"'.format(dir=git_dir),
-                gitify('add "{dir}/minor_file"'.format(dir=git_dir)),
+                f'touch "{git_dir}/minor_file"',
+                gitify(f'add "{git_dir}/minor_file"'),
                 gitify('commit -a -m "feat(testB): added minor_file"'),
                 # For testing major versions
                 gitify(
-                    "checkout -b {major_branch}".format(major_branch=cls.MAJOR_BRANCH)
+                    f"checkout -b {cls.MAJOR_BRANCH}"
                 ),
-                'touch "{dir}/major_file"'.format(dir=git_dir),
-                gitify('add "{dir}/major_file"'.format(dir=git_dir)),
+                f'touch "{git_dir}/major_file"',
+                gitify(f'add "{git_dir}/major_file"'),
                 gitify(
                     "commit -a -m"
                     ' "feat(testC): added major_file\n'
@@ -530,23 +530,23 @@ class TestCommitMessage(unittest.TestCase):
             env["EDITOR"] = "/usr/bin/true"
         else:
             raise NotImplementedError("platform not supported for this test")
-        check_subprocess('git -C "{dir}" commit'.format(dir=git_dir), env=env)
+        check_subprocess(f'git -C "{git_dir}" commit', env=env)
 
         # For testing changelog from a commit
         check_subprocess_sequence(
             [
-                gitify("checkout {minor_branch}".format(minor_branch=cls.MINOR_BRANCH)),
+                gitify(f"checkout {cls.MINOR_BRANCH}"),
                 gitify(
-                    "checkout -b {x_branch}".format(x_branch=cls.PATCH_MINOR_BRANCH)
+                    f"checkout -b {cls.PATCH_MINOR_BRANCH}"
                 ),
-                'touch "{dir}/xbefore_file"'.format(dir=git_dir),
-                gitify('add "{dir}/xbefore_file"'.format(dir=git_dir)),
+                f'touch "{git_dir}/xbefore_file"',
+                gitify(f'add "{git_dir}/xbefore_file"'),
                 gitify('commit -a -m "feat(test): COMMIT AT TAG"'),
-                gitify("tag {x_marker} HEAD".format(x_marker=cls.PATCH_MINOR_X)),
-                'touch "{dir}/x_first"'.format(dir=git_dir),
-                gitify('add "{dir}/x_first"'.format(dir=git_dir)),
+                gitify(f"tag {cls.PATCH_MINOR_X} HEAD"),
+                f'touch "{git_dir}/x_first"',
+                gitify(f'add "{git_dir}/x_first"'),
                 gitify('commit -a -m "fix(test): First Fix"'),
-                'rm "{dir}/x_first"'.format(dir=git_dir),
+                f'rm "{git_dir}/x_first"',
                 gitify('commit -a -m "fix(test): Second Fix"'),
             ]
         )
@@ -578,7 +578,7 @@ class TestCommitMessage(unittest.TestCase):
         shutil.rmtree(cls.base_temp_dir)
 
     def setUp(self):
-        self.run_git("checkout master".format(dir=self.git_dir))
+        self.run_git(f"checkout master")
 
     def test_message_analysis_with_commit_baseline(self):
         # pylint: disable=line-too-long
@@ -586,7 +586,7 @@ class TestCommitMessage(unittest.TestCase):
 
         tests = [(self.PATCH_MINOR_BRANCH, self.PATCH_MINOR_X)]
         for branch, baseline_commit in tests:
-            self.run_git("checkout {branch}".format(branch=branch))
+            self.run_git(f"checkout {branch}")
             commit_id = git.query_local_repository_commit_id(self.git_dir)
             messages = git.query_local_repository_commits_between_two_commit_ids(
                 self.git_dir, baseline_commit, commit_id

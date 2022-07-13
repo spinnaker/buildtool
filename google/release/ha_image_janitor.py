@@ -36,7 +36,7 @@ be run periodically to reap old, unreferenced images.
 """
 
 
-RELEASED_VERSION_MATCHER = re.compile("^[0-9]+\.[0-9]+\.[0-9]+\.yml$")
+RELEASED_VERSION_MATCHER = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+\.yml$")
 
 SERVICES = [
     "clouddriver",
@@ -92,7 +92,7 @@ def __image_age_days(image_json):
 def __tag_images(
     versions_to_tag, project, account, project_images, bom_contents_by_name
 ):
-    images_to_tag = set([])
+    images_to_tag = set()
     for bom_version in versions_to_tag:
         to_tag = [
             i
@@ -132,7 +132,7 @@ def __write_image_delete_script(
     project_images,
     bom_contents_by_name,
 ):
-    images_to_delete = set([])
+    images_to_delete = set()
     print(
         "Calculating images for {} versions to delete.".format(
             len(possible_versions_to_delete)
@@ -175,11 +175,11 @@ def __write_image_delete_script(
                 )
                 delete_script_lines.append(line)
     delete_script = "\n".join(delete_script_lines)
-    timestamp = "{:%Y%m%d%H%M%S}".format(datetime.datetime.utcnow())
-    script_name = "delete-images-{}".format(timestamp)
+    timestamp = f"{datetime.datetime.utcnow():%Y%m%d%H%M%S}"
+    script_name = f"delete-images-{timestamp}"
     with open(script_name, "w") as script:
         script.write(delete_script)
-    print("Wrote image janitor script to {}".format(script_name))
+    print(f"Wrote image janitor script to {script_name}")
 
 
 def __derive_images_from_bom(bom_version, contents_by_name):
@@ -211,11 +211,11 @@ def __delete_unused_bom_images(options):
     if options.additional_boms_to_tag:
         additional_boms_to_tag = options.additional_boms_to_tag.split(",")
         print(
-            "Adding additional BOM versions to tag: {}".format(additional_boms_to_tag)
+            f"Adding additional BOM versions to tag: {additional_boms_to_tag}"
         )
         versions_to_tag.extend(additional_boms_to_tag)
-    print("Tagging versions: {}".format(versions_to_tag))
-    print("Deleting versions: {}".format(possible_versions_to_delete))
+    print(f"Tagging versions: {versions_to_tag}")
+    print(f"Deleting versions: {possible_versions_to_delete}")
 
     project = options.project
     service_account = options.service_account
@@ -226,7 +226,7 @@ def __delete_unused_bom_images(options):
         echo=False,
     )
     image_list = json.loads(image_list_str)
-    project_images = set([image["name"] for image in image_list])
+    project_images = {image["name"] for image in image_list}
     __tag_images(
         versions_to_tag, project, service_account, project_images, bom_contents_by_name
     )

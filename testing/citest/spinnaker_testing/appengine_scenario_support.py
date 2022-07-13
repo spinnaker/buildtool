@@ -59,7 +59,7 @@ class AppEngineScenarioSupport(BaseScenarioPlatformSupport):
         Args:
           scenario: [SpinnakerTestScenario] The scenario being supported.
         """
-        super(AppEngineScenarioSupport, self).__init__("appengine", scenario)
+        super().__init__("appengine", scenario)
 
         bindings = scenario.bindings
 

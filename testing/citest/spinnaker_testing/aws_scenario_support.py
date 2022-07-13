@@ -123,7 +123,7 @@ class AwsScenarioSupport(BaseScenarioPlatformSupport):
         Args:
           scenario: [SpinnakerTestScenario] The scenario being supported.
         """
-        super(AwsScenarioSupport, self).__init__("aws", scenario)
+        super().__init__("aws", scenario)
         self.__aws_observer = None
 
         bindings = scenario.bindings
@@ -140,7 +140,7 @@ class AwsScenarioSupport(BaseScenarioPlatformSupport):
             bindings["TEST_AWS_REGION"] = bindings["TEST_AWS_ZONE"][:-1]
 
         if not bindings.get("TEST_AWS_KEYPAIR", ""):
-            bindings["TEST_AWS_KEYPAIR"] = "{0}-keypair".format(
+            bindings["TEST_AWS_KEYPAIR"] = "{}-keypair".format(
                 bindings["SPINNAKER_AWS_ACCOUNT"]
             )
 
@@ -175,7 +175,7 @@ class AwsScenarioSupport(BaseScenarioPlatformSupport):
 
             vpc_list = response["Vpcs"]
             if not vpc_list:
-                raise ValueError("There is no vpc matching filter {0}".format(filters))
+                raise ValueError(f"There is no vpc matching filter {filters}")
 
             found = vpc_list[0]["VpcId"]
             logger.info("Using discovered default VpcId=%s", str(found))
@@ -201,7 +201,7 @@ class AwsScenarioSupport(BaseScenarioPlatformSupport):
                     break
             if not found:
                 raise ValueError(
-                    "Could not find a security group for AWS_VPC_ID {0}".format(vpc_id)
+                    f"Could not find a security group for AWS_VPC_ID {vpc_id}"
                 )
 
             logger.info("Using discovered default SecurityGroupId=%s", str(found))

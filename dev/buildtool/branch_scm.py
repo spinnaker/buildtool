@@ -53,7 +53,7 @@ class BranchSourceCodeManager(SpinnakerSourceCodeManager):
         )
 
     def __init__(self, *pos_args, **kwargs):
-        super(BranchSourceCodeManager, self).__init__(*pos_args, **kwargs)
+        super().__init__(*pos_args, **kwargs)
         options = self.options
         check_options_set(options, ["git_branch", "github_owner", "github_hostname"])
 

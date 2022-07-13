@@ -39,25 +39,25 @@ class TestResultPublisher:
 
     def __checkout_githubio_repo(self):
         """Clones the spinnaker.io git repo."""
-        check_run_quick("git clone {0}".format(self.__githubio_repo_uri))
+        check_run_quick(f"git clone {self.__githubio_repo_uri}")
         self.__repo_name = os.path.basename(self.__githubio_repo_uri)
         if self.__repo_name.endswith(".git"):
             self.__repo_name = self.__repo_name.replace(".git", "")
 
     def __read_test_results(self):
         """Read the test results into memory."""
-        with open(self.__test_results_file, "r") as results_file:
+        with open(self.__test_results_file) as results_file:
             self.__test_results_html = results_file.read()
 
     def __format_nightly_post(self):
         # Initialized with 'front matter' necessary for the post.
-        timestamp = "{:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now())
+        timestamp = f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S}"
         post_lines = [
             "---",
             "title: Spinnaker Nightly Build Version {version}".format(
                 version=self.__nightly_version
             ),
-            "date: {date}".format(date=timestamp),
+            f"date: {timestamp}",
             "categories: nightly-builds",
             "---",
             "",
@@ -73,7 +73,7 @@ class TestResultPublisher:
         return post
 
     def __publish_post(self, post_content):
-        day = "{:%Y-%m-%d}".format(datetime.datetime.now())
+        day = f"{datetime.datetime.now():%Y-%m-%d}"
         post_name = "{day}-{version}-nightly.md".format(
             day=day, version=self.__nightly_version
         )
@@ -83,10 +83,10 @@ class TestResultPublisher:
         with open(post_path, "w") as post_file:
             post_file.write(post_content)
 
-        check_run_quick("git -C {0} add {1}".format(self.__repo_name, post_rel_path))
-        message = "Nightly Build post for version {0}".format(self.__nightly_version)
-        check_run_quick('git -C {0} commit -m "{1}"'.format(self.__repo_name, message))
-        check_run_quick("git -C {0} push origin master".format(self.__repo_name))
+        check_run_quick(f"git -C {self.__repo_name} add {post_rel_path}")
+        message = f"Nightly Build post for version {self.__nightly_version}"
+        check_run_quick(f'git -C {self.__repo_name} commit -m "{message}"')
+        check_run_quick(f"git -C {self.__repo_name} push origin master")
 
     def publish_nightly_post(self):
         """Creates and publishes Nightly Build post for the spinnaker.io site.

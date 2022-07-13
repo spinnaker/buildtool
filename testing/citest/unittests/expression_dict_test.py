@@ -22,9 +22,9 @@ class ExpressionDictTest(unittest.TestCase):
     def test_constructor(self):
         d = {"a": "A"}
         x = ExpressionDict({"a": "A"})
-        self.assertEquals("A", x["a"])
-        self.assertEquals(d.items(), x.items())
-        self.assertEquals(d, x)
+        self.assertEqual("A", x["a"])
+        self.assertEqual(d.items(), x.items())
+        self.assertEqual(d, x)
 
     def test_load_composite_value(self):
         x = ExpressionDict({"a": "A", "b": "B", "test": "${a}/${b}"})

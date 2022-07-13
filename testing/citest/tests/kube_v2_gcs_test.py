@@ -55,7 +55,7 @@ class KubeV2GcsTestScenario(sk.SpinnakerTestScenario):
         Args:
           parser: argparse.ArgumentParser
         """
-        super(KubeV2GcsTestScenario, cls).initArgumentParser(parser, defaults=defaults)
+        super().initArgumentParser(parser, defaults=defaults)
 
         defaults = defaults or {}
         parser.add_argument(
@@ -88,7 +88,7 @@ class KubeV2GcsTestScenario(sk.SpinnakerTestScenario):
           bindings: [dict] The data bindings to use to configure the scenario.
           agent: [GateAgent] The agent for invoking the test operations on Gate.
         """
-        super(KubeV2GcsTestScenario, self).__init__(bindings, agent)
+        super().__init__(bindings, agent)
         bindings = self.bindings
 
         # We'll call out the app name because it is widely used
@@ -140,7 +140,7 @@ class KubeV2GcsTestScenario(sk.SpinnakerTestScenario):
             "boundArtifact": {
                 "type": "gcs/object",
                 "name": path,
-                "reference": "gs://{}/{}".format(self.BUCKET, path),
+                "reference": f"gs://{self.BUCKET}/{path}",
             },
             "id": id_,
         }

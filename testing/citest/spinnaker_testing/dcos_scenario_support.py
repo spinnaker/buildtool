@@ -76,4 +76,4 @@ class DcosScenarioSupport(BaseScenarioPlatformSupport):
         Args:
           scenario: [SpinnakerTestScenario] The scenario being supported.
         """
-        super(DcosScenarioSupport, self).__init__("dcos", scenario)
+        super().__init__("dcos", scenario)

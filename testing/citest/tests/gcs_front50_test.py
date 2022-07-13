@@ -69,7 +69,7 @@ class GcsFront50TestScenario(sk.SpinnakerTestScenario):
             help="The root folder in the specified Google Cloud Storage bucket to place all of Spinnaker's persistent data.",
         )
 
-        super(GcsFront50TestScenario, cls).initArgumentParser(parser, defaults=defaults)
+        super().initArgumentParser(parser, defaults=defaults)
 
     def _do_init_bindings(self):
         """Hook to initialize custom test bindings so journaling is scoped."""
@@ -92,8 +92,8 @@ class GcsFront50TestScenario(sk.SpinnakerTestScenario):
             self.bindings["GCS_BASE_PATH"] or config["spinnaker.gcs.rootFolder"]
         )
         self.TEST_APP = self.bindings["TEST_APP"]
-        self.TEST_PIPELINE_NAME = "My {app} Pipeline".format(app=self.TEST_APP)
-        self.TEST_PIPELINE_ID = "{app}-pipeline-id".format(app=self.TEST_APP)
+        self.TEST_PIPELINE_NAME = f"My {self.TEST_APP} Pipeline"
+        self.TEST_PIPELINE_ID = f"{self.TEST_APP}-pipeline-id"
         self.gcs_observer = gcp.GcpStorageAgent.make_agent(
             credentials_path=self.bindings["GCS_JSON_PATH"],
             scopes=gcp.gcp_storage_agent.STORAGE_FULL_SCOPE,
@@ -115,7 +115,7 @@ class GcsFront50TestScenario(sk.SpinnakerTestScenario):
               Front50
         """
         self.logger = logging.getLogger(__name__)
-        super(GcsFront50TestScenario, self).__init__(bindings, agent)
+        super().__init__(bindings, agent)
         self.app_history = []
         self.pipeline_history = []
 
@@ -299,7 +299,7 @@ class GcsFront50TestScenario(sk.SpinnakerTestScenario):
         f50_builder = st.http_observer.HttpContractBuilder(self.agent)
         (
             f50_builder.new_clause_builder("History Records Changes")
-            .get_url_path("/v2/applications/{app}/history".format(app=self.TEST_APP))
+            .get_url_path(f"/v2/applications/{self.TEST_APP}/history")
             .contains_path_match(
                 "[0]",
                 {
@@ -364,7 +364,7 @@ class GcsFront50TestScenario(sk.SpinnakerTestScenario):
             f50_builder.new_clause_builder(
                 "History Retains Application", retryable_for_secs=5
             )
-            .get_url_path("/v2/applications/{app}/history".format(app=self.TEST_APP))
+            .get_url_path(f"/v2/applications/{self.TEST_APP}/history")
             .EXPECT(
                 ov_factory.value_list_matches(
                     [
@@ -422,7 +422,7 @@ class GcsFront50TestScenario(sk.SpinnakerTestScenario):
             .list_bucket(self.BUCKET, "/".join([self.BASE_PATH, "pipelines"]))
             .contains_path_value(
                 "name",
-                "pipelines/{id}/specification.json".format(id=self.TEST_PIPELINE_ID),
+                f"pipelines/{self.TEST_PIPELINE_ID}/specification.json",
             )
         )
         (
@@ -459,12 +459,12 @@ class GcsFront50TestScenario(sk.SpinnakerTestScenario):
         )
         (
             f50_builder.new_clause_builder("Application Lists Pipeline")
-            .get_url_path("/pipelines/{app}".format(app=self.TEST_APP))
+            .get_url_path(f"/pipelines/{self.TEST_APP}")
             .contains_path_value("name", self.TEST_PIPELINE_NAME)
         )
         (
             f50_builder.new_clause_builder("Returns Pipeline")
-            .get_url_path("/pipelines/{id}/history".format(id=self.TEST_PIPELINE_ID))
+            .get_url_path(f"/pipelines/{self.TEST_PIPELINE_ID}/history")
             .contains_path_match(
                 "[0]",
                 {
@@ -501,7 +501,7 @@ class GcsFront50TestScenario(sk.SpinnakerTestScenario):
             f50_builder.new_clause_builder(
                 "Application Unlists Pipeline", retryable_for_secs=5
             )
-            .get_url_path("/pipelines/{app}".format(app=self.TEST_APP))
+            .get_url_path(f"/pipelines/{self.TEST_APP}")
             .excludes_path_value("id", self.TEST_PIPELINE_ID)
         )
 
@@ -509,7 +509,7 @@ class GcsFront50TestScenario(sk.SpinnakerTestScenario):
             f50_builder.new_clause_builder(
                 "History Retains Pipeline", retryable_for_secs=5
             )
-            .get_url_path("/pipelines/{id}/history".format(id=self.TEST_PIPELINE_ID))
+            .get_url_path(f"/pipelines/{self.TEST_PIPELINE_ID}/history")
             .contains_path_match(
                 "[0]",
                 {

@@ -97,7 +97,7 @@ class AzureScenarioSupport(BaseScenarioPlatformSupport):
         Args:
           scenario: [SpinnakerTestScenario] The scenario being supported.
         """
-        super(AzureScenarioSupport, self).__init__("azure", scenario)
+        super().__init__("azure", scenario)
         self.__az_observer = None
 
         bindings = scenario.bindings

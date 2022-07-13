@@ -16,7 +16,7 @@
 """Implementation of Netflix's Frigga naming convention"""
 
 
-class Naming(object):
+class Naming:
     """Implementation of Netflix's Frigga naming convention"""
 
     @staticmethod
@@ -28,9 +28,9 @@ class Naming(object):
             return app
 
         if not detail:
-            return "{0}-{1}".format(app, stack)
+            return f"{app}-{stack}"
 
-        return "{0}-{1}-{2}".format(app, stack, detail)
+        return f"{app}-{stack}-{detail}"
 
     @staticmethod
     def server_group(app=None, stack=None, detail=None, version="v000"):
@@ -40,6 +40,6 @@ class Naming(object):
         if not version:
             raise ValueError("`version` is required for generating names")
 
-        return "{0}-{1}".format(
+        return "{}-{}".format(
             Naming.cluster(app=app, stack=stack, detail=detail), version
         )

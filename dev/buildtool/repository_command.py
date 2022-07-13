@@ -87,7 +87,7 @@ class RepositoryCommandProcessor(CommandProcessor):
             logging.debug("Limiting %s to one thread.", factory.name)
             max_threads = 1
 
-        super(RepositoryCommandProcessor, self).__init__(factory, options, **kwargs)
+        super().__init__(factory, options, **kwargs)
         self.__scm = factory.make_scm(
             options, self.get_input_dir(), max_threads=max_threads
         )
@@ -198,7 +198,7 @@ class RepositoryCommandProcessor(CommandProcessor):
     def _do_repository(self, repository):
         """This should be overriden to implement actual behavior."""
         raise NotImplementedError(
-            "%s._do_repository(%r)" % (self.__class__.__name__, repository.name)
+            f"{self.__class__.__name__}._do_repository({repository.name!r})"
         )
 
 
@@ -212,7 +212,7 @@ class RepositoryCommandFactory(CommandFactory):
         *factory_method_pos_args,
         **factory_method_kwargs
     ):
-        super(RepositoryCommandFactory, self).__init__(
+        super().__init__(
             name,
             factory_method,
             description,
@@ -227,7 +227,7 @@ class RepositoryCommandFactory(CommandFactory):
 
     def init_argparser(self, parser, defaults):
         """Hook for derived classes to override to add their specific arguments."""
-        super(RepositoryCommandFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
         self.__scm_factory.add_parser_args(parser, defaults)
         self.add_argument(
             parser,

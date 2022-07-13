@@ -71,40 +71,40 @@ class TestSourceCodeManager(unittest.TestCase):
         for repo_name, repo_origin in cls.ORIGIN_URLS.items():
             os.makedirs(repo_origin)
             base_file = os.path.join(
-                repo_origin, "{name}-base.txt".format(name=repo_name)
+                repo_origin, f"{repo_name}-base.txt"
             )
             unique_file = os.path.join(
-                repo_origin, "{name}-unique.txt".format(name=repo_name)
+                repo_origin, f"{repo_name}-unique.txt"
             )
             untagged_file = os.path.join(
-                repo_origin, "{name}-untagged.txt".format(name=repo_name)
+                repo_origin, f"{repo_name}-untagged.txt"
             )
 
             logging.debug("Initializing repository %s", repo_origin)
-            git_prefix = 'git -C "{dir}" '.format(dir=repo_origin)
+            git_prefix = f'git -C "{repo_origin}" '
             run_git = lambda cmd: git_prefix + cmd
 
             check_subprocess_sequence(
                 [
                     # BASE_VERSION
-                    'touch "{file}"'.format(file=base_file),
+                    f'touch "{base_file}"',
                     run_git(" init"),
-                    run_git('add "{file}"'.format(file=os.path.basename(base_file))),
+                    run_git(f'add "{os.path.basename(base_file)}"'),
                     run_git('commit -a -m "feat(first): first commit"'),
                     run_git(
-                        "tag {base_version} HEAD".format(base_version=BASE_VERSION)
+                        f"tag {BASE_VERSION} HEAD"
                     ),
                     # Add Unique branch name per repo
-                    run_git("checkout -b {name}-branch".format(name=repo_name)),
-                    'touch "{file}"'.format(file=unique_file),
-                    run_git('add "{file}"'.format(file=os.path.basename(unique_file))),
+                    run_git(f"checkout -b {repo_name}-branch"),
+                    f'touch "{unique_file}"',
+                    run_git(f'add "{os.path.basename(unique_file)}"'),
                     run_git('commit -a -m "chore(uniq): unique commit"'),
                     # Add a common branch name, but without a tag on HEAD
                     run_git("checkout master"),
-                    run_git("checkout -b {branch}".format(branch=UNTAGGED_BRANCH)),
-                    'touch "{file}"'.format(file=untagged_file),
+                    run_git(f"checkout -b {UNTAGGED_BRANCH}"),
+                    f'touch "{untagged_file}"',
                     run_git(
-                        'add "{file}"'.format(file=os.path.basename(untagged_file))
+                        f'add "{os.path.basename(untagged_file)}"'
                     ),
                     run_git('commit -a -m "feat(uniq): untagged commit"'),
                     run_git("checkout master"),

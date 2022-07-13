@@ -46,7 +46,7 @@ from buildtool import (
 )
 
 
-class HalRunner(object):
+class HalRunner:
     """Encapsulates knowledge of administering halyard releases."""
 
     @staticmethod
@@ -183,5 +183,5 @@ class HalRunner(object):
         if latest:
             logging.info('Publishing spinnaker version "%s" as latest', release_version)
             self.check_run(
-                'admin publish latest "{version}"'.format(version=release_version)
+                f'admin publish latest "{release_version}"'
             )

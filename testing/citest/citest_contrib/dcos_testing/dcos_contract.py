@@ -35,17 +35,17 @@ class DcosObjectObserver(jc.ObjectObserver):
           dcoscli: DcosCliAgent instance to use.
           args: Command-line argument list to execute.
         """
-        super(DcosObjectObserver, self).__init__(filter)
+        super().__init__(filter)
         self.__dcoscli = dcoscli
         self.__args = args
 
     def export_to_json_snapshot(self, snapshot, entity):
         """Implements JsonSnapshotableEntity interface."""
         snapshot.edge_builder.make_control(entity, "Args", self.__args)
-        super(DcosObjectObserver, self).export_to_json_snapshot(snapshot, entity)
+        super().export_to_json_snapshot(snapshot, entity)
 
     def __str__(self):
-        return "DcosObjectObserver({0})".format(self.__args)
+        return f"DcosObjectObserver({self.__args})"
 
     def collect_observation(self, context, observation):
         args = context.eval(self.__args)
@@ -73,7 +73,7 @@ class DcosObjectObserver(jc.ObjectObserver):
         return observation.objects
 
 
-class DcosObjectFactory(object):
+class DcosObjectFactory:
     # pylint: disable=too-few-public-methods
 
     def __init__(self, dcoscli):
@@ -118,7 +118,7 @@ class DcosClauseBuilder(jc.ContractClauseBuilder):
              This is deprecated because in the future this should be on a per
              constraint basis.
         """
-        super(DcosClauseBuilder, self).__init__(
+        super().__init__(
             title=title, retryable_for_secs=retryable_for_secs
         )
         self.__factory = DcosObjectFactory(dcoscli)
@@ -135,7 +135,7 @@ class DcosClauseBuilder(jc.ContractClauseBuilder):
         )
 
         get_builder = jc.ValueObservationVerifierBuilder(
-            "Get {0} {1}".format(type, extra_args), strict=self.__strict
+            f"Get {type} {extra_args}", strict=self.__strict
         )
         self.verifier_builder.append_verifier_builder(get_builder)
 
@@ -151,7 +151,7 @@ class DcosContractBuilder(jc.ContractBuilder):
         Args:
           kubectl: The DcosCliAgent to use for communicating with DC/OS.
         """
-        super(DcosContractBuilder, self).__init__(
+        super().__init__(
             lambda title, retryable_for_secs=0, strict=False: DcosClauseBuilder(
                 title,
                 dcoscli=dcoscli,

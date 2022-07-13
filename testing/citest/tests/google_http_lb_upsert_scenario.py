@@ -72,7 +72,7 @@ class GoogleHttpLoadBalancerTestScenario(sk.SpinnakerTestScenario):
           bindings: [dict] The data bindings to use to configure the scenario.
           agent: [GateAgent] The agent for invoking the test operations on Gate.
         """
-        super(GoogleHttpLoadBalancerTestScenario, self).__init__(bindings, agent)
+        super().__init__(bindings, agent)
 
         bindings = self.bindings
 
@@ -276,7 +276,7 @@ class GoogleHttpLoadBalancerTestScenario(sk.SpinnakerTestScenario):
 
         port_string = "443-443"
         if upsert["certificate"] == "":
-            port_string = "%s-%s" % (upsert["portRange"], upsert["portRange"])
+            port_string = "{}-{}".format(upsert["portRange"], upsert["portRange"])
 
         (
             contract_builder.new_clause_builder(
@@ -378,7 +378,7 @@ class GoogleHttpLoadBalancerTestScenario(sk.SpinnakerTestScenario):
 
         payload = self.agent.make_json_payload_from_kwargs(
             job=[delete],
-            description="Delete L7 Load Balancer: {0} in {1}".format(
+            description="Delete L7 Load Balancer: {} in {}".format(
                 self.__lb_name,
                 bindings["SPINNAKER_GOOGLE_ACCOUNT"],
             ),

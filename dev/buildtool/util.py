@@ -25,7 +25,7 @@ import socket
 # Usually build numbers are obtained from the BOM file or --build_number
 # However sometimes this isnt the case (e.g. generating the BOM).
 DEFAULT_BUILD_NUMBER = str(
-    os.environ.get("BUILD_NUMBER", "{:%Y%m%d%H%M%S}".format(datetime.datetime.utcnow()))
+    os.environ.get("BUILD_NUMBER", f"{datetime.datetime.utcnow():%Y%m%d%H%M%S}")
 )
 
 
@@ -60,7 +60,7 @@ def log_timestring(now=None):
     """Returns timestamp as date time string in logging format."""
     now = now or datetime.datetime.now()
 
-    return "{:%Y-%m-%d %H:%M:%S}".format(now)
+    return f"{now:%Y-%m-%d %H:%M:%S}"
 
 
 def timedelta_string(delta):
@@ -113,5 +113,5 @@ def write_to_path(content, path):
         with open(path, "w") as f:
             f.write(content)
     else:
-        with io.open(path, "w", encoding="utf-8") as f:
+        with open(path, "w", encoding="utf-8") as f:
             f.write(content)

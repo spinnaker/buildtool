@@ -57,4 +57,4 @@ class KubernetesV2ScenarioSupport(BaseScenarioPlatformSupport):
         Args:
           scenario: [SpinnakerTestScenario] The scenario being supported.
         """
-        super(KubernetesV2ScenarioSupport, self).__init__("kubernetes_v2", scenario)
+        super().__init__("kubernetes_v2", scenario)

@@ -105,7 +105,7 @@ class AwsKatoTestScenario(sk.SpinnakerTestScenario):
 
     def __init__(self, bindings):
         """Initialize scenario."""
-        super(AwsKatoTestScenario, self).__init__(bindings)
+        super().__init__(bindings)
         self.elb_client = self.aws_observer.make_boto_client("elb")
 
     def upsert_load_balancer(self):

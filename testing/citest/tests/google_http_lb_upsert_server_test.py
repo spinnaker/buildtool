@@ -38,11 +38,11 @@ class GoogleHttpLoadBalancerServerTest(GoogleHttpLoadBalancerTest):
 
     @classmethod
     def setUpClass(cls):
-        super(GoogleHttpLoadBalancerServerTest, cls).setUpClass()
+        super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        super(GoogleHttpLoadBalancerServerTest, cls).tearDownClass()
+        super().tearDownClass()
 
     @property
     def scenario(self):

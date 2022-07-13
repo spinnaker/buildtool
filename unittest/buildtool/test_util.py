@@ -18,7 +18,7 @@ import shutil
 import tempfile
 import unittest
 import yaml
-from mock import patch
+from unittest.mock import patch
 
 from buildtool import check_subprocess_sequence, check_subprocess, MetricsManager
 
@@ -32,7 +32,7 @@ def init_runtime(options=None):
 
     if not options:
 
-        class Options(object):
+        class Options:
             pass
 
         options = Options()
@@ -161,7 +161,7 @@ class BaseTestFixture(unittest.TestCase):
         shutil.rmtree(cls.base_temp_dir)
 
     def make_test_options(self):
-        class Options(object):
+        class Options:
             pass
 
         options = Options()
@@ -178,13 +178,13 @@ class BaseTestFixture(unittest.TestCase):
 class BaseGitRepoTestFixture(BaseTestFixture):
     @classmethod
     def setUpClass(cls):
-        super(BaseGitRepoTestFixture, cls).setUpClass()
+        super().setUpClass()
         cls.repo_commit_map = make_all_standard_git_repos(cls.base_temp_dir)
         source_path = os.path.join(os.path.dirname(__file__), "standard_test_bom.yml")
 
         # Adjust the golden bom so it references the details of
         # the test instance specific origin repo we just created in test_util.
-        with open(source_path, "r") as stream:
+        with open(source_path) as stream:
             cls.golden_bom = yaml.safe_load(stream.read())
 
             #  Change the bom's default gitPrefix to our origin root
@@ -221,5 +221,5 @@ class BaseGitRepoTestFixture(BaseTestFixture):
         return hook
 
     def setUp(self):
-        super(BaseGitRepoTestFixture, self).setUp()
+        super().setUp()
         self.options.github_repository_root = self.base_temp_dir
