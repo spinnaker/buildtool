@@ -54,6 +54,44 @@ FAILED (errors=4)
 
 ## Release
 
+### Tag branches
+
+Tag repositories with their respective next tag.
+
+- branches without any new commits since the last tag will not be re-tagged.
+- `master` branches will be tagged with the next `{minor}` and `{patch}` of `0`.
+  For example, a repo with `master` tagged `1.2.0` will be tagged `1.3.0`.
+- all other branches (e.g: `release-*`) will be tagged with the next `{patch}`.
+  For example, a repo with `release-1.27.x` tagged `1.2.3` will be tagged `1.2.4`.
+
+At time of writing, tagging designated (`master` and `release-*`) branches will:
+
+1. (on `master`) provide a commit SHA to branch at for a new Spinnaker Release,
+   e.g: `1.28.0`.
+1. trigger GitHub Actions to build new artifacts with the tag
+1. trigger auto-bump Pull Request's across services bumping dependency versions.
+   NOTE: This will in-turn increment `{minor}` tag on the downstream service
+   and build a new set of artifacts.
+
+```
+./dev/buildtool.sh tag_branches \
+  --git_branch master
+```
+
+When troubleshooting try using your fork, targeting a single service and
+disabling git push:
+
+```
+git_branch=master
+fork_owner=<you>
+
+./dev/buildtool.sh tag_branches \
+  --git_branch "${git_branch}" \
+  --github_owner "${fork_owner}" \
+  --only_repositories clouddriver \
+  --git_never_push true
+```
+
 ### Create Release Branches
 
 Before starting this step all branches should be tagged with the latest semVer
@@ -93,23 +131,15 @@ cd source_code/new_release_branch/clouddriver/
 
 git branch
   master
-* release-0.2.x
+* release-0.1.x
 
 # consider enabling git push and running again (remove: `--git_never_push true`)
 ```
 
 ### Build BOM
 
-WARNING: If the HEAD of the new `release-{major}-{minor}-x` branch is not
-tagged then `buildtool` will log the following warning. You may wish to push
-a new tag to HEAD of the branch and try again.
-
-```
-W 19:50:36.886 [Thread-4.552794] fiat HEAD commit of 52a8f5204dc12b693b8eac5ff6126759c119684a is newer than v1.28.4 tag at 23cf00d96d55e02ff3e4ce2d0cd42ef614532bb7
-```
-
-Build BOM, supplying a base BOM with archived project `spinnaker-monitoring`
-already defined.
+Build BOM at the latest tag for each service, supplying a base BOM with
+archived project `spinnaker-monitoring` already defined.
 
 ```
 git_branch=release-1.27.x
@@ -251,8 +281,8 @@ fork_owner=<you>
   --github_owner "${fork_owner}"
 ```
 
-To troubleshoot, try creating your own Gist and pushing the changelog to your
-fork:
+To troubleshoot, try creating the changelog and verifying locally in
+file system.
 
 ```
 changelog_path=./output/build_changelog/changelog.md

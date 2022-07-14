@@ -15,6 +15,7 @@ SPINNAKER_RUNNABLE_REPOSITORY_NAMES = [
     "orca",
     "rosco",
 ]
+SPINNAKER_RUNNABLE_NON_CORE_REPOSITORY_NAMES = ["keel"]
 
 # For building and validating a release
 SPINNAKER_PROCESS_REPOSITORY_NAMES = ["buildtool", "spinrel"]
