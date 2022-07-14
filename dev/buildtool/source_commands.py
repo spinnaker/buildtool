@@ -157,7 +157,7 @@ class TagBranchCommand(RepositoryCommandProcessor):
     def _do_repository(self, repository):
         """Implements RepositoryCommandProcessor interface."""
         head_commit_id = self.__git.query_local_repository_commit_id(repository.git_dir)
-        logging.debug("repo: %s - HEAD commit: %s", repository.name, head_commit_id)
+        logging.debug("%s HEAD commit: %s", repository.name, head_commit_id)
 
         (
             latest_tag,
@@ -167,7 +167,7 @@ class TagBranchCommand(RepositoryCommandProcessor):
         )
         if latest_tag_commit_id == head_commit_id:
             logging.info(
-                "repo: %s - HEAD commit: %s is already tagged at: %s. Not generating a new tag.",
+                "%s HEAD commit: %s already tagged at: %s. Skipping.",
                 repository.name,
                 head_commit_id,
                 latest_tag,
@@ -175,7 +175,7 @@ class TagBranchCommand(RepositoryCommandProcessor):
             return
 
         logging.debug(
-            "repo: %s - latest tag: %s - latest tag commit: %s",
+            "%s latest tag: %s - latest tag commit: %s",
             repository.name,
             latest_tag,
             latest_tag_commit_id,
@@ -191,7 +191,7 @@ class TagBranchCommand(RepositoryCommandProcessor):
         next_tag = next_semver.to_tag()
 
         logging.info(
-            "repo: %s - latest tag: %s not at HEAD, generating next tag: %s",
+            "%s latest tag: %s not at HEAD, generating next tag: %s",
             repository.name,
             latest_tag,
             next_tag,
@@ -213,22 +213,6 @@ class TagBranchCommandFactory(RepositoryCommandFactory):
     def init_argparser(self, parser, defaults):
         super().init_argparser(parser, defaults)
         GitRunner.add_publishing_parser_args(parser, defaults)
-        self.add_argument(
-            parser,
-            "delete_existing",
-            defaults,
-            False,
-            type=bool,
-            help="Force a new clone by removing existing directories if present.",
-        )
-        self.add_argument(
-            parser,
-            "skip_existing",
-            defaults,
-            False,
-            type=bool,
-            help="Ignore directories that are already present.",
-        )
 
 
 def register_commands(registry, subparsers, defaults):
