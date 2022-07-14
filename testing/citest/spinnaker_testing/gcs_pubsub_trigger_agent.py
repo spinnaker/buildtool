@@ -27,7 +27,7 @@ class GcsFileUploadAgent(base_agent.BaseAgent):
     """Specialization to upload files to GCS."""
 
     def __init__(self, credentials_path=None, logger=None):
-        super(GcsFileUploadAgent, self).__init__(logger=logger)
+        super().__init__(logger=logger)
         if credentials_path:
             self.__client = storage.Client.from_service_account_json(credentials_path)
         else:
@@ -60,7 +60,7 @@ class GcsFileUploadAgent(base_agent.BaseAgent):
         upload_blob.upload_from_filename(filename=local_filename)
 
     def export_to_json_snapshot(self, snapshot, entity):
-        super(GcsFileUploadAgent, self).export_to_json_snapshot(snapshot, entity)
+        super().export_to_json_snapshot(snapshot, entity)
 
     def new_gcs_pubsub_trigger_operation(
         self,
@@ -103,14 +103,14 @@ class BaseGcsPubsubTriggerOperation(base_agent.AgentOperation):
             raise TypeError(
                 "gate_agent is not a GateAgent: " + gate_agent.__class__.__name__
             )
-        super(BaseGcsPubsubTriggerOperation, self).__init__(title, gate_agent, **kwargs)
+        super().__init__(title, gate_agent, **kwargs)
         self.__pubsub_agent = gcs_pubsub_agent
 
     def export_to_json_snapshot(self, snapshot, entity):
         snapshot.edge_builder.make_mechanism(
             entity, "Gcs Pubsub Agent", self.__pubsub_agent
         )
-        super(BaseGcsPubsubTriggerOperation, self).export_to_json_snapshot(
+        super().export_to_json_snapshot(
             snapshot, entity
         )
 
@@ -120,7 +120,7 @@ class BaseGcsPubsubTriggerOperation(base_agent.AgentOperation):
         return status
 
     def _do_execute(self, agent):
-        raise NotImplementedError("{0}._do_execute".format(type(self)))
+        raise NotImplementedError(f"{type(self)}._do_execute")
 
 
 class GcsPubsubUploadTriggerOperation(BaseGcsPubsubTriggerOperation):
@@ -137,7 +137,7 @@ class GcsPubsubUploadTriggerOperation(BaseGcsPubsubTriggerOperation):
         status_class,
         status_path,
     ):
-        super(GcsPubsubUploadTriggerOperation, self).__init__(
+        super().__init__(
             title, gcs_pubsub_agent, gate_agent
         )
         self.__bucket_name = bucket_name
@@ -171,7 +171,7 @@ class GcsPubsubTriggerOperationStatus(base_agent.AgentOperationStatus):
 
     @property
     def detail(self):
-        return "trigger response: {response}".format(response=self.__trigger_response)
+        return f"trigger response: {self.__trigger_response}"
 
     @property
     def timed_out(self):
@@ -194,7 +194,7 @@ class GcsPubsubTriggerOperationStatus(base_agent.AgentOperationStatus):
         Args:
         operation [BaseGcsPubsubTriggerOperation]: The GCS operation this is for.
         """
-        super(GcsPubsubTriggerOperationStatus, self).__init__(operation)
+        super().__init__(operation)
         max_wait_secs = kwargs.pop("max_wait_secs", 300)
         self.__timeout_time = time.time() + max_wait_secs
         self.__trigger_response = operation.agent.get(status_path)
@@ -208,9 +208,7 @@ class GcsPubsubTriggerOperationStatus(base_agent.AgentOperationStatus):
     def export_summary_to_json_snapshot(self, snapshot, entity):
         """Implements JsonSnapshotableEntity interface."""
         (
-            super(
-                GcsPubsubTriggerOperationStatus, self
-            ).export_summary_to_json_snapshot(snapshot, entity)
+            super().export_summary_to_json_snapshot(snapshot, entity)
         )
 
         if self.__trigger_response:
@@ -227,6 +225,6 @@ class GcsPubsubTriggerOperationStatus(base_agent.AgentOperationStatus):
         snapshot.edge_builder.make_output(
             entity, "Trigger Response", self.__trigger_response
         )
-        super(GcsPubsubTriggerOperationStatus, self).export_to_json_snapshot(
+        super().export_to_json_snapshot(
             snapshot, entity
         )

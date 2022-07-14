@@ -54,7 +54,7 @@ class KubeV2ArtifactTestScenario(sk.SpinnakerTestScenario):
         Args:
           parser: argparse.ArgumentParser
         """
-        super(KubeV2ArtifactTestScenario, cls).initArgumentParser(
+        super().initArgumentParser(
             parser, defaults=defaults
         )
 
@@ -72,7 +72,7 @@ class KubeV2ArtifactTestScenario(sk.SpinnakerTestScenario):
           bindings: [dict] The data bindings to use to configure the scenario.
           agent: [GateAgent] The agent for invoking the test operations on Gate.
         """
-        super(KubeV2ArtifactTestScenario, self).__init__(bindings, agent)
+        super().__init__(bindings, agent)
         bindings = self.bindings
 
         # We'll call out the app name because it is widely used

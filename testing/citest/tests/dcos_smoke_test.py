@@ -72,7 +72,7 @@ class DcosSmokeTestScenario(sk.SpinnakerTestScenario):
           bindings: [dict] The data bindings to use to configure the scenario.
           agent: [GateAgent] The agent for invoking the test operations on Gate.
         """
-        super(DcosSmokeTestScenario, self).__init__(bindings, agent)
+        super().__init__(bindings, agent)
         bindings = self.bindings
 
         self.pipeline_id = None
@@ -160,7 +160,7 @@ class DcosSmokeTestScenario(sk.SpinnakerTestScenario):
             builder.new_clause_builder("Marathon App Added", retryable_for_secs=240)
             .get_marathon_resources("app".format(bindings["SPINNAKER_DCOS_ACCOUNT"]))
             .contains_path_value(
-                "id", "/{0}/{1}".format(bindings["SPINNAKER_DCOS_ACCOUNT"], group_name)
+                "id", "/{}/{}".format(bindings["SPINNAKER_DCOS_ACCOUNT"], group_name)
             )
         )
 
@@ -207,7 +207,7 @@ class DcosSmokeTestScenario(sk.SpinnakerTestScenario):
             builder.new_clause_builder("Marathon App Deleted", retryable_for_secs=240)
             .get_marathon_resources("app".format(bindings["SPINNAKER_DCOS_ACCOUNT"]))
             .excludes_path_value(
-                "id", "/{0}/{1}".format(bindings["SPINNAKER_DCOS_ACCOUNT"], group_name)
+                "id", "/{}/{}".format(bindings["SPINNAKER_DCOS_ACCOUNT"], group_name)
             )
         )
 
@@ -310,7 +310,7 @@ class DcosSmokeTestScenario(sk.SpinnakerTestScenario):
         (
             builder.new_clause_builder("Has Pipeline", retryable_for_secs=15)
             .get_url_path(
-                "applications/{app}/pipelineConfigs".format(app=self.TEST_APP)
+                f"applications/{self.TEST_APP}/pipelineConfigs"
             )
             .contains_path_value(None, pipeline_spec)
         )
@@ -326,7 +326,7 @@ class DcosSmokeTestScenario(sk.SpinnakerTestScenario):
         )
 
     def run_deploy_pipeline(self):
-        path = "pipelines/{0}/{1}".format(self.TEST_APP, self.pipeline_id)
+        path = f"pipelines/{self.TEST_APP}/{self.pipeline_id}"
         bindings = self.bindings
         group_name = frigga.Naming.server_group(
             app=self.TEST_APP, stack=bindings["TEST_STACK"], version="v001"
@@ -343,7 +343,7 @@ class DcosSmokeTestScenario(sk.SpinnakerTestScenario):
             )
             .get_marathon_resources("app".format(bindings["SPINNAKER_DCOS_ACCOUNT"]))
             .contains_path_value(
-                "id", "/{0}/{1}".format(bindings["SPINNAKER_DCOS_ACCOUNT"], group_name)
+                "id", "/{}/{}".format(bindings["SPINNAKER_DCOS_ACCOUNT"], group_name)
             )
         )
 

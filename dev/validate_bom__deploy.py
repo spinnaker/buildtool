@@ -109,8 +109,8 @@ def ensure_empty_ssh_key(path, user):
     logging.debug('Creating %s SSH key for user "%s"', path, user)
     check_subprocess_sequence(
         [
-            'ssh-keygen -N "" -t rsa -f {path} -C {user}'.format(path=path, user=user),
-            'sed "s/^ssh-rsa/{user}:ssh-rsa/" -i {path}'.format(user=user, path=path),
+            f'ssh-keygen -N "" -t rsa -f {path} -C {user}',
+            f'sed "s/^ssh-rsa/{user}:ssh-rsa/" -i {path}',
         ]
     )
 
@@ -154,7 +154,7 @@ def write_script_to_path(script, path=None):
     return write_data_to_secure_path("\n".join(data), path=path, is_script=True)
 
 
-class BaseValidateBomDeployer(object):
+class BaseValidateBomDeployer:
     """Base class/interface for Deployer that uses Halyard to deploy Spinnaker.
 
     This class is not intended to be constructed directly. Instead see the
@@ -299,7 +299,7 @@ class BaseValidateBomDeployer(object):
                     # dont log since the error was already captured.
                 else:
                     logging.error(message)
-                    message += "\n{trace}".format(trace=traceback.format_exc())
+                    message += f"\n{traceback.format_exc()}"
 
                 write_data_to_secure_path(
                     message, os.path.join(log_dir, service + ".log")
@@ -374,7 +374,7 @@ class BaseValidateBomDeployer(object):
         script.append(
             "sudo apt-get update && sudo apt-get install -y openjdk-11-jre-headless"
         )
-        script.append("curl -s -O {url}".format(url=options.halyard_install_script))
+        script.append(f"curl -s -O {options.halyard_install_script}")
         install_params = ["-y"]
         if options.halyard_config_bucket:
             install_params.extend(["--config-bucket", options.halyard_config_bucket])
@@ -451,7 +451,7 @@ class KubernetesV2ValidateBomDeployer(BaseValidateBomDeployer):
     """
 
     def __init__(self, options, metrics, **kwargs):
-        super(KubernetesV2ValidateBomDeployer, self).__init__(
+        super().__init__(
             options, metrics, **kwargs
         )
 
@@ -489,7 +489,7 @@ class KubernetesV2ValidateBomDeployer(BaseValidateBomDeployer):
         if hasattr(options, "injected_deploy_spinnaker_account"):
             raise_and_log_error(
                 UnexpectedError(
-                    'deploy_spinnaker_account was already set to "{0}"'.format(
+                    'deploy_spinnaker_account was already set to "{}"'.format(
                         options.injected_deploy_spinnaker_account
                     )
                 )
@@ -521,7 +521,7 @@ class KubernetesV2ValidateBomDeployer(BaseValidateBomDeployer):
         )
         kubectl_command = "kubectl {context} get pods {flags}".format(
             context=(
-                "--context {0}".format(options.k8s_v2_account_context)
+                f"--context {options.k8s_v2_account_context}"
                 if options.k8s_v2_account_context
                 else ""
             ),
@@ -563,7 +563,7 @@ class KubernetesV2ValidateBomDeployer(BaseValidateBomDeployer):
             k8s_v2_namespace,
             "port-forward",
             service_pod,
-            "{local}:{remote}".format(local=local_port, remote=remote_port),
+            f"{local_port}:{remote_port}",
         ]
 
     def do_deploy(self, script, files_to_upload):
@@ -572,11 +572,11 @@ class KubernetesV2ValidateBomDeployer(BaseValidateBomDeployer):
         # To deploy spinnaker to kubernetes, you need to go through
         # a halyard VM deployment. Halyard itself can be deployed to K8s.
         # This script doesnt.
-        super(KubernetesV2ValidateBomDeployer, self).do_deploy(script, files_to_upload)
+        super().do_deploy(script, files_to_upload)
 
     def do_undeploy(self):
         """Implements the BaseBomValidateDeployer interface."""
-        super(KubernetesV2ValidateBomDeployer, self).do_undeploy()
+        super().do_undeploy()
         # kubectl delete namespace spinnaker
 
     def do_fetch_service_log_file(self, service, log_dir):
@@ -608,7 +608,7 @@ class KubernetesV2ValidateBomDeployer(BaseValidateBomDeployer):
                     namespace=k8s_v2_namespace,
                     container=container,
                     context=(
-                        "--context {0}".format(options.k8s_v2_account_context)
+                        f"--context {options.k8s_v2_account_context}"
                         if options.k8s_v2_account_context
                         else ""
                     ),
@@ -648,10 +648,10 @@ class GenericVmValidateBomDeployer(BaseValidateBomDeployer):
         self.__ssh_key_path = path
 
     def __init__(self, options, metrics, **kwargs):
-        super(GenericVmValidateBomDeployer, self).__init__(options, metrics, **kwargs)
+        super().__init__(options, metrics, **kwargs)
         self.__instance_ip = None
         self.__ssh_key_path = os.path.join(
-            os.environ["HOME"], ".ssh", "{0}_empty_key".format(self.hal_user)
+            os.environ["HOME"], ".ssh", f"{self.hal_user}_empty_key"
         )
 
     def do_make_port_forward_command(self, service, local_port, remote_port):
@@ -664,7 +664,7 @@ class GenericVmValidateBomDeployer(BaseValidateBomDeployer):
             "StrictHostKeyChecking=no",
             "-o",
             "UserKnownHostsFile=/dev/null",
-            "{user}@{ip}".format(user=self.hal_user, ip=self.instance_ip),
+            f"{self.hal_user}@{self.instance_ip}",
             "-L",
             "{local_port}:localhost:{remote_port}".format(
                 local_port=local_port, remote_port=remote_port
@@ -771,7 +771,7 @@ class GenericVmValidateBomDeployer(BaseValidateBomDeployer):
         script_parts = []
         for path in files_to_upload:
             filename = os.path.basename(path)
-            script_parts.append("sudo chmod 600 {file}".format(file=filename))
+            script_parts.append(f"sudo chmod 600 {filename}")
             script_parts.append(
                 "sudo chown {user}:{user} {file}".format(
                     user=self.hal_user, file=filename
@@ -956,7 +956,7 @@ class AwsValidateBomDeployer(GenericVmValidateBomDeployer):
             if retcode != 0:
                 raise_and_log_error(
                     ExecutionError(
-                        "Could not probe AWS: {0}".format(stdout), program="aws"
+                        f"Could not probe AWS: {stdout}", program="aws"
                     )
                 )
             reservations = decode_json(stdout).get("Reservations")
@@ -981,7 +981,7 @@ class AwsValidateBomDeployer(GenericVmValidateBomDeployer):
                 )
 
     def __init__(self, options, metrics, **kwargs):
-        super(AwsValidateBomDeployer, self).__init__(options, metrics, **kwargs)
+        super().__init__(options, metrics, **kwargs)
         self.__instance_id = None
         self.ssh_key_path = options.deploy_aws_pem_path
 
@@ -1016,14 +1016,14 @@ class AwsValidateBomDeployer(GenericVmValidateBomDeployer):
         if retcode != 0:
             raise_and_log_error(
                 ExecutionError(
-                    "Could not determine public IP: {0}".format(stdout), program="aws"
+                    f"Could not determine public IP: {stdout}", program="aws"
                 )
             )
         found = decode_json(stdout).get("Reservations")
         if not found:
             raise_and_log_error(
                 ResponseError(
-                    '"{0}" is not running'.format(options.deploy_aws_name), server="ec2"
+                    f'"{options.deploy_aws_name}" is not running', server="ec2"
                 )
             )
 
@@ -1129,7 +1129,7 @@ class AwsValidateBomDeployer(GenericVmValidateBomDeployer):
 
         if state in ["shutting-down", "terminated"]:
             raise_and_log_error(
-                ResponseError("VM failed: {0}".format(info), server="ec2")
+                ResponseError(f"VM failed: {info}", server="ec2")
             )
 
         logging.info("%s is in state %s", self.__instance_id, state)
@@ -1336,14 +1336,14 @@ class AzureValidateBomDeployer(GenericVmValidateBomDeployer):
         if retcode != 0:
             raise_and_log_error(
                 ExecutionError(
-                    "Could not determine public IP: {0}".format(stdout), program="az"
+                    f"Could not determine public IP: {stdout}", program="az"
                 )
             )
         found = decode_json(stdout)[0].get("virtualMachine")
         if not found:
             raise_and_log_error(
                 ResponseError(
-                    '"{0}" is not running'.format(options.deploy_azure_name),
+                    f'"{options.deploy_azure_name}" is not running',
                     server="az",
                 )
             )
@@ -1392,7 +1392,7 @@ class GoogleValidateBomDeployer(GenericVmValidateBomDeployer):
         return ip
 
     def __init__(self, options, metrics, **kwargs):
-        super(GoogleValidateBomDeployer, self).__init__(options, metrics, **kwargs)
+        super().__init__(options, metrics, **kwargs)
 
     @classmethod
     def init_platform_argument_parser(cls, parser, defaults):
@@ -1533,7 +1533,7 @@ class GoogleValidateBomDeployer(GenericVmValidateBomDeployer):
             options.deploy_google_instance,
             options.deploy_google_project,
         )
-        with open(self.ssh_key_path + ".pub", "r") as f:
+        with open(self.ssh_key_path + ".pub") as f:
             ssh_key = f.read().strip()
         if ssh_key.startswith("ssh-rsa"):
             ssh_key = self.hal_user + ":" + ssh_key
@@ -1613,7 +1613,7 @@ def make_deployer(options, metrics):
     if options.deploy_spinnaker_type not in SUPPORTED_DEPLOYMENT_TYPES:
         raise_and_log_error(
             ConfigError(
-                'Invalid --deploy_spinnaker_type "{0}". Must be one of {1}'.format(
+                'Invalid --deploy_spinnaker_type "{}". Must be one of {}'.format(
                     options.deploy_spinnaker_type, SUPPORTED_DEPLOYMENT_TYPES
                 )
             )
@@ -1635,7 +1635,7 @@ def make_deployer(options, metrics):
             raise_and_log_error(
                 ConfigError(
                     "Unknown --deploy_distributed_platform."
-                    " This must be the value of one of the following parameters: {0}".format(
+                    " This must be the value of one of the following parameters: {}".format(
                         SUPPORTED_DISTRIBUTED_PLATFORMS
                     )
                 )

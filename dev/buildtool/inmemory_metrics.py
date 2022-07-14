@@ -85,7 +85,7 @@ class InMemoryCounter(Counter):
     CATEGORY = SNAPSHOT_CATEGORY[MetricFamily.COUNTER]
 
     def __init__(self, family, labels):
-        super(InMemoryCounter, self).__init__(family, labels)
+        super().__init__(family, labels)
         self.__timeseries = []
         self.__timeseries_mutex = threading.Lock()
         self.__mark = (0, 0)
@@ -114,7 +114,7 @@ class InMemoryCounter(Counter):
         return result
 
     def touch(self, utc=None):
-        super(InMemoryCounter, self).touch(utc=utc)
+        super().touch(utc=utc)
         with self.__timeseries_mutex:
             self.__timeseries.append(DataPoint(self.count, self.last_modified))
 
@@ -142,7 +142,7 @@ class InMemoryGauge(Gauge):
         return self.__timeseries
 
     def __init__(self, family, labels):
-        super(InMemoryGauge, self).__init__(family, labels)
+        super().__init__(family, labels)
         self.__timeseries = []
         self.__timeseries_mutex = threading.Lock()
         self.__mark = 0
@@ -159,7 +159,7 @@ class InMemoryGauge(Gauge):
         return self.mark()
 
     def touch(self, utc=None):
-        super(InMemoryGauge, self).touch(utc=utc)
+        super().touch(utc=utc)
         data_point = DataPoint(self.value, self.last_modified)
         with self.__timeseries_mutex:
             self.__timeseries.append(data_point)
@@ -185,7 +185,7 @@ class InMemoryTimer(Timer):
     CATEGORY = SNAPSHOT_CATEGORY[MetricFamily.TIMER]
 
     def __init__(self, family, labels):
-        super(InMemoryTimer, self).__init__(family, labels)
+        super().__init__(family, labels)
         self.__timeseries = []
         self.__timeseries_mutex = threading.Lock()
         self.__mark = (0, 0, 0)
@@ -221,7 +221,7 @@ class InMemoryTimer(Timer):
         return result
 
     def touch(self, utc=None):
-        super(InMemoryTimer, self).touch(utc=utc)
+        super().touch(utc=utc)
         with self.__timeseries_mutex:
             self.__timeseries.append(
                 DataPoint((self.count, self.total_seconds), self.last_modified)
@@ -263,7 +263,7 @@ class InMemoryMetricsRegistry(BaseMetricsRegistry):
         parser.added_inmemory = True
 
     def __init__(self, options):
-        super(InMemoryMetricsRegistry, self).__init__(options)
+        super().__init__(options)
         self.__metrics_snapshot_prototype = {
             SNAPSHOT_CATEGORY[MetricFamily.COUNTER]: {},
             SNAPSHOT_CATEGORY[MetricFamily.GAUGE]: {},
@@ -287,7 +287,7 @@ class InMemoryMetricsRegistry(BaseMetricsRegistry):
         dir_path = options.metrics_dir or os.path.join(options.output_dir, "metrics")
         self.__metrics_path = os.path.join(
             dir_path,
-            "metrics__{command}__{pid}.json".format(command=options.command, pid=pid),
+            f"metrics__{options.command}__{pid}.json",
         )
         logging.debug("Metrics snapshots will write to %s", self.__metrics_path)
 

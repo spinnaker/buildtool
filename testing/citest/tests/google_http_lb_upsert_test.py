@@ -80,7 +80,7 @@ class GoogleHttpLoadBalancerTest(st.AgentTestCase):
         cls.SECOND_CERT = "second-cert-%s" % (bindings["TEST_APP"])
         cls.UPDATED_HC = "updated-%s" % (bindings["TEST_APP"])
         managed_region = bindings["TEST_GCE_REGION"]
-        title = "Check Quota for {0}".format(scenario.__class__.__name__)
+        title = f"Check Quota for {scenario.__class__.__name__}"
 
         verify_results = gcp.verify_quota(
             title,
@@ -94,7 +94,7 @@ class GoogleHttpLoadBalancerTest(st.AgentTestCase):
             ],
         )
         if not verify_results:
-            raise RuntimeError("Insufficient Quota: {0}".format(verify_results))
+            raise RuntimeError(f"Insufficient Quota: {verify_results}")
 
         # No predicates against this agent, context is empty.
         context = ExecutionContext()

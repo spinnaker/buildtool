@@ -73,7 +73,7 @@ class BuildApiDocsCommand(RepositoryCommandProcessor):
     """Implements build_api_docs command."""
 
     def __init__(self, factory, options, **kwargs):
-        super(BuildApiDocsCommand, self).__init__(
+        super().__init__(
             factory, options, source_repository_names=["gate"], **kwargs
         )
         self._check_args()
@@ -110,7 +110,7 @@ class BuildApiDocsCommand(RepositoryCommandProcessor):
         try:
             if start_redis:
                 check_subprocess("sudo service %s start" % redis_name)
-            super(BuildApiDocsCommand, self)._do_command()
+            super()._do_command()
         finally:
             if start_redis:
                 # pylint: disable=broad-except
@@ -137,7 +137,7 @@ class BuildApiDocsCommand(RepositoryCommandProcessor):
 
         raise_and_log_error(
             TimeoutError("%s not ready" % url),
-            "%s not ready after %s secs" % (url, timeout_secs),
+            f"{url} not ready after {timeout_secs} secs",
         )
 
     def __generate_json_from_url(self, repository, server_url, output_path):
@@ -190,7 +190,7 @@ class BuildApiDocsCommand(RepositoryCommandProcessor):
         swagger_output_path = os.path.join(
             repository.git_dir, swagger_dir, "swagger.json"
         )
-        with open(swagger_output_path, "r") as stream:
+        with open(swagger_output_path) as stream:
             content = stream.read()
         with open(json_path, "w") as stream:
             stream.write(content)
@@ -267,7 +267,7 @@ class BuildApiDocsFactory(RepositoryCommandFactory):
     """Creates instances of BuildApiDocsCommand."""
 
     def __init__(self):
-        super(BuildApiDocsFactory, self).__init__(
+        super().__init__(
             BUILD_DOCS_COMMAND,
             BuildApiDocsCommand,
             "Build the Spinnaker API REST documentation.",
@@ -311,7 +311,7 @@ class BuildApiDocsFactory(RepositoryCommandFactory):
             "/2.2.3/swagger-codegen-cli-2.2.3.jar",
         )
 
-        super(BuildApiDocsFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
 
 
 class PublishApiDocsCommand(CommandProcessor):
@@ -323,7 +323,7 @@ class PublishApiDocsCommand(CommandProcessor):
     """
 
     def __init__(self, factory, options, **kwargs):
-        super(PublishApiDocsCommand, self).__init__(factory, options, **kwargs)
+        super().__init__(factory, options, **kwargs)
         docs_dir = self.get_output_dir(command=BUILD_DOCS_COMMAND)
         self.__html_path = os.path.join(os.path.abspath(docs_dir), "index.html")
         self._check_args()
@@ -361,7 +361,7 @@ class PublishApiDocsCommand(CommandProcessor):
             # build for some reason that is re-tried will have the same version
             # so the branch may already exist from the earlier attempt.
             "checkout " + base_branch,
-            "checkout {flag} {branch}".format(flag=branch_flag, branch=head_branch),
+            f"checkout {branch_flag} {head_branch}",
             "add " + " ".join([os.path.abspath(path) for path in files_added]),
         ]
         logging.debug(
@@ -371,7 +371,7 @@ class PublishApiDocsCommand(CommandProcessor):
         )
         git = self.__scm.git
         git.check_run_sequence(git_dir, local_git_commands)
-        git.check_commit_or_no_changes(git_dir, '-m "{msg}"'.format(msg=message))
+        git.check_commit_or_no_changes(git_dir, f'-m "{message}"')
 
         logging.info(
             'Pushing branch="%s" into "%s"', head_branch, self.__docs_repository.origin
@@ -402,7 +402,7 @@ class PublishApiDocsFactory(CommandFactory):
     """Factory for PublishApidDocCommand"""
 
     def __init__(self, **kwargs):
-        super(PublishApiDocsFactory, self).__init__(
+        super().__init__(
             "publish_apidocs",
             PublishApiDocsCommand,
             "Publish Spinnaker REST API documentation to spinnaker.io.",
@@ -411,7 +411,7 @@ class PublishApiDocsFactory(CommandFactory):
 
     def init_argparser(self, parser, defaults):
         """Adds command-specific arguments."""
-        super(PublishApiDocsFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
         GitRunner.add_parser_args(parser, defaults)
         GitRunner.add_publishing_parser_args(parser, defaults)
         self.add_argument(

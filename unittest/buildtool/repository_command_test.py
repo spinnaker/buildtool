@@ -44,14 +44,14 @@ class TestRepositoryCommand(RepositoryCommandProcessor):
     def __init__(
         self, factory, options, pos_arg, source_repository_names=None, **kwargs
     ):
-        super(TestRepositoryCommand, self).__init__(
+        super().__init__(
             factory, options, source_repository_names=source_repository_names
         )
         self.test_init_args = (factory, options, pos_arg, kwargs)
         self.preprocessed = False
         self.postprocess_dict = None
-        self.ensured = set([])
-        self.repositories = set([])
+        self.ensured = set()
+        self.repositories = set()
         self.test_repo_threadid = []
 
     def ensure_local_repository(self, repository):
@@ -82,12 +82,12 @@ class TestRepositoryCommand(RepositoryCommandProcessor):
         if self.name == FAILURE_COMMAND_NAME:
             logging.info("Raising injected error")
             raise ValueError("Injected Failure")
-        return "TEST {0}".format(repository.name)
+        return f"TEST {repository.name}"
 
 
 class RepositoryCommandProcessorTest(BaseGitRepoTestFixture):
     def make_test_options(self):
-        options = super(RepositoryCommandProcessorTest, self).make_test_options()
+        options = super().make_test_options()
         options.git_branch = "test_branch"
         options.github_hostname = "test-hostname"
         options.github_owner = "test_github_owner"
@@ -181,7 +181,7 @@ class RepositoryCommandProcessorTest(BaseGitRepoTestFixture):
 
         self.assertTrue(command.preprocessed)
         self.assertEqual(
-            set([repo.name for repo in command.source_repositories]), command.ensured
+            {repo.name for repo in command.source_repositories}, command.ensured
         )
         self.assertEqual(command.ensured, command.repositories)
 
@@ -212,13 +212,11 @@ class RepositoryCommandProcessorTest(BaseGitRepoTestFixture):
         self.assertIsNotNone(family)
         self.assertEqual(family.family_type, family.TIMER)
         self.assertEqual(family.name, outcome_name)
-        repository_names = set(
-            [
+        repository_names = {
                 metric.labels.get("repository")
                 for metric in family.instance_list
                 if metric.labels.get("command") == test_command_name
-            ]
-        )
+        }
         self.assertEqual(2, len(repository_names))
         self.assertEqual(repository_names, set(ALL_STANDARD_TEST_BOM_REPO_NAMES))
         for metric in family.instance_list:
@@ -255,13 +253,11 @@ class RepositoryCommandProcessorTest(BaseGitRepoTestFixture):
             self.assertEqual(family.family_type, family.TIMER)
             self.assertEqual(family.name, outcome_name)
             if test_repository_command:
-                repository_names = set(
-                    [
+                repository_names = {
                         metric.labels.get("repository")
                         for metric in family.instance_list
                         if metric.labels.get("command") == test_command_name
-                    ]
-                )
+                }
                 self.assertEqual(2, len(repository_names))
                 self.assertEqual(
                     repository_names, set(ALL_STANDARD_TEST_BOM_REPO_NAMES)

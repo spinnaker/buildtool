@@ -134,7 +134,7 @@ class BakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         Args:
           parser: argparse.ArgumentParser
         """
-        super(BakeAndDeployTestScenario, cls).initArgumentParser(
+        super().initArgumentParser(
             parser, defaults=defaults
         )
 
@@ -197,7 +197,7 @@ class BakeAndDeployTestScenario(sk.SpinnakerTestScenario):
             logger.info("Infering JENKINS_URL %s", bindings["JENKINS_URL"])
 
     def __init__(self, bindings, agent=None):
-        super(BakeAndDeployTestScenario, self).__init__(bindings, agent)
+        super().__init__(bindings, agent)
         self.logger = logging.getLogger(__name__)
 
         bindings = self.bindings
@@ -342,7 +342,7 @@ class BakeAndDeployTestScenario(sk.SpinnakerTestScenario):
                     "user": "[anonymous]",
                 }
             ],
-            description="Delete Load Balancer: {0} in {1}:{2}".format(
+            description="Delete Load Balancer: {} in {}:{}".format(
                 self.__full_lb_name,
                 bindings["SPINNAKER_GOOGLE_ACCOUNT"],
                 bindings["TEST_GCE_REGION"],
@@ -482,7 +482,7 @@ class BakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         (
             builder.new_clause_builder("Has Pipeline", retryable_for_secs=5)
             .get_url_path(
-                "applications/{app}/pipelineConfigs".format(app=self.TEST_APP)
+                f"applications/{self.TEST_APP}/pipelineConfigs"
             )
             .contains_path_value(None, pipeline_spec)
         )
@@ -522,7 +522,7 @@ class BakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         (
             builder.new_clause_builder("Has Pipeline", retryable_for_secs=5)
             .get_url_path(
-                "applications/{app}/pipelineConfigs".format(app=self.TEST_APP)
+                f"applications/{self.TEST_APP}/pipelineConfigs"
             )
             .contains_path_value(None, pipeline_spec)
         )
@@ -563,7 +563,7 @@ class BakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         (
             builder.new_clause_builder("Has Pipeline", retryable_for_secs=5)
             .get_url_path(
-                "applications/{app}/pipelineConfigs".format(app=self.TEST_APP)
+                f"applications/{self.TEST_APP}/pipelineConfigs"
             )
             .contains_path_value(None, pipeline_spec)
         )
@@ -606,7 +606,7 @@ class BakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         (
             builder.new_clause_builder("Has Pipeline", retryable_for_secs=5)
             .get_url_path(
-                "applications/{app}/pipelineConfigs".format(app=self.TEST_APP)
+                f"applications/{self.TEST_APP}/pipelineConfigs"
             )
             .contains_path_value(None, pipeline_spec)
         )
@@ -647,7 +647,7 @@ class BakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         (
             builder.new_clause_builder("Has Pipeline", retryable_for_secs=5)
             .get_url_path(
-                "applications/{app}/pipelineConfigs".format(app=self.TEST_APP)
+                f"applications/{self.TEST_APP}/pipelineConfigs"
             )
             .contains_path_value(None, pipeline_spec)
         )
@@ -670,7 +670,7 @@ class BakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         (
             builder.new_clause_builder("Has Pipeline", retryable_for_secs=5)
             .get_url_path(
-                "applications/{app}/pipelineConfigs".format(app=self.TEST_APP)
+                f"applications/{self.TEST_APP}/pipelineConfigs"
             )
             .excludes_path_value("name", pipeline_id)
         )
@@ -686,7 +686,7 @@ class BakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         )
 
     def trigger_bake_and_deploy_google_pipeline(self):
-        path = "applications/{app}/pipelines".format(app=self.TEST_APP)
+        path = f"applications/{self.TEST_APP}/pipelines"
 
         group_name = "{app}-{stack}-v000".format(
             app=self.TEST_APP, stack=self.bindings["TEST_STACK"]
@@ -786,7 +786,7 @@ class BakeAndDeployTest(st.AgentTestCase):
             return
 
         managed_region = scenario.bindings["TEST_GCE_REGION"]
-        title = "Check Quota for {0}".format(scenario.__class__.__name__)
+        title = f"Check Quota for {scenario.__class__.__name__}"
 
         verify_results = gcp.verify_quota(
             title,
@@ -795,7 +795,7 @@ class BakeAndDeployTest(st.AgentTestCase):
             regions=[(managed_region, BakeAndDeployTestScenario.MINIMUM_REGION_QUOTA)],
         )
         if not verify_results:
-            raise RuntimeError("Insufficient Quota: {0}".format(verify_results))
+            raise RuntimeError(f"Insufficient Quota: {verify_results}")
 
     @property
     def scenario(self):

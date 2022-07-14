@@ -30,36 +30,36 @@ class BuildtoolError(Exception):
     INTERNAL = "internal"
 
     def __init__(self, message, classification, cause=None):
-        super(BuildtoolError, self).__init__(message)
+        super().__init__(message)
         labels = {"cause": cause, "classification": classification}
         MetricsManager.singleton().inc_counter("BuildtoolError", labels)
 
 
 class ConfigError(BuildtoolError):
     def __init__(self, message, cause=None):
-        super(ConfigError, self).__init__(
+        super().__init__(
             message, self.INTERNAL, cause=cause or "config"
         )
 
 
 class TimeoutError(BuildtoolError):
     def __init__(self, message, cause=None):
-        super(TimeoutError, self).__init__(message, self.RUNTIME, cause=cause)
+        super().__init__(message, self.RUNTIME, cause=cause)
 
 
 class ExecutionError(BuildtoolError):
     def __init__(self, message, program=None):
-        super(ExecutionError, self).__init__(message, self.RUNTIME, cause=program)
+        super().__init__(message, self.RUNTIME, cause=program)
 
 
 class ResponseError(BuildtoolError):
     def __init__(self, message, server=None):
-        super(ResponseError, self).__init__(message, self.RUNTIME, cause=server)
+        super().__init__(message, self.RUNTIME, cause=server)
 
 
 class UnexpectedError(BuildtoolError):
     def __init__(self, message, cause=None):
-        super(UnexpectedError, self).__init__(
+        super().__init__(
             message, self.INTERNAL, cause=cause or "unexpected"
         )
 
@@ -81,7 +81,7 @@ def maybe_log_exception(where, ex, action_msg="propagating exception"):
 
 def raise_and_log_error(error, *pos_args):
     if len(pos_args) > 1:
-        raise ValueError("Too many positional args: {}".format(pos_args))
+        raise ValueError(f"Too many positional args: {pos_args}")
     message = pos_args[0] if pos_args else exception_to_message(error)
     logging.debug("".join(traceback.format_stack()))
     logging.error("*** ERROR ***: %s", message)
@@ -106,20 +106,20 @@ def check_options_set(options, name_list, where=None):
 def check_path_exists(path, why):
     """Check path exists and if not, log and raise an error with reason for it."""
     if not os.path.exists(path):
-        error = ConfigError('NotFound: "%s" for %s' % (path, why))
+        error = ConfigError(f'NotFound: "{path}" for {why}')
         raise_and_log_error(error)
 
 
 def check_kwargs_empty(kwargs):
     if kwargs:
         raise_and_log_error(
-            UnexpectedError("Unexpected arguments: {}".format(kwargs.keys()))
+            UnexpectedError(f"Unexpected arguments: {kwargs.keys()}")
         )
 
 
 def scan_logs_for_install_errors(path):
     """Scan logfile at path and count specific errors of interest."""
-    content = io.open(path, "r", encoding="utf-8").read()
+    content = open(path, encoding="utf-8").read()
     match = re.search(
         "^E:.* Version '([^']+)' for '([^']+)' was not found", content, re.MULTILINE
     )

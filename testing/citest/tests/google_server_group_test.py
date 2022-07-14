@@ -38,7 +38,7 @@ class GoogleServerGroupTestScenario(sk.SpinnakerTestScenario):
     @classmethod
     def initArgumentParser(cls, parser, defaults=None):
         """Initialize command line argument parser."""
-        super(GoogleServerGroupTestScenario, cls).initArgumentParser(
+        super().initArgumentParser(
             parser, defaults=defaults
         )
         parser.add_argument(
@@ -66,7 +66,7 @@ class GoogleServerGroupTestScenario(sk.SpinnakerTestScenario):
         return gate.new_agent(bindings)
 
     def __init__(self, bindings, agent=None):
-        super(GoogleServerGroupTestScenario, self).__init__(bindings, agent)
+        super().__init__(bindings, agent)
 
         if bindings["REGIONAL"]:
             app_decorator = "r"
@@ -504,7 +504,7 @@ class GoogleServerGroupTestScenario(sk.SpinnakerTestScenario):
         )
 
     def destroy_server_group(self, version):
-        serverGroupName = "%s-%s" % (self.__cluster_name, version)
+        serverGroupName = f"{self.__cluster_name}-{version}"
         job = [
             {
                 "cloudProvider": "gce",
@@ -592,7 +592,7 @@ class GoogleServerGroupTest(st.AgentTestCase):
         runner = citest.base.TestRunner.global_runner()
         scenario = runner.get_shared_data(GoogleServerGroupTestScenario)
         managed_region = scenario.bindings["TEST_GCE_REGION"]
-        title = "Check Quota for {0}".format(scenario.__class__.__name__)
+        title = f"Check Quota for {scenario.__class__.__name__}"
 
         verify_results = gcp.verify_quota(
             title,
@@ -603,7 +603,7 @@ class GoogleServerGroupTest(st.AgentTestCase):
             ],
         )
         if not verify_results:
-            raise RuntimeError("Insufficient Quota: {0}".format(verify_results))
+            raise RuntimeError(f"Insufficient Quota: {verify_results}")
 
     @property
     def scenario(self):

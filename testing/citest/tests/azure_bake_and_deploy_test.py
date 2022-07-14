@@ -85,7 +85,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
             parser: argparse.ArgumnetParser
         """
 
-        super(AzureBakeAndDeployTestScenario, cls).initArgumentParser(
+        super().initArgumentParser(
             parser, defaults=defaults
         )
 
@@ -107,7 +107,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         bindings["GCE_PROJECT"] = None
         bindings["GOOGLE_PRIMARY_MANAGED_PROJECT_ID"] = None
 
-        super(AzureBakeAndDeployTestScenario, self).__init__(bindings, agent)
+        super().__init__(bindings, agent)
         bindings = self.bindings
 
         self.TEST_APP = bindings["TEST_APP"]
@@ -162,7 +162,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         execution_context = citest.base.ExecutionContext()
         args = [
             "--name",
-            "{app}-{rg}".format(app=self.TEST_APP, rg=self.__rg_location),
+            f"{self.TEST_APP}-{self.__rg_location}",
             "--yes",
         ]  # wait until the Resource Group deleted
         cmd = self.az_observer.build_az_command_args("group", "delete", args)
@@ -177,7 +177,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
 
         healthyCheck = [
             {
-                "probeName": "{lb}-probe".format(lb=self.__full_lb_name),
+                "probeName": f"{self.__full_lb_name}-probe",
                 "probeProtocol": "HTTP",
                 "probePort": "80",
                 "probePath": "/",
@@ -188,11 +188,11 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         ]
         rules = [
             {
-                "ruleName": "{lb}-rule0".format(lb=self.__full_lb_name),
+                "ruleName": f"{self.__full_lb_name}-rule0",
                 "protocol": "HTTP",
                 "externalPort": 80,
                 "backendPort": 80,
-                "probeName": "{lb}-probe".format(lb=self.__full_lb_name),
+                "probeName": f"{self.__full_lb_name}-probe",
                 "persistence": "None",
                 "idleTimeout": 4,
             }
@@ -263,7 +263,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
                 args=[
                     "list",
                     "--resource-group",
-                    "{app}-{rg}".format(app=self.TEST_APP, rg=self.__rg_location),
+                    f"{self.TEST_APP}-{self.__rg_location}",
                 ],
             )
             .EXPECT(
@@ -328,7 +328,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
                 args=[
                     "list",
                     "--resource-group",
-                    "{app}-{rg}".format(app=self.TEST_APP, rg=self.__rg_location),
+                    f"{self.TEST_APP}-{self.__rg_location}",
                 ],
             )
             # expected no lb
@@ -531,7 +531,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         (
             builder.new_clause_builder("Has Pipeline")
             .get_url_path(
-                "applications/{app}/pipelineConfigs".format(app=self.TEST_APP)
+                f"applications/{self.TEST_APP}/pipelineConfigs"
             )
             .contains_path_value(None, {"name": name})
         )
@@ -574,7 +574,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         (
             builder.new_clause_builder("Has Pipeline")
             .get_url_path(
-                "applications/{app}/pipelineConfigs".format(app=self.TEST_APP)
+                f"applications/{self.TEST_APP}/pipelineConfigs"
             )
             .contains_path_value(None, {"name": name})
         )
@@ -602,7 +602,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         (
             builder.new_clause_builder("Has Pipeline", retryable_for_secs=5)
             .get_url_path(
-                "applications/{app}/pipelineConfigs".format(app=self.TEST_APP)
+                f"applications/{self.TEST_APP}/pipelineConfigs"
             )
             .excludes_path_value("name", pipeline_id)
         )
@@ -611,7 +611,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
             self.new_delete_operation(
                 title="delete pipeline",
                 data="",
-                path=("pipelines/{app}/{pl}".format(app=self.TEST_APP, pl=pipeline_id)),
+                path=(f"pipelines/{self.TEST_APP}/{pipeline_id}"),
                 status_class=st.SynchronousHttpOperationStatus,
             ),
             contract=builder.build(),
@@ -628,7 +628,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
         pipeline_id = self.bake_pipeline_id
         payload = self.agent.make_json_payload_from_kwargs(
             job=[{"dryRun": False, "type": "manual", "user": "[anonymous]"}],
-            description="Test - begin bake and deploy: {pl}".format(pl=pipeline_id),
+            description=f"Test - begin bake and deploy: {pipeline_id}",
             application=self.TEST_APP,
         )
 
@@ -642,7 +642,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
                 command="list",
                 args=[
                     "--resource-group",
-                    "{app}-{rg}".format(app=self.TEST_APP, rg=self.__rg_location),
+                    f"{self.TEST_APP}-{self.__rg_location}",
                 ],
             )
             .EXPECT(
@@ -650,7 +650,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
                     jp.DICT_MATCHES(
                         {
                             "name": jp.STR_EQ(
-                                "{lb}-v000".format(lb=self.__full_lb_name)
+                                f"{self.__full_lb_name}-v000"
                             ),
                             "provisioningState": jp.STR_EQ("Succeeded"),
                             "tags": jp.DICT_MATCHES(
@@ -674,7 +674,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
                 title="bake and deploy",
                 data=payload,
                 # TODO: cannot use v2 url: pipelines/v2/{app}/{pl}
-                path="pipelines/{app}/{pl}".format(app=self.TEST_APP, pl=pipeline_id),
+                path=f"pipelines/{self.TEST_APP}/{pipeline_id}",
                 max_wait_secs=3600,
             ),
             contract=builder.build(),
@@ -706,7 +706,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
                 command="list",
                 args=[
                     "--resource-group",
-                    "{app}-{rg}".format(app=self.TEST_APP, rg=self.__rg_location),
+                    f"{self.TEST_APP}-{self.__rg_location}",
                 ],
             )
             .EXPECT(
@@ -719,7 +719,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
             )
             .OR(
                 ov_factory.value_list_path_excludes(
-                    "name", jp.STR_EQ("{lb}-v000".format(lb=self.__full_lb_name))
+                    "name", jp.STR_EQ(f"{self.__full_lb_name}-v000")
                 )
             )
         )
@@ -729,7 +729,7 @@ class AzureBakeAndDeployTestScenario(sk.SpinnakerTestScenario):
                 title="disable and destroy",
                 data=payload,
                 # TODO: cannot use v2 url: pipelines/v2/{app}/{pl}
-                path="pipelines/{app}/{pl}".format(app=self.TEST_APP, pl=pipeline_id),
+                path=f"pipelines/{self.TEST_APP}/{pipeline_id}",
                 max_wait_secs=3600,
             ),
             contract=builder.build(),

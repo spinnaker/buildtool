@@ -43,7 +43,7 @@ def check_bom_service(bom, service_name):
             ConfigError(
                 'BOM does not contain service "%s"' % service_name, cause="BadBom"
             ),
-            'BOM missing "%s": %s' % (service_name, services.keys()),
+            f'BOM missing "{service_name}": {services.keys()}',
         )
     return entry
 
@@ -78,7 +78,7 @@ class BomSourceCodeManager(SpinnakerSourceCodeManager):
     def bom_from_path(path):
         """Load a BOM from a file."""
         logging.debug("Loading bom from %s", path)
-        with open(path, "r") as f:
+        with open(path) as f:
             bom_yaml_string = f.read()
         return yaml.safe_load(bom_yaml_string)
 
@@ -112,7 +112,7 @@ class BomSourceCodeManager(SpinnakerSourceCodeManager):
 
     def __init__(self, options, *pos_args, **kwargs):
         self.__bom = kwargs.pop("bom", None) or self.load_bom(options)
-        super(BomSourceCodeManager, self).__init__(options, *pos_args, **kwargs)
+        super().__init__(options, *pos_args, **kwargs)
 
     def get_repository_service_build_version(self, repository):
         if not self.__bom:
@@ -197,7 +197,7 @@ class BomSourceCodeManager(SpinnakerSourceCodeManager):
         if have_commit != bom_commit:
             raise_and_log_error(
                 UnexpectedError(
-                    '"%s" is at the wrong commit "%s"' % (git_dir, bom_commit)
+                    f'"{git_dir}" is at the wrong commit "{bom_commit}"'
                 )
             )
         return True
@@ -220,6 +220,6 @@ class BomSourceCodeManager(SpinnakerSourceCodeManager):
             repo_name = self.service_name_to_repository_name(service_name)
 
             prefix = spec["gitPrefix"] if "gitPrefix" in spec else git_prefix
-            origin = "%s/%s" % (prefix, repo_name)
+            origin = f"{prefix}/{repo_name}"
             repositories.append(self.make_repository_spec(repo_name, origin=origin))
         return repositories

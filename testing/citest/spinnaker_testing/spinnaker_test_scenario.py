@@ -225,7 +225,7 @@ class SpinnakerTestScenario(sk.AgentTestScenario):
 
         cls._init_spinnaker_bindings_builder(builder, defaults=defaults)
 
-        super(SpinnakerTestScenario, cls).init_bindings_builder(
+        super().init_bindings_builder(
             builder, defaults=defaults
         )
 
@@ -300,7 +300,7 @@ class SpinnakerTestScenario(sk.AgentTestScenario):
              scenario configuration.
           agent: [SpinnakerAgent] The Spinnaker agent to bind to the scenario.
         """
-        super(SpinnakerTestScenario, self).__init__(bindings, agent)
+        super().__init__(bindings, agent)
         self.__google_resource_analyzer = None
         agent = self.agent
         bindings = self.bindings

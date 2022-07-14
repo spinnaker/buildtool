@@ -98,7 +98,7 @@ class GoogleSmokeTestScenario(sk.SpinnakerTestScenario):
         Args:
           parser: argparse.ArgumentParser
         """
-        super(GoogleSmokeTestScenario, cls).initArgumentParser(
+        super().initArgumentParser(
             parser, defaults=defaults
         )
 
@@ -109,7 +109,7 @@ class GoogleSmokeTestScenario(sk.SpinnakerTestScenario):
           bindings: [dict] The data bindings to use to configure the scenario.
           agent: [GateAgent] The agent for invoking the test operations on Gate.
         """
-        super(GoogleSmokeTestScenario, self).__init__(bindings, agent)
+        super().__init__(bindings, agent)
 
         bindings = self.bindings
 
@@ -157,7 +157,7 @@ class GoogleSmokeTestScenario(sk.SpinnakerTestScenario):
         the contract builder for more info on what the expectations are.
         """
         bindings = self.bindings
-        target_pool_name = "{0}/targetPools/{1}-tp".format(
+        target_pool_name = "{}/targetPools/{}-tp".format(
             bindings["TEST_GCE_REGION"], self.__lb_name
         )
 
@@ -256,7 +256,7 @@ class GoogleSmokeTestScenario(sk.SpinnakerTestScenario):
                     "user": "[anonymous]",
                 }
             ],
-            description="Delete Load Balancer: {0} in {1}:{2}".format(
+            description="Delete Load Balancer: {} in {}:{}".format(
                 self.__lb_name,
                 bindings["SPINNAKER_GOOGLE_ACCOUNT"],
                 bindings["TEST_GCE_REGION"],
@@ -430,7 +430,7 @@ class GoogleSmokeTest(st.AgentTestCase):
         runner = citest.base.TestRunner.global_runner()
         scenario = runner.get_shared_data(GoogleSmokeTestScenario)
         managed_region = scenario.bindings["TEST_GCE_REGION"]
-        title = "Check Quota for {0}".format(scenario.__class__.__name__)
+        title = f"Check Quota for {scenario.__class__.__name__}"
 
         verify_results = gcp.verify_quota(
             title,
@@ -439,7 +439,7 @@ class GoogleSmokeTest(st.AgentTestCase):
             regions=[(managed_region, GoogleSmokeTestScenario.MINIMUM_REGION_QUOTA)],
         )
         if not verify_results:
-            raise RuntimeError("Insufficient Quota: {0}".format(verify_results))
+            raise RuntimeError(f"Insufficient Quota: {verify_results}")
 
     @property
     def scenario(self):

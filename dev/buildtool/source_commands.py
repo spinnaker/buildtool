@@ -40,7 +40,7 @@ class FetchSourceCommand(RepositoryCommandProcessor):
         all_names = list(SPINNAKER_BOM_REPOSITORY_NAMES)
         all_names.append(SPINNAKER_HALYARD_REPOSITORY_NAME)
         all_names.extend(SPINNAKER_PROCESS_REPOSITORY_NAMES)
-        super(FetchSourceCommand, self).__init__(
+        super().__init__(
             factory, options, source_repository_names=all_names
         )
 
@@ -62,7 +62,7 @@ class FetchSourceCommand(RepositoryCommandProcessor):
                         )
                     )
                 )
-        super(FetchSourceCommand, self).ensure_local_repository(repository)
+        super().ensure_local_repository(repository)
 
     def _do_repository(self, repository):
         """Implements RepositoryCommandProcessor interface."""
@@ -71,7 +71,7 @@ class FetchSourceCommand(RepositoryCommandProcessor):
 
 class FetchSourceCommandFactory(RepositoryCommandFactory):
     def __init__(self):
-        super(FetchSourceCommandFactory, self).__init__(
+        super().__init__(
             "fetch_source",
             FetchSourceCommand,
             "Clone or refresh the local git repositories from the origin.",
@@ -79,7 +79,7 @@ class FetchSourceCommandFactory(RepositoryCommandFactory):
         )
 
     def init_argparser(self, parser, defaults):
-        super(FetchSourceCommandFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
         self.add_argument(
             parser,
             "build_number",
@@ -119,7 +119,7 @@ class ExtractSourceInfoCommandFactory(RepositoryCommandFactory):
     """Associates the current build number with each repository."""
 
     def __init__(self):
-        super(ExtractSourceInfoCommandFactory, self).__init__(
+        super().__init__(
             "extract_source_info",
             ExtractSourceInfoCommand,
             "Get the repository metadata and establish a build number.",
@@ -128,7 +128,7 @@ class ExtractSourceInfoCommandFactory(RepositoryCommandFactory):
         )
 
     def init_argparser(self, parser, defaults):
-        super(ExtractSourceInfoCommandFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
         self.add_argument(
             parser,
             "build_number",

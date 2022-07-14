@@ -57,7 +57,7 @@ class _KatoStatus(sk.SpinnakerStatus):
           operation: The operation this status is for.
           original_response: The original JSON string with the status identifier.
         """
-        super(_KatoStatus, self).__init__(operation, original_response)
+        super().__init__(operation, original_response)
 
         if not original_response.ok():
             self.__finished = True
@@ -79,7 +79,7 @@ class _KatoStatus(sk.SpinnakerStatus):
             self._bind_detail_path(doc["resourceUri"])
             self._bind_id(doc["id"])
         else:
-            self._bind_error('Invalid response="{0}"'.format(original_response))
+            self._bind_error(f'Invalid response="{original_response}"')
             self.__finished = True
             self.__failed = True
             self.current_state = "CITEST_INTERNAL_ERROR"

@@ -28,7 +28,7 @@ from buildtool import (
 )
 
 
-class CommandFactory(object):
+class CommandFactory:
     """Abstract base class for CLI command injection."""
 
     @staticmethod
@@ -49,7 +49,7 @@ class CommandFactory(object):
         if name in registry.keys():
             raise_and_log_error(
                 UnexpectedError(
-                    'CommandFactory "{name}" already exists.'.format(name=name)
+                    f'CommandFactory "{name}" already exists.'
                 )
             )
 
@@ -115,7 +115,7 @@ class CommandFactory(object):
         self.__called_init_argparser = True
 
 
-class CommandProcessor(object):
+class CommandProcessor:
     """Abstract base class for CLI command implementations."""
 
     @property
@@ -162,7 +162,7 @@ class CommandProcessor(object):
     def _do_command(self):
         """This should be overriden to implement actual behavior."""
         raise NotImplementedError(
-            "{0}._do_command is not implemented".format(self.__class__.name)
+            f"{self.__class__.name}._do_command is not implemented"
         )
 
     def get_logfile_path(self, basename):

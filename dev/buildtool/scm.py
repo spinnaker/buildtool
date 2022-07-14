@@ -45,7 +45,7 @@ class SourceInfo(collections.namedtuple("SourceInfo", ["build_number", "summary"
         return self.summary.version
 
 
-class RepositoryWorker(object):
+class RepositoryWorker:
     """A picklable callable for passing to inter-process mappers."""
 
     # pylint: disable=too-few-public-methods
@@ -70,7 +70,7 @@ class RepositoryWorker(object):
         return name, self.__fn(repository, *self.__pargs, **self.__kwargs)
 
 
-class SpinnakerSourceCodeManager(object):
+class SpinnakerSourceCodeManager:
     """Helper class for managing spinnaker source code repositories."""
 
     AUTO = "_auto_"

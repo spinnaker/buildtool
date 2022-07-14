@@ -63,7 +63,7 @@ from google.cloud import storage
 from google.oauth2 import service_account
 
 
-class Configurator(object):
+class Configurator:
     """Interface used to control hal configuration of a particular feature set."""
 
     def init_argument_parser(self, parser, defaults):
@@ -531,7 +531,7 @@ class StorageConfigurator(Configurator):
         helper = self.HELPERS.get(options.spinnaker_storage, None)
         if helper is None:
             raise ValueError(
-                'Unknown --spinnaker_storage="{0}"'.format(options.spinnaker_storage)
+                f'Unknown --spinnaker_storage="{options.spinnaker_storage}"'
             )
         helper.validate_options(options)
 
@@ -540,7 +540,7 @@ class StorageConfigurator(Configurator):
         helper = self.HELPERS.get(options.spinnaker_storage, None)
         if helper is None:
             raise ValueError(
-                'Unknown --spinnaker_storage="{0}"'.format(options.spinnaker_storage)
+                f'Unknown --spinnaker_storage="{options.spinnaker_storage}"'
             )
         helper.add_files_to_upload(options, file_set)
 
@@ -549,7 +549,7 @@ class StorageConfigurator(Configurator):
         helper = self.HELPERS.get(options.spinnaker_storage, None)
         if helper is None:
             raise ValueError(
-                'Unknown --spinnaker_storage="{0}"'.format(options.spinnaker_storage)
+                f'Unknown --spinnaker_storage="{options.spinnaker_storage}"'
             )
         helper.add_config(options, script)
         script.append(
@@ -643,7 +643,7 @@ class AwsConfigurator(Configurator):
 
         if options.aws_account_pem_path:
             basename = os.path.basename(options.aws_account_pem_path)
-            script.append("mv {file} .ssh/".format(file=basename))
+            script.append(f"mv {basename} .ssh/")
             account_params.extend(["--default-key-pair", os.path.splitext(basename)[0]])
         if options.aws_account_regions:
             account_params.extend(["--regions", options.aws_account_regions])
@@ -947,7 +947,7 @@ class AzureConfigurator(Configurator):
             key = "azure_account_" + name
             if not getattr(options, key):
                 raise ValueError(
-                    "--{0} is required with --azure_account_subscription_id.".format(
+                    "--{} is required with --azure_account_subscription_id.".format(
                         key
                     )
                 )
@@ -1497,7 +1497,7 @@ class GooglePubsubConfigurator(Configurator):
         script.append("hal -q --log=info config pubsub google enable")
         subscription_cmd = ["hal -q --log=info config pubsub google subscription"]
         if options.pubsub_google_name:
-            subscription_cmd.append("add {}".format(options.pubsub_google_name))
+            subscription_cmd.append(f"add {options.pubsub_google_name}")
         if options.pubsub_google_project:
             subscription_cmd.append("--project " + options.pubsub_google_project)
         if options.pubsub_google_credentials_path:
@@ -1744,9 +1744,9 @@ class JenkinsConfigurator(Configurator):
         ):
             raise ValueError(
                 "Inconsistent jenkins_master specification: "
-                ' --jenkins_master_name="{0}"'
-                ' --jenkins_master_address="{1}"'
-                ' --jenkins_master_user="{2}"'.format(
+                ' --jenkins_master_name="{}"'
+                ' --jenkins_master_address="{}"'
+                ' --jenkins_master_user="{}"'.format(
                     options.jenkins_master_name,
                     options.jenkins_master_address,
                     options.jenkins_master_user,
@@ -1810,7 +1810,7 @@ class JenkinsConfigurator(Configurator):
         elif os.environ.get("JENKINS_MASTER_PASSWORD", None):
             path = write_data_to_secure_path(
                 os.environ.get("JENKINS_MASTER_PASSWORD"),
-                "jenkins_{0}_password".format(options.jenkins_master_name),
+                f"jenkins_{options.jenkins_master_name}_password",
             )
             file_set.add(path)
 
@@ -1901,7 +1901,7 @@ class MonitoringConfigurator(Configurator):
         Add these to the start of the script so we can monitor installation.
         """
         version = "0.17.0"
-        node_version = "node_exporter-{0}.linux-amd64".format(version)
+        node_version = f"node_exporter-{version}.linux-amd64"
         install_node_exporter = [
             "curl -s -S -L -o /tmp/node_exporter.gz"
             " https://github.com/prometheus/node_exporter/releases/download"
@@ -2031,7 +2031,7 @@ hystrix:
       queueSizeRejectionThreshold: 100
 """
         script.append(
-            'echo "{}" > ~/.hal/default/profiles/gate-local.yml'.format(hystrix_config)
+            f'echo "{hystrix_config}" > ~/.hal/default/profiles/gate-local.yml'
         )
         script.append(
             'echo "{}" > ~/.hal/default/profiles/front50-local.yml'.format(
@@ -2338,7 +2338,7 @@ def get_files_to_upload(options):
     Returns:
        A set of path strings.
     """
-    file_set = set([])
+    file_set = set()
     for configurator in CONFIGURATOR_LIST:
         configurator.add_files_to_upload(options, file_set)
     return file_set

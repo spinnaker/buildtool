@@ -68,7 +68,7 @@ class TestRunner(unittest.TestCase):
             if logfile:
                 self.assertTrue(os.path.exists(logfile))
                 self.assertIsNone(output)
-                with io.open(logfile, "r", encoding="utf-8") as stream:
+                with open(logfile, encoding="utf-8") as stream:
                     lines = stream.read().split("\n")
                 self.assertTrue("Spawning" in lines[0])
                 self.assertTrue("process completed with" in lines[-2])
@@ -123,7 +123,7 @@ class TestRunner(unittest.TestCase):
             check_subprocesses_to_logfile("Test Logfile", path, [cmd])
         self.assertTrue(hasattr(ex.exception, "loggedit"))
         self.assertTrue(os.path.exists(path))
-        with open(path, "r") as stream:
+        with open(path) as stream:
             lines = stream.read().split("\n")
         body = "\n".join(lines[3:-3]).strip()
         expect = "/bin/ls: cannot access '/abc/def': No such file or directory"

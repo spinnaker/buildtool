@@ -89,7 +89,7 @@ class AwsSmokeTestScenario(sk.SpinnakerTestScenario):
           bindings: [dict] The data bindings to use to configure the scenario.
           agent: [GateAgent] The agent for invoking the test operations on Gate.
         """
-        super(AwsSmokeTestScenario, self).__init__(bindings, agent)
+        super().__init__(bindings, agent)
         bindings = self.bindings
 
         aws_observer = self.aws_observer
@@ -182,7 +182,7 @@ class AwsSmokeTestScenario(sk.SpinnakerTestScenario):
                     avail_zones = [avail_zones[0], avail_zones[-1]]  # just keep two
 
             except KeyError:
-                raise ValueError("vpc_id={0} appears to be unknown".format(vpc_id))
+                raise ValueError(f"vpc_id={vpc_id} appears to be unknown")
         else:
             # We're assuming that the given region has 'A' and 'B' availability
             # zones. This seems conservative but might be brittle since we permit
@@ -321,7 +321,7 @@ class AwsSmokeTestScenario(sk.SpinnakerTestScenario):
                     "loadBalancerName": load_balancer_name,
                 }
             ],
-            description="Delete Load Balancer: {0} in {1}:{2}".format(
+            description="Delete Load Balancer: {} in {}:{}".format(
                 load_balancer_name,
                 self.bindings["SPINNAKER_AWS_ACCOUNT"],
                 self.bindings["TEST_AWS_REGION"],

@@ -30,7 +30,7 @@ from test_util import EXTRA_REPO, init_runtime, BaseGitRepoTestFixture
 
 class TestSpinnakerCommandFixture(BaseGitRepoTestFixture):
     def setUp(self):
-        super(TestSpinnakerCommandFixture, self).setUp()
+        super().setUp()
         self.parser = argparse.ArgumentParser()
         self.subparsers = self.parser.add_subparsers(title="command", dest="command")
 

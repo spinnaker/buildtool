@@ -76,7 +76,7 @@ import urllib2
 
 
 GOOGLE_METADATA_URL = "http://metadata.google.internal/computeMetadata/v1"
-GOOGLE_INSTANCE_METADATA_URL = "{url}/instance".format(url=GOOGLE_METADATA_URL)
+GOOGLE_INSTANCE_METADATA_URL = f"{GOOGLE_METADATA_URL}/instance"
 _MY_ZONE = None
 
 
@@ -98,7 +98,7 @@ def get_zone():
     if _MY_ZONE is not None:
         return _MY_ZONE
     code, output = fetch(
-        "{url}/zone".format(url=GOOGLE_INSTANCE_METADATA_URL), google=True
+        f"{GOOGLE_INSTANCE_METADATA_URL}/zone", google=True
     )
     if code == 200:
         _MY_ZONE = os.path.basename(output)
@@ -113,7 +113,7 @@ def running_on_gce():
 
 def get_instance_metadata_attribute(name):
     code, output = fetch(
-        "{url}/attributes/{name}".format(url=GOOGLE_INSTANCE_METADATA_URL, name=name),
+        f"{GOOGLE_INSTANCE_METADATA_URL}/attributes/{name}",
         google=True,
     )
     if code == 200:
@@ -250,7 +250,7 @@ if __name__ == "__main__":
         os.makedirs("/opt/spinnaker/install")
         os.chdir("/opt/spinnaker/install")
     except OSError as e:
-        sys.stderr.write("Startup mkdir failed: {e}".format(e=e))
+        sys.stderr.write(f"Startup mkdir failed: {e}")
 
     # Copy this script to /opt/spinnaker/install as install_loader.py
     # since other scripts will reference it that way.
@@ -259,7 +259,7 @@ if __name__ == "__main__":
             "/var/run/google.startup.script",
             "/opt/spinnaker/install/google_install_loader.py",
         )
-    except IOError as e:
-        sys.stderr.write("Startup script copy failed: {e}".format(e=e))
+    except OSError as e:
+        sys.stderr.write(f"Startup script copy failed: {e}")
 
     sys.exit(__unpack_and_run())

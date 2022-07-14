@@ -74,7 +74,7 @@ class JenkinsOperationStatus(base_agent.AgentOperationStatus):
           http_response [HttpResponseType]: Response given by Jenkins to the
             trigger.
         """
-        super(JenkinsOperationStatus, self).__init__(operation)
+        super().__init__(operation)
         self.__trigger_status = status_class(operation, http_response)
         self.__trigger_status._bind_id("n/a for synchronous request")
         self.__trigger_status._bind_detail_path(path)
@@ -83,11 +83,11 @@ class JenkinsOperationStatus(base_agent.AgentOperationStatus):
         return self.__trigger_status.__cmp__(response.__trigger_status)
 
     def __str__(self):
-        return "jenkins_trigger_status={0}".format(self.__trigger_status)
+        return f"jenkins_trigger_status={self.__trigger_status}"
 
     def export_summary_to_json_snapshot(self, snapshot, entity):
         """Implements JsonSnapshotableEntity interface."""
-        super(JenkinsOperationStatus, self).export_summary_to_json_snapshot(
+        super().export_summary_to_json_snapshot(
             snapshot, entity
         )
         trigger_status = self.__trigger_status
@@ -111,14 +111,14 @@ class JenkinsOperationStatus(base_agent.AgentOperationStatus):
         snapshot.edge_builder.make_output(
             entity, "Trigger Status", self.__trigger_status
         )
-        super(JenkinsOperationStatus, self).export_to_json_snapshot(snapshot, entity)
+        super().export_to_json_snapshot(snapshot, entity)
 
 
 class JenkinsAgent(base_agent.BaseAgent):
     """A specialization of BaseAgent for interacting with Jenkins."""
 
     def __init__(self, baseUrl, auth_path, owner_agent, logger=None, max_wait_secs=780):
-        super(JenkinsAgent, self).__init__(logger=logger)
+        super().__init__(logger=logger)
         self.__http_agent = http_agent.HttpAgent(baseUrl)
         self.__owner_agent = owner_agent
 
@@ -140,7 +140,7 @@ class JenkinsAgent(base_agent.BaseAgent):
                     " or JENKINS_USER and JENKINS_PASSWORD environment variables."
                 )
         else:
-            with open(auth_path, "r") as f:
+            with open(auth_path) as f:
                 auth_info = bytes.decode(f.read()).split()
 
                 if len(auth_info) != 2:
@@ -156,7 +156,7 @@ class JenkinsAgent(base_agent.BaseAgent):
         return self.__owner_agent.get(path)
 
     def _trigger_jenkins_build(self, job, token):
-        jenkins_path = "job/{job}/build/?token={token}".format(job=job, token=token)
+        jenkins_path = f"job/{job}/build/?token={token}"
         self.logger.info("Triggering Jenkins %s", jenkins_path)
         result = self.__http_agent.get(jenkins_path)
         result.check_ok()
@@ -166,7 +166,7 @@ class JenkinsAgent(base_agent.BaseAgent):
         snapshot.edge_builder.make_control(
             entity, "baseUrl", self.__http_agent.base_url
         )
-        super(JenkinsAgent, self).export_to_json_snapshot(snapshot, entity)
+        super().export_to_json_snapshot(snapshot, entity)
 
     def new_jenkins_trigger_operation(
         self, title, job, token, status_class, status_path, **kwargs
@@ -216,7 +216,7 @@ class BaseJenkinsOperation(base_agent.AgentOperation):
            confirm success of the action resulting from the Jenkins trigger.
           kwargs [kwargs]:  Additional AgentOperation constructor kwargs.
         """
-        super(BaseJenkinsOperation, self).__init__(title, jenkins_agent, **kwargs)
+        super().__init__(title, jenkins_agent, **kwargs)
         if not jenkins_agent or not isinstance(jenkins_agent, JenkinsAgent):
             raise TypeError(
                 "agent not a  JenkinsAgent: " + jenkins_agent.__class__.__name__
@@ -231,7 +231,7 @@ class BaseJenkinsOperation(base_agent.AgentOperation):
         snapshot.edge_builder.make_data(
             entity, "Payload Data", self.__data, format="json"
         )
-        super(BaseJenkinsOperation, self).export_to_json_snapshot(snapshot, entity)
+        super().export_to_json_snapshot(snapshot, entity)
 
     def execute(self, agent=None):
         if not self.agent:
@@ -244,7 +244,7 @@ class BaseJenkinsOperation(base_agent.AgentOperation):
         return status
 
     def _do_execute(self, agent):
-        raise NotImplementedError("{0}._do_execute".format(type(self)))
+        raise NotImplementedError(f"{type(self)}._do_execute")
 
 
 class JenkinsTriggerOperation(BaseJenkinsOperation):
@@ -268,7 +268,7 @@ class JenkinsTriggerOperation(BaseJenkinsOperation):
           status_path [string]: The path the status should poll for success on.
           kwargs [kwargs]:  Additional Operation constructor kwargs.
         """
-        super(JenkinsTriggerOperation, self).__init__(
+        super().__init__(
             jenkins_agent=jenkins_agent,
             status_class=status_class,
             title=title,

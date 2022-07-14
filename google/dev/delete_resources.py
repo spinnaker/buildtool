@@ -110,7 +110,7 @@ def determine_version(api):
     discovery = make_service("discovery", "v1")
     response = discovery.apis().list(name=api, preferred=True).execute()
     if not response.get("items"):
-        raise ValueError('Unknown API "{0}".'.format(api))
+        raise ValueError(f'Unknown API "{api}".')
     return response["items"][0]["version"]
 
 
@@ -126,7 +126,7 @@ def determine_timestamp(item):
         if key in item:
             return item[key]
     raise ValueError(
-        "Could not determine timestamp key for {0}".format(item.get("kind", item))
+        "Could not determine timestamp key for {}".format(item.get("kind", item))
     )
 
 
@@ -144,7 +144,7 @@ def __determine_resource_obj(service, resource):
             node = getattr(node, elem)()
         except AttributeError:
             raise AttributeError(
-                '"{0}" has no attribute "{1}"'.format(
+                '"{}" has no attribute "{}"'.format(
                     ".".join(path[0 : path.index(elem)]), elem
                 )
             )
@@ -234,7 +234,7 @@ def make_resource_object(resource_type, credentials_path):
         api_name, resource = resource_type.split(".", 1)
     except ValueError:
         raise ValueError(
-            'resource_type "{0}" is not in form <api>.<resource>'.format(resource_type)
+            f'resource_type "{resource_type}" is not in form <api>.<resource>'
         )
     version = determine_version(api_name)
     service = make_service(api_name, version, credentials_path)
@@ -247,7 +247,7 @@ def make_resource_object(resource_type, credentials_path):
         except AttributeError:
             path_str = ".".join(path[0 : path.index(elem)])
             raise AttributeError(
-                '"{0}{1}" has no attribute "{2}"'.format(
+                '"{}{}" has no attribute "{}"'.format(
                     api_name, "." + path_str if path_str else "", elem
                 )
             )
@@ -418,7 +418,7 @@ def main():
             delete_kwargs[resource_id_key] = resource_instance["name"]
             try:
                 delete(resource_obj, resource_instance, delete_kwargs, options.dry_run)
-            except IOError as error:
+            except OSError as error:
                 sys.stderr.write(str(error) + "\n")
                 num_errors += 1
 
@@ -433,7 +433,7 @@ def main():
             delete_kwargs[resource_id_key] = resource_instance["name"]
             try:
                 delete(resource_obj, resource_instance, delete_kwargs, options.dry_run)
-            except IOError as error:
+            except OSError as error:
                 sys.stderr.write(str(error) + "\n")
                 num_errors += 1
 

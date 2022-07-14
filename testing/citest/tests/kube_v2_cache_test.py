@@ -57,7 +57,7 @@ class KubeV2CacheTestScenario(sk.SpinnakerTestScenario):
         Args:
           parser: argparse.ArgumentParser
         """
-        super(KubeV2CacheTestScenario, cls).initArgumentParser(
+        super().initArgumentParser(
             parser, defaults=defaults
         )
 
@@ -75,7 +75,7 @@ class KubeV2CacheTestScenario(sk.SpinnakerTestScenario):
           bindings: [dict] The data bindings to use to configure the scenario.
           agent: [GateAgent] The agent for invoking the test operations on Gate.
         """
-        super(KubeV2CacheTestScenario, self).__init__(bindings, agent)
+        super().__init__(bindings, agent)
         bindings = self.bindings
 
         # We'll call out the app name because it is widely used
@@ -204,7 +204,7 @@ class KubeV2CacheTestScenario(sk.SpinnakerTestScenario):
                 "/manifests/{account}/{namespace}/{name}".format(
                     account=account,
                     namespace=self.TEST_NAMESPACE,
-                    name="{}%20{}".format(kind, name),
+                    name=f"{kind}%20{name}",
                 )
             )
             .EXPECT(
@@ -247,7 +247,7 @@ class KubeV2CacheTestScenario(sk.SpinnakerTestScenario):
         account = self.bindings["SPINNAKER_KUBERNETES_V2_ACCOUNT"]
         builder = HttpContractBuilder(self.agent)
         lb_pred = (
-            jp.LIST_MATCHES([jp.STR_EQ("service {}-service".format(self.TEST_APP))])
+            jp.LIST_MATCHES([jp.STR_EQ(f"service {self.TEST_APP}-service")])
             if has_lb
             else jp.LIST_EQ([])
         )
@@ -256,7 +256,7 @@ class KubeV2CacheTestScenario(sk.SpinnakerTestScenario):
                 "Has recorded a server group for the deployed manifest",
                 retryable_for_secs=120,
             )
-            .get_url_path("/applications/{}/serverGroups".format(self.TEST_APP))
+            .get_url_path(f"/applications/{self.TEST_APP}/serverGroups")
             .EXPECT(
                 ov_factory.value_list_contains(
                     jp.DICT_MATCHES(
@@ -289,7 +289,7 @@ class KubeV2CacheTestScenario(sk.SpinnakerTestScenario):
             builder.new_clause_builder(
                 "Has recorded a load balancer", retryable_for_secs=120
             )
-            .get_url_path("/applications/{}/loadBalancers".format(self.TEST_APP))
+            .get_url_path(f"/applications/{self.TEST_APP}/loadBalancers")
             .EXPECT(
                 ov_factory.value_list_contains(
                     jp.DICT_MATCHES(
@@ -322,7 +322,7 @@ class KubeV2CacheTestScenario(sk.SpinnakerTestScenario):
         builder = HttpContractBuilder(self.agent)
         (
             builder.new_clause_builder("Has no load balancer", retryable_for_secs=120)
-            .get_url_path("/applications/{}/loadBalancers".format(self.TEST_APP))
+            .get_url_path(f"/applications/{self.TEST_APP}/loadBalancers")
             .EXPECT(ov_factory.value_list_matches([]))
         )
 
@@ -339,7 +339,7 @@ class KubeV2CacheTestScenario(sk.SpinnakerTestScenario):
                 "Has recorded a cluster for the deployed manifest",
                 retryable_for_secs=120,
             )
-            .get_url_path("/applications/{}/clusters".format(self.TEST_APP))
+            .get_url_path(f"/applications/{self.TEST_APP}/clusters")
             .EXPECT(
                 ov_factory.value_list_contains(
                     jp.DICT_MATCHES(

@@ -39,7 +39,7 @@ from buildtool import (
 )
 
 
-class GradleMetricsUpdater(object):
+class GradleMetricsUpdater:
     """Collect gradle metrics, focusing on characterizing failures."""
 
     def __init__(self, metrics_repository, spinnaker_repository, gradle_context_name):
@@ -155,7 +155,7 @@ class GradleMetricsUpdater(object):
         return
 
 
-class GradleRunner(object):
+class GradleRunner:
     """Helper module for running gradle."""
 
     __GRADLE_PUBLISH_FILE = os.path.join("gradle", "init-publish.gradle")
@@ -229,7 +229,7 @@ class GradleRunner(object):
         user = os.environ["BINTRAY_USER"]
         password = os.environ["BINTRAY_KEY"]
         encoded_auth = base64.b64encode(
-            "{user}:{password}".format(user=user, password=password)
+            f"{user}:{password}"
         )
         request.add_header("Authorization", "Basic " + bytes.decode(encoded_auth))
 
@@ -248,8 +248,8 @@ class GradleRunner(object):
             if ex.code == 404:
                 return False
             raise_and_log_error(
-                ResponseError("Bintray failure: {}".format(ex), server="bintray.check"),
-                "Failed on url=%s: %s" % (bintray_url, exception_to_message(ex)),
+                ResponseError(f"Bintray failure: {ex}", server="bintray.check"),
+                f"Failed on url={bintray_url}: {exception_to_message(ex)}",
             )
         except Exception as ex:
             raise
@@ -303,7 +303,7 @@ class GradleRunner(object):
             else:
                 raise_and_log_error(
                     ConfigError(
-                        "Already have debian for {name}".format(name=repository.name)
+                        f"Already have debian for {repository.name}"
                     )
                 )
         return False
@@ -329,9 +329,9 @@ class GradleRunner(object):
                 return True
             raise_and_log_error(
                 ResponseError(
-                    "Bintray failure: {}".format(ex), server="bintray.delete"
+                    f"Bintray failure: {ex}", server="bintray.delete"
                 ),
-                "Failed on url=%s: %s" % (bintray_url, exception_to_message(ex)),
+                f"Failed on url={bintray_url}: {exception_to_message(ex)}",
             )
 
     def get_common_args(self):
@@ -344,7 +344,7 @@ class GradleRunner(object):
 
         if options.maven_custom_init_file:
             # Note, this was only debians
-            args.append("-I {}".format(options.maven_custom_init_file))
+            args.append(f"-I {options.maven_custom_init_file}")
 
         return args
 
@@ -359,11 +359,11 @@ class GradleRunner(object):
         publish_wait_secs = options.bintray_publish_wait_secs
 
         args = [
-            '-PbintrayOrg="{org}"'.format(org=bintray_org),
-            '-PbintrayPackageRepo="{repo}"'.format(repo=debian_repo),
-            '-PbintrayJarRepo="{jarRepo}"'.format(jarRepo=jar_repo),
-            '-PbintrayKey="{key}"'.format(key=bintray_key),
-            '-PbintrayUser="{user}"'.format(user=bintray_user),
+            f'-PbintrayOrg="{bintray_org}"',
+            f'-PbintrayPackageRepo="{debian_repo}"',
+            f'-PbintrayJarRepo="{jar_repo}"',
+            f'-PbintrayKey="{bintray_key}"',
+            f'-PbintrayUser="{bintray_user}"',
             "-PbintrayPackageDebDistribution={distribution}".format(
                 distribution=distribution
             ),
@@ -392,7 +392,7 @@ class GradleRunner(object):
             args.extend(["-I", self.__GRADLE_PUBLISH_FILE])
 
         if self.__is_plugin_version_6(repository):
-            args.extend(["-Pversion=%s-%s" % (version, build_number)])
+            args.extend([f"-Pversion={version}-{build_number}"])
         else:
             args.append("-Prelease.useLastTag=true")
             build_number = self.prepare_local_git_for_nebula(
@@ -460,7 +460,7 @@ class GradleRunner(object):
         if not version:
             build_version = self.__scm.get_repository_service_build_version(repository)
         else:
-            build_version = "%s-%s" % (version, build_number)
+            build_version = f"{version}-{build_number}"
 
         logging.debug(
             'Tagging repository %s with "%s" for nebula', git_dir, build_version
@@ -509,7 +509,7 @@ class GradleCommandFactory(RepositoryCommandFactory):
 
     def init_argparser(self, parser, defaults):
         """Adds command-specific arguments."""
-        super(GradleCommandFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
         GradleRunner.add_parser_args(parser, defaults)
         self.add_bom_parser_args(parser, defaults)
 
@@ -562,5 +562,5 @@ class GradleCommandProcessor(RepositoryCommandProcessor):
         return self.__gradle
 
     def __init__(self, factory, options, **kwargs):
-        super(GradleCommandProcessor, self).__init__(factory, options, **kwargs)
+        super().__init__(factory, options, **kwargs)
         self.__gradle = GradleRunner(options, self.source_code_manager, self.metrics)

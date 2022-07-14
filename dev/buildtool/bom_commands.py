@@ -53,7 +53,7 @@ def now():
     return datetime.datetime.utcnow()
 
 
-class BomBuilder(object):
+class BomBuilder:
     """Helper class for BuildBomCommand that constructs the bom specification."""
 
     @staticmethod
@@ -134,7 +134,7 @@ class BomBuilder(object):
             logging.debug(
                 "Loading bom dependencies from %s", self.__bom_dependencies_path
             )
-            with open(self.__bom_dependencies_path, "r") as stream:
+            with open(self.__bom_dependencies_path) as stream:
                 dependencies = yaml.safe_load(stream.read())
                 logging.debug("Loaded %s", dependencies)
         else:
@@ -212,7 +212,7 @@ class BomBuilder(object):
             "dependencies": dependencies,
             "services": services,
             "version": options.build_number,
-            "timestamp": "{:%Y-%m-%d %H:%M:%S}".format(now()),
+            "timestamp": f"{now():%Y-%m-%d %H:%M:%S}",
         }
 
 
@@ -220,13 +220,13 @@ class BuildBomCommand(RepositoryCommandProcessor):
     """Implements build_bom."""
 
     def __init__(self, factory, options, *pos_args, **kwargs):
-        super(BuildBomCommand, self).__init__(factory, options, *pos_args, **kwargs)
+        super().__init__(factory, options, *pos_args, **kwargs)
 
         if options.refresh_from_bom_path and options.refresh_from_bom_version:
             raise_and_log_error(
                 ConfigError(
-                    'Cannot specify both --refresh_from_bom_path="{0}"'
-                    ' and --refresh_from_bom_version="{1}"'.format(
+                    'Cannot specify both --refresh_from_bom_path="{}"'
+                    ' and --refresh_from_bom_version="{}"'.format(
                         options.refresh_from_bom_path, options.refresh_from_bom_version
                     )
                 )
@@ -236,7 +236,7 @@ class BuildBomCommand(RepositoryCommandProcessor):
                 'Using base bom from path "%s"', options.refresh_from_bom_path
             )
             check_path_exists(options.refresh_from_bom_path, "refresh_from_bom_path")
-            with open(options.refresh_from_bom_path, "r") as stream:
+            with open(options.refresh_from_bom_path) as stream:
                 base_bom = yaml.safe_load(stream.read())
         elif options.refresh_from_bom_version:
             logging.debug(
@@ -281,7 +281,7 @@ class BuildBomCommand(RepositoryCommandProcessor):
 
 class BuildBomCommandFactory(RepositoryCommandFactory):
     def __init__(self, **kwargs):
-        super(BuildBomCommandFactory, self).__init__(
+        super().__init__(
             "build_bom",
             BuildBomCommand,
             "Build a BOM file.",
@@ -291,7 +291,7 @@ class BuildBomCommandFactory(RepositoryCommandFactory):
         )
 
     def init_argparser(self, parser, defaults):
-        super(BuildBomCommandFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
         HalRunner.add_parser_args(parser, defaults)
 
         self.add_argument(

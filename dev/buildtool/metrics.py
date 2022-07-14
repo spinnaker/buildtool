@@ -21,7 +21,7 @@ from buildtool.inmemory_metrics import InMemoryMetricsRegistry
 from buildtool.influxdb_metrics import InfluxDbMetricsRegistry
 
 
-class MetricsManager(object):
+class MetricsManager:
     """Acts as factory for specialized BaseMetricsRegistry singleton."""
 
     __metrics_registry = None

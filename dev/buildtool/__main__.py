@@ -107,7 +107,7 @@ def add_standard_parser_args(parser, defaults):
         parser,
         "parent_invocation_id",
         defaults,
-        "{:%y%m%d}.{}".format(datetime.datetime.utcnow(), os.getpid()),
+        f"{datetime.datetime.utcnow():%y%m%d}.{os.getpid()}",
         help="For identifying the context of the metrics data to be produced.",
     )
 
@@ -119,7 +119,7 @@ def __load_defaults_from_path(path, visited=None):
         raise ValueError('Circular "default_args_file" dependency in %s' % path)
     visited.append(path)
 
-    with open(path, "r") as f:
+    with open(path) as f:
         defaults = yaml.safe_load(f)
 
         # Allow these files to be recursive

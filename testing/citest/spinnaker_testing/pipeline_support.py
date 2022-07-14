@@ -21,7 +21,7 @@ ov_factory = jc.ObservationPredicateFactory()
 """Utilities for producing and running pipelines in test cases"""
 
 
-class PipelineSupport(object):
+class PipelineSupport:
     def __init__(self, scenario):
         self.scenario = scenario
 
@@ -53,7 +53,7 @@ class PipelineSupport(object):
         builder = st.HttpContractBuilder(s.agent)
         (
             builder.new_clause_builder("Has Pipeline", retryable_for_secs=15)
-            .get_url_path("applications/{app}/pipelineConfigs".format(app=s.TEST_APP))
+            .get_url_path(f"applications/{s.TEST_APP}/pipelineConfigs")
             .contains_match(expect_match)
         )
         return st.OperationContract(

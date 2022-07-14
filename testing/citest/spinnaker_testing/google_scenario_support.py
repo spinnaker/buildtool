@@ -195,7 +195,7 @@ class GoogleScenarioSupport(BaseScenarioPlatformSupport):
         Args:
           scenario: [SpinnakerTestScenario] The scenario being supported.
         """
-        super(GoogleScenarioSupport, self).__init__("google", scenario)
+        super().__init__("google", scenario)
         bindings = scenario.bindings
 
         if not bindings["TEST_GCE_ZONE"]:
@@ -225,7 +225,7 @@ GcpResourceUsage = collections.namedtuple(
 )
 
 
-class GcpResourceUsageAnalyzer(object):
+class GcpResourceUsageAnalyzer:
     """A nonstandard class for inspecting Google Quota and Resources.
 
     This isnt for testing, rather is for analyzing the tests to help
@@ -280,10 +280,10 @@ class GcpResourceUsageAnalyzer(object):
         if self.__log_path:
             padding = "  " * indent
             with open(self.__log_path, "a") as fd:
-                fd.write("%s%s\n" % (padding, heading))
+                fd.write(f"{padding}{heading}\n")
                 if detail:
                     padding += "  "
-                    fd.write("%s%s\n" % (padding, detail.replace("\n", "\n" + padding)))
+                    fd.write("{}{}\n".format(padding, detail.replace("\n", "\n" + padding)))
 
     def make_gcp_api_scanner(
         self, project, credentials_path, include_apis=None, exclude_apis=None
@@ -400,13 +400,13 @@ class GcpResourceUsageAnalyzer(object):
                 text_list.append("+ ADDED:")
                 for resource, instances in added.items():
                     text_list.append("  %s" % resource)
-                    text_list.extend(["  - {!r}".format(name) for name in instances])
+                    text_list.extend([f"  - {name!r}" for name in instances])
 
             if removed:
                 text_list.append("- REMOVED:")
                 for resource, instances in removed.items():
                     text_list.append("  %s" % resource)
-                    text_list.extend(["  - {!r}".format(name) for name in instances])
+                    text_list.extend([f"  - {name!r}" for name in instances])
 
         self.__to_log_path(
             "--- RESOURCES ---",

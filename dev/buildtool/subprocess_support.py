@@ -214,7 +214,7 @@ def check_subprocesses_to_logfile(what, logfile, cmds, append=False, **kwargs):
     how = "Appending" if append else "Logging"
     logging.info("%s %s to %s", how, what, logfile)
     ensure_dir_exists(os.path.dirname(logfile))
-    with io.open(logfile, mode, encoding="utf-8") as stream:
+    with open(logfile, mode, encoding="utf-8") as stream:
         try:
             check_subprocess_sequence(cmds, stream=stream, embed_errors=False, **kwargs)
         except Exception as ex:
@@ -223,7 +223,7 @@ def check_subprocesses_to_logfile(what, logfile, cmds, append=False, **kwargs):
 
             traceback.print_exc()
 
-            with io.open(logfile, "r", encoding="utf-8") as readagain:
+            with open(logfile, encoding="utf-8") as readagain:
                 output = readagain.read()
                 log_embedded_output(logging.ERROR, logfile, output)
             logging.error(
@@ -233,7 +233,7 @@ def check_subprocesses_to_logfile(what, logfile, cmds, append=False, **kwargs):
             ensure_dir_exists(ERROR_LOGFILE_DIR)
             error_path = os.path.join("errors", os.path.basename(logfile))
             logging.info("Copying error log file to %s", error_path)
-            with io.open(error_path, "w", encoding="utf-8") as f:
+            with open(error_path, "w", encoding="utf-8") as f:
                 f.write(output)
                 f.write("\n--------\n")
                 f.write("Exeception caught in parent process:\n%s" % ex)

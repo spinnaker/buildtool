@@ -152,7 +152,7 @@ class CollectBomVersions(CommandProcessor):
             else None
         )
 
-        super(CollectBomVersions, self).__init__(factory, options, **kwargs)
+        super().__init__(factory, options, **kwargs)
 
     def load_bom_from_url(self, url):
         """Returns the bom specification dict from a gcs url."""
@@ -250,7 +250,7 @@ class CollectBomVersions(CommandProcessor):
             return
         try:
             if bom["version"] + ".yml" != line[line.rfind("/") + 1 :]:
-                message = 'BOM version "%s" != filename "%s"' % (bom["version"], line)
+                message = 'BOM version "{}" != filename "{}"'.format(bom["version"], line)
                 self.__bad_files[self.url_to_bom_name(line.strip())] = message
                 logging.warning(message)
                 raise_and_log_error(UnexpectedError(message))
@@ -437,7 +437,7 @@ class CollectBomVersions(CommandProcessor):
 
 class CollectBomVersionsFactory(CommandFactory):
     def __init__(self, **kwargs):
-        super(CollectBomVersionsFactory, self).__init__(
+        super().__init__(
             "collect_bom_versions",
             CollectBomVersions,
             "Find information about bom versions.",
@@ -445,7 +445,7 @@ class CollectBomVersionsFactory(CommandFactory):
         )
 
     def init_argparser(self, parser, defaults):
-        super(CollectBomVersionsFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
         self.add_argument(
             parser,
             "version_name_prefix",
@@ -501,7 +501,7 @@ class CollectArtifactVersions(CommandProcessor):
     """
 
     def __init__(self, factory, options, **kwargs):
-        super(CollectArtifactVersions, self).__init__(factory, options, **kwargs)
+        super().__init__(factory, options, **kwargs)
 
         check_options_set(
             options,
@@ -515,7 +515,7 @@ class CollectArtifactVersions(CommandProcessor):
         user = os.environ.get("BINTRAY_USER")
         password = os.environ.get("BINTRAY_KEY")
         if user and password:
-            user_password = "{user}:{password}".format(user=user, password=password)
+            user_password = f"{user}:{password}"
             encoded_auth = base64.b64encode(user_password)
             self.__basic_auth = "Basic %s" % encoded_auth.decode()
         else:
@@ -532,8 +532,8 @@ class CollectArtifactVersions(CommandProcessor):
             content = json.JSONDecoder().decode(payload.decode())
         except HTTPError as ex:
             raise_and_log_error(
-                ResponseError("Bintray failure: {}".format(ex), server="bintray.api"),
-                "Failed on url=%s: %s" % (bintray_url, exception_to_message(ex)),
+                ResponseError(f"Bintray failure: {ex}", server="bintray.api"),
+                f"Failed on url={bintray_url}: {exception_to_message(ex)}",
             )
         except Exception as ex:
             raise
@@ -549,7 +549,7 @@ class CollectArtifactVersions(CommandProcessor):
             # logging.debug('Bintray responded with headers\n%s', headers)
             total = headers.get("X-RangeLimit-Total", 0)
             result.extend(
-                ["%s/%s" % (subject_repo, entry["name"]) for entry in content]
+                ["{}/{}".format(subject_repo, entry["name"]) for entry in content]
             )
             if len(result) >= total:
                 break
@@ -616,7 +616,7 @@ class CollectArtifactVersions(CommandProcessor):
         ]
         results = []
         for repo_type, bintray_repo in repos:
-            subject_repo = "%s/%s" % (options.bintray_org, bintray_repo)
+            subject_repo = f"{options.bintray_org}/{bintray_repo}"
             packages = self.list_bintray_packages(subject_repo)
             package_versions = pool.map(self.query_bintray_package_versions, packages)
 
@@ -626,7 +626,7 @@ class CollectArtifactVersions(CommandProcessor):
             results.append(package_map)
 
             path = os.path.join(
-                self.get_output_dir(), "%s__%s_versions.yml" % (bintray_repo, repo_type)
+                self.get_output_dir(), f"{bintray_repo}__{repo_type}_versions.yml"
             )
             logging.info("Writing %s versions to %s", bintray_repo, path)
             write_to_path(
@@ -738,7 +738,7 @@ class CollectArtifactVersions(CommandProcessor):
         options = self.options
         bucket = options.halyard_bom_bucket
         logging.debug("Collecting configs from bucket %s", bucket)
-        full_bucket_prefix = "gs://{}/".format(bucket)
+        full_bucket_prefix = f"gs://{bucket}/"
         command_parts = ["gsutil", "ls", full_bucket_prefix]
 
         response = check_subprocess(" ".join(command_parts))
@@ -754,7 +754,7 @@ class CollectArtifactVersions(CommandProcessor):
 
             command_parts = ["gsutil", "ls", subdir_prefix]
 
-            logging.debug("Collecting configs from {}".format(subdir_prefix))
+            logging.debug(f"Collecting configs from {subdir_prefix}")
 
             versions = check_subprocess(" ".join(command_parts))
 
@@ -817,7 +817,7 @@ class CollectArtifactVersions(CommandProcessor):
 
 class CollectArtifactVersionsFactory(CommandFactory):
     def __init__(self, **kwargs):
-        super(CollectArtifactVersionsFactory, self).__init__(
+        super().__init__(
             "collect_artifact_versions",
             CollectArtifactVersions,
             "Find information about artifact jar/debian/config versions.",
@@ -825,7 +825,7 @@ class CollectArtifactVersionsFactory(CommandFactory):
         )
 
     def init_argparser(self, parser, defaults):
-        super(CollectArtifactVersionsFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
         self.add_argument(
             parser,
             "bintray_org",
@@ -954,19 +954,19 @@ class AuditArtifactVersions(CommandProcessor):
                 )
 
         logging.debug('Loading container image versions from "%s"', gcr_paths[0])
-        with open(gcr_paths[0], "r") as stream:
+        with open(gcr_paths[0]) as stream:
             self.__container_versions = yaml.safe_load(stream.read())
-        with open(jar_paths[0], "r") as stream:
+        with open(jar_paths[0]) as stream:
             self.__jar_versions = yaml.safe_load(stream.read())
-        with open(debian_paths[0], "r") as stream:
+        with open(debian_paths[0]) as stream:
             self.__debian_versions = yaml.safe_load(stream.read())
-        with open(image_paths[0], "r") as stream:
+        with open(image_paths[0]) as stream:
             self.__gce_image_versions = yaml.safe_load(stream.read())
-        with open(config_paths[0], "r") as stream:
+        with open(config_paths[0]) as stream:
             self.__config_versions = yaml.safe_load(stream.read())
 
     def __extract_all_bom_versions(self, bom_map):
-        result = set([])
+        result = set()
         for versions in bom_map.values():
             if not versions:
                 continue
@@ -1027,7 +1027,7 @@ class AuditArtifactVersions(CommandProcessor):
             # Typically numeric so is interpreted as number from yaml
             options.prune_min_buildnum_prefix = str(options.prune_min_buildnum_prefix)
 
-        super(AuditArtifactVersions, self).__init__(factory, options, **kwargs)
+        super().__init__(factory, options, **kwargs)
         base_path = os.path.dirname(self.get_output_dir())
         self.__init_bintray_versions_helper(base_path)
 
@@ -1040,7 +1040,7 @@ class AuditArtifactVersions(CommandProcessor):
         bom_data_dir = os.path.join(base_path, "collect_bom_versions")
         path = os.path.join(bom_data_dir, "released_bom_service_map.yml")
         check_path_exists(path, "released bom analysis")
-        with open(path, "r") as stream:
+        with open(path) as stream:
             self.__all_released_boms = {}  # forever
             self.__current_released_boms = {}  # since min_version to audit
             for service, versions in yaml.safe_load(stream.read()).items():
@@ -1059,7 +1059,7 @@ class AuditArtifactVersions(CommandProcessor):
 
         path = os.path.join(bom_data_dir, "unreleased_bom_service_map.yml")
         check_path_exists(path, "unreleased bom analysis")
-        with open(path, "r") as stream:
+        with open(path) as stream:
             self.__unreleased_boms = yaml.safe_load(stream.read())
 
         self.__only_bad_and_invalid_boms = False
@@ -1086,7 +1086,7 @@ class AuditArtifactVersions(CommandProcessor):
         self.__unused_gce_images = {}
         self.__unused_configs = {}
         self.__invalid_boms = {}
-        self.__confirmed_boms = set([])
+        self.__confirmed_boms = set()
         self.__prune_boms = []
         self.__prune_jars = {}
         self.__prune_debians = {}
@@ -1187,7 +1187,7 @@ class AuditArtifactVersions(CommandProcessor):
             "bom_list.txt",
         )
         candidates = []
-        with open(path, "r") as stream:
+        with open(path) as stream:
             for line in stream.read().split("\n"):
                 # This matches both -unvalidated and -validated BOMs
                 if line.endswith("validated.yml"):
@@ -1249,14 +1249,14 @@ class AuditArtifactVersions(CommandProcessor):
         path = os.path.join(
             os.path.dirname(self.get_output_dir()), "collect_bom_versions", "config.yml"
         )
-        with open(path, "r") as stream:
+        with open(path) as stream:
             bom_config = yaml.safe_load(stream.read())
         path = os.path.join(
             os.path.dirname(self.get_output_dir()),
             "collect_artifact_versions",
             "config.yml",
         )
-        with open(path, "r") as stream:
+        with open(path) as stream:
             art_config = yaml.safe_load(stream.read())
 
         if self.__prune_boms:
@@ -1264,11 +1264,11 @@ class AuditArtifactVersions(CommandProcessor):
             logging.info("Writing to %s", path)
             write_to_path("\n".join(sorted(self.__prune_boms)), path)
 
-        jar_repo_path = "packages/%s/%s" % (
+        jar_repo_path = "packages/{}/{}".format(
             art_config["bintray_org"],
             art_config["bintray_jar_repository"],
         )
-        debian_repo_path = "packages/%s/%s" % (
+        debian_repo_path = "packages/{}/{}".format(
             art_config["bintray_org"],
             art_config["bintray_debian_repository"],
         )
@@ -1277,7 +1277,7 @@ class AuditArtifactVersions(CommandProcessor):
             % (jar_repo_path, name),
             "debian": lambda name: "https://api.bintray.com/%s/%s/versions/"
             % (debian_repo_path, name if name == "spinnaker" else "spinnaker-" + name),
-            "container": lambda name: "%s/%s:" % (art_config["docker_registry"], name),
+            "container": lambda name: "{}/{}:".format(art_config["docker_registry"], name),
             "image": lambda name: "spinnaker-%s-" % name,
             "config": lambda name: "gs://%s/%s/"
             % (bom_config["halyard_bom_bucket"], name),
@@ -1458,7 +1458,7 @@ class AuditArtifactVersions(CommandProcessor):
 
         data_list = which.get(package, [])
         if buildnum:
-            data_list.append("%s-%s" % (version, buildnum))
+            data_list.append(f"{version}-{buildnum}")
         else:
             data_list.append(version)
         which[package] = data_list
@@ -1514,7 +1514,7 @@ class AuditArtifactVersions(CommandProcessor):
             for version, commits in versions.items():
                 for _, buildnums in commits.items():
                     for buildnum, info_list in buildnums.items():
-                        version_buildnum = "%s-%s" % (version, buildnum)
+                        version_buildnum = f"{version}-{buildnum}"
                         if service in [
                             "monitoring-daemon",
                             "monitoring-third-party",
@@ -1559,7 +1559,7 @@ class AuditArtifactVersions(CommandProcessor):
 
 class AuditArtifactVersionsFactory(CommandFactory):
     def __init__(self, **kwargs):
-        super(AuditArtifactVersionsFactory, self).__init__(
+        super().__init__(
             "audit_artifact_versions",
             AuditArtifactVersions,
             "Audit artifact versions in BOMs and vice-versa",
@@ -1567,7 +1567,7 @@ class AuditArtifactVersionsFactory(CommandFactory):
         )
 
     def init_argparser(self, parser, defaults):
-        super(AuditArtifactVersionsFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
         self.add_argument(
             parser,
             "min_audit_bom_version",

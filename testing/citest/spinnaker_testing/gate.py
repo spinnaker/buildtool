@@ -50,7 +50,7 @@ class BaseGateStatus(sk.SpinnakerStatus):
 
     def export_summary_to_json_snapshot(self, snapshot, entity):
         """Implements JsonSnapshotableEntity"""
-        super(BaseGateStatus, self).export_summary_to_json_snapshot(snapshot, entity)
+        super().export_summary_to_json_snapshot(snapshot, entity)
         detail = self.detail_doc
         if not detail:
             return
@@ -68,7 +68,7 @@ class BaseGateStatus(sk.SpinnakerStatus):
         self._export_status(detail[0], builder, entity)
         self._export_time_info(detail[0], base_time, builder, entity)
 
-        step_list_entity = snapshot.new_entity(summary="{0} parts".format(len(detail)))
+        step_list_entity = snapshot.new_entity(summary=f"{len(detail)} parts")
 
         for index, step in enumerate(detail):
             step_entity = snapshot.new_entity()
@@ -77,7 +77,7 @@ class BaseGateStatus(sk.SpinnakerStatus):
             )
             builder.make(
                 step_list_entity,
-                "[{0}] {1}".format(index, step.get("name")),
+                "[{}] {}".format(index, step.get("name")),
                 step_entity,
             )
         builder.make(entity, "Steps", step_list_entity)
@@ -102,7 +102,7 @@ class BaseGateStatus(sk.SpinnakerStatus):
         if not stages:
             return
         stage_list_entity = snapshot.new_entity(
-            summary="{0} stages".format(len(stages))
+            summary=f"{len(stages)} stages"
         )
         worst_relation_score = self._RELATION_SCORE.get(None)
         for index, stage in enumerate(stages):
@@ -118,7 +118,7 @@ class BaseGateStatus(sk.SpinnakerStatus):
             decorator = "(*) " if stage.get("status") == "RUNNING" else ""
             builder.make(
                 stage_list_entity,
-                "[{0}] {1}{2}".format(index, decorator, stage.get("name")),
+                "[{}] {}{}".format(index, decorator, stage.get("name")),
                 stage_entity,
                 relation=relation,
             )
@@ -157,7 +157,7 @@ class BaseGateStatus(sk.SpinnakerStatus):
         if not tasks:
             return stage_relation
 
-        task_list_entity = snapshot.new_entity(summary="{0} tasks".format(len(tasks)))
+        task_list_entity = snapshot.new_entity(summary=f"{len(tasks)} tasks")
         worst_relation_score = self._RELATION_SCORE.get(None)
         for index, task in enumerate(tasks):
             task_name = task.get("name")
@@ -173,7 +173,7 @@ class BaseGateStatus(sk.SpinnakerStatus):
             decorator = "(*) " if task.get("status") == "RUNNING" else ""
             builder.make(
                 task_list_entity,
-                "[{0}] {1}{2}".format(index, decorator, task_name),
+                f"[{index}] {decorator}{task_name}",
                 task_entity,
                 relation=relation,
             )
@@ -204,7 +204,7 @@ class GateTaskStatus(BaseGateStatus):
           operation: [AgentOperation] The operation this status is for.
           original_response: [string] The original JSON with the status identifier.
         """
-        super(GateTaskStatus, self).__init__(operation, original_response)
+        super().__init__(operation, original_response)
 
         if not original_response.ok():
             self._bind_error(original_response.error_message)
@@ -221,7 +221,7 @@ class GateTaskStatus(BaseGateStatus):
             self._bind_detail_path(doc["ref"])
             self._bind_id(self.detail_path)
         else:
-            self._bind_error("Invalid response='{0}'".format(original_response))
+            self._bind_error(f"Invalid response='{original_response}'")
             self.current_state = "CITEST_INTERNAL_ERROR"
 
     def _update_response_from_json(self, doc):
@@ -284,7 +284,7 @@ class GatePipelineStatus(BaseGateStatus):
           operation: [AgentOperation] The operation this status is for.
           original_response: [string] The original JSON with the status identifier.
         """
-        super(GatePipelineStatus, self).__init__(operation, original_response)
+        super().__init__(operation, original_response)
         self.__saw_pipeline = False
 
     def _update_response_from_json(self, doc):
@@ -298,7 +298,7 @@ class GatePipelineStatus(BaseGateStatus):
         self._bind_exception_details(None)
 
         if not isinstance(doc, list):
-            self._bind_error("Invalid response='{0}'".format(doc))
+            self._bind_error(f"Invalid response='{doc}'")
             self.current_state = "CITEST_INTERNAL_ERROR"
 
         # It can take a while for the running pipelines to show up.

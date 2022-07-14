@@ -42,7 +42,7 @@ from publish_bom import format_stable_branch
 from spinnaker.run import check_run_quick
 
 
-class HalyardPublisher(object):
+class HalyardPublisher:
     """Publishes a nightly version of Halyard to be a stable version."""
 
     def __init__(self, options, build_number=None):
@@ -66,12 +66,12 @@ class HalyardPublisher(object):
         """Clones the Halyard git repo at the commit at which we built the nightly version."""
         bucket_uri = self.__hal_nightly_bucket_uri
         local_bucket_name = os.path.basename(bucket_uri)
-        print("cloning: {0}".format(self.__halyard_repo_uri))
-        check_run_quick("git clone {0}".format(self.__halyard_repo_uri))
+        print(f"cloning: {self.__halyard_repo_uri}")
+        check_run_quick(f"git clone {self.__halyard_repo_uri}")
 
         # Read the Halyard nightly bucket file.
         print(
-            "Fetching Halyard nightly build info from {0}. Writing locally to {1}.".format(
+            "Fetching Halyard nightly build info from {}. Writing locally to {}.".format(
                 bucket_uri, local_bucket_name
             )
         )
@@ -82,11 +82,11 @@ class HalyardPublisher(object):
                 remote_uri=bucket_uri, local_bucket=local_bucket_name
             )
         )
-        nightly_commit_file = "{0}/nightly-version-commits.yml".format(
+        nightly_commit_file = "{}/nightly-version-commits.yml".format(
             local_bucket_name
         )
         nightly_commit_dict = {}
-        with open(nightly_commit_file, "r") as ncf:
+        with open(nightly_commit_file) as ncf:
             nightly_commit_dict = yaml.safe_load(ncf.read())
 
         # Check Halyard out at the correct commit.
@@ -98,18 +98,18 @@ class HalyardPublisher(object):
                 )
             )
         print(
-            "Checking out Halyard from {0} repo at commit {1}.".format(
+            "Checking out Halyard from {} repo at commit {}.".format(
                 self.__halyard_repo_uri, commit_to_build
             )
         )
-        check_run_quick("git -C halyard checkout {0}".format(commit_to_build))
+        check_run_quick(f"git -C halyard checkout {commit_to_build}")
 
     def __update_versions_tracking_file(self):
         """Updates the global versions.yml tracking file to point at the new
         version of Halyard.
         """
         check_run_quick(
-            "hal admin publish latest-halyard {}".format(self.__stable_version)
+            f"hal admin publish latest-halyard {self.__stable_version}"
         )
 
     def __tag_halyard_repo(self):
@@ -136,12 +136,12 @@ class HalyardPublisher(object):
         extra_args = [
             "--debug",
             "-Prelease.useLastTag=true",
-            "-PbintrayPackageBuildNumber={number}".format(number=self.__build_number),
-            '-PbintrayOrg="{org}"'.format(org=org),
-            '-PbintrayPackageRepo="{repo}"'.format(repo=packageRepo),
-            '-PbintrayJarRepo="{jarRepo}"'.format(jarRepo=jarRepo),
-            '-PbintrayKey="{key}"'.format(key=bintray_key),
-            '-PbintrayUser="{user}"'.format(user=bintray_user),
+            f"-PbintrayPackageBuildNumber={self.__build_number}",
+            f'-PbintrayOrg="{org}"',
+            f'-PbintrayPackageRepo="{packageRepo}"',
+            f'-PbintrayJarRepo="{jarRepo}"',
+            f'-PbintrayKey="{bintray_key}"',
+            f'-PbintrayUser="{bintray_user}"',
             "-PbintrayPackageDebDistribution=trusty-stable",
         ]
 
@@ -154,18 +154,18 @@ class HalyardPublisher(object):
         self.__stable_branch = format_stable_branch(major, minor)
 
         if self.__patch_release:
-            check_run_quick("git -C halyard checkout {0}".format(self.__stable_branch))
+            check_run_quick(f"git -C halyard checkout {self.__stable_branch}")
         else:
             # Create new release branch.
             check_run_quick(
-                "git -C halyard checkout -b {0}".format(self.__stable_branch)
+                f"git -C halyard checkout -b {self.__stable_branch}"
             )
 
         repo_to_push = "git@github.com:{owner}/halyard.git".format(
             owner=self.__github_publisher
         )
         check_run_quick(
-            "git -C halyard remote add release {url}".format(url=repo_to_push)
+            f"git -C halyard remote add release {repo_to_push}"
         )
 
         print(
@@ -174,7 +174,7 @@ class HalyardPublisher(object):
             )
         )
         check_run_quick(
-            "git -C halyard push release {branch}".format(branch=self.__stable_branch)
+            f"git -C halyard push release {self.__stable_branch}"
         )
 
         print(
@@ -183,7 +183,7 @@ class HalyardPublisher(object):
             )
         )
         check_run_quick(
-            "git -C halyard push release {tag}".format(tag=self.__stable_version_tag)
+            f"git -C halyard push release {self.__stable_version_tag}"
         )
 
     def __generate_halyard_docs(self):
@@ -204,9 +204,9 @@ class HalyardPublisher(object):
         repo_uri = "git@github.com:{repo_owner}/{repo_name}".format(
             repo_owner=self.__docs_repo_owner, repo_name=self.__docs_repo_name
         )
-        check_run_quick("git clone {repo_uri}".format(repo_uri=repo_uri))
+        check_run_quick(f"git clone {repo_uri}")
 
-        with open(docs_source, "r") as source:
+        with open(docs_source) as source:
             with open(docs_target, "w") as target:
                 header = "\n".join(
                     [

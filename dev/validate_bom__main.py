@@ -133,7 +133,7 @@ def get_options(args):
 
     # Add platform/spinnaker_type to each metric we produce.
     # We'll use this to distinguish what was being tested.
-    context_labels = "platform=%s,deployment_type=%s" % (
+    context_labels = "platform={},deployment_type={}".format(
         validate_bom__deploy.determine_deployment_platform(options),
         options.deploy_spinnaker_type,
     )

@@ -90,7 +90,7 @@ class AppengineGcsPubsubTestScenario(sk.SpinnakerTestScenario):
         Args:
         parser: argparse.ArgumentParser
         """
-        super(AppengineGcsPubsubTestScenario, cls).initArgumentParser(
+        super().initArgumentParser(
             parser, defaults=defaults
         )
 
@@ -128,7 +128,7 @@ class AppengineGcsPubsubTestScenario(sk.SpinnakerTestScenario):
         )
 
     def __init__(self, bindings, agent=None):
-        super(AppengineGcsPubsubTestScenario, self).__init__(bindings, agent)
+        super().__init__(bindings, agent)
         self.logger = logging.getLogger(__name__)
 
         bindings = self.bindings
@@ -251,7 +251,7 @@ class AppengineGcsPubsubTestScenario(sk.SpinnakerTestScenario):
             "id": self.__EXPECTED_ARTIFACT_ID,
             "matchArtifact": {
                 "kind": "gcs",
-                "name": "gs://{}/app.tar".format(self.bucket),
+                "name": f"gs://{self.bucket}/app.tar",
                 "type": "gcs/object",
             },
             "useDefaultArtifact": False,
@@ -355,7 +355,7 @@ class AppengineGcsPubsubTestScenario(sk.SpinnakerTestScenario):
         )
 
         # Triggered pipeline does a deploy, check for that server group.
-        server_group_path = "applications/{app}/serverGroups".format(app=self.TEST_APP)
+        server_group_path = f"applications/{self.TEST_APP}/serverGroups"
         builder = st.HttpContractBuilder(self.agent)
         (
             builder.new_clause_builder(
@@ -369,13 +369,13 @@ class AppengineGcsPubsubTestScenario(sk.SpinnakerTestScenario):
             )
         )
 
-        executions_path = "executions?pipelineConfigIds={}".format(self.__pipeline_id)
+        executions_path = f"executions?pipelineConfigIds={self.__pipeline_id}"
         return st.OperationContract(
             self.__gcs_pubsub_agent.new_gcs_pubsub_trigger_operation(
                 gate_agent=self.agent,
                 title="monitor_gcs_pubsub_pipeline",
                 bucket_name=self.bucket,
-                upload_path="{}".format(name),
+                upload_path=f"{name}",
                 local_filename=os.path.abspath(name),
                 status_class=gate.GatePipelineStatus,
                 status_path=executions_path,
@@ -396,7 +396,7 @@ class AppengineGcsPubsubTestScenario(sk.SpinnakerTestScenario):
                     "user": "[anonymous]",
                 }
             ],
-            description="Delete Load Balancer: {0} in {1}".format(
+            description="Delete Load Balancer: {} in {}".format(
                 self.__lb_name, bindings["SPINNAKER_APPENGINE_ACCOUNT"]
             ),
             application=self.TEST_APP,
@@ -428,7 +428,7 @@ class AppengineGcsPubsubTestScenario(sk.SpinnakerTestScenario):
         (
             builder.new_clause_builder("Has Pipeline", retryable_for_secs=5)
             .get_url_path(
-                "applications/{app}/pipelineConfigs".format(app=self.TEST_APP)
+                f"applications/{self.TEST_APP}/pipelineConfigs"
             )
             .excludes_path_value("name", pipeline_id)
         )
@@ -456,7 +456,7 @@ class AppengineGcsPubsubTest(st.AgentTestCase):
 
         scenario.temp = tempfile.mkdtemp()
 
-        gcs_path = "gs://{bucket}".format(bucket=scenario.bucket)
+        gcs_path = f"gs://{scenario.bucket}"
         topic = "{}-topic".format(bindings["TEST_APP"])
         subscription = "{}-subscription".format(bindings["TEST_APP"])
 

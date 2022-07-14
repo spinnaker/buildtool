@@ -81,7 +81,7 @@ class AppengineSmokeTestScenario(sk.SpinnakerTestScenario):
     @classmethod
     def initArgumentParser(cls, parser, defaults=None):
         """Initialize command line argument parser."""
-        super(AppengineSmokeTestScenario, cls).initArgumentParser(
+        super().initArgumentParser(
             parser, defaults=defaults
         )
         parser.add_argument(
@@ -122,7 +122,7 @@ class AppengineSmokeTestScenario(sk.SpinnakerTestScenario):
         )
 
     def __init__(self, bindings, agent=None):
-        super(AppengineSmokeTestScenario, self).__init__(bindings, agent)
+        super().__init__(bindings, agent)
 
         if not bindings["GIT_REPO_URL"]:
             raise ValueError("Must supply value for --git_repo_url")
@@ -390,7 +390,7 @@ class AppengineSmokeTestScenario(sk.SpinnakerTestScenario):
         builder = st.HttpContractBuilder(self.agent)
         (
             builder.new_clause_builder("Has Pipeline", retryable_for_secs=5)
-            .get_url_path("applications/{0}/pipelineConfigs".format(self.TEST_APP))
+            .get_url_path(f"applications/{self.TEST_APP}/pipelineConfigs")
             .contains_path_value(None, pipeline_spec)
         )
 
@@ -405,7 +405,7 @@ class AppengineSmokeTestScenario(sk.SpinnakerTestScenario):
         )
 
     def run_deploy_upsert_load_balancer_pipeline(self):
-        url_path = "pipelines/{0}/{1}".format(self.TEST_APP, self.pipeline_id)
+        url_path = f"pipelines/{self.TEST_APP}/{self.pipeline_id}"
 
         previous_group_name = frigga.Naming.server_group(
             app=self.TEST_APP, stack=self.TEST_STACK, version="v000"
@@ -460,7 +460,7 @@ class AppengineSmokeTestScenario(sk.SpinnakerTestScenario):
                     "user": "[anonymous]",
                 }
             ],
-            description="Delete Load Balancer: {0} in {1}".format(
+            description="Delete Load Balancer: {} in {}".format(
                 self.__lb_name, bindings["SPINNAKER_APPENGINE_ACCOUNT"]
             ),
             application=self.TEST_APP,

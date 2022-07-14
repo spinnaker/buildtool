@@ -498,7 +498,7 @@ class GoogleKatoTestScenario(sk.SpinnakerTestScenario):
         self.__use_lb_name = "katotest-lb-" + self.test_id
         self.__use_lb_hc_name = "%s-hc" % self.__use_lb_name
         self.__use_lb_tp_name = "%s-tp" % self.__use_lb_name
-        self.__use_lb_target = "{0}/targetPools/{1}".format(
+        self.__use_lb_target = "{}/targetPools/{}".format(
             self.bindings["TEST_GCE_REGION"], self.__use_lb_tp_name
         )
 

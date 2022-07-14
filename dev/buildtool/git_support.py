@@ -44,7 +44,7 @@ from buildtool import (
 )
 
 
-class GitRepositorySpec(object):
+class GitRepositorySpec:
     """A reference to a git repository with local and origin locations.
 
     Attributes:
@@ -64,7 +64,7 @@ class GitRepositorySpec(object):
         """The path to the local repository the origin was cloned to."""
         if not self.__git_dir:
             raise_and_log_error(
-                ConfigError("{0} does not specify a git_dir".format(self))
+                ConfigError(f"{self} does not specify a git_dir")
             )
         return self.__git_dir
 
@@ -73,7 +73,7 @@ class GitRepositorySpec(object):
         """The origin URL."""
         if not self.__origin:
             raise_and_log_error(
-                ConfigError("{0} does not specify an origin".format(self))
+                ConfigError(f"{self} does not specify an origin")
             )
         return self.__origin
 
@@ -82,7 +82,7 @@ class GitRepositorySpec(object):
         """The upstream URL."""
         if not self.__upstream:
             raise_and_log_error(
-                ConfigError("{0} does not specify an upstream".format(self))
+                ConfigError(f"{self} does not specify an upstream")
             )
         return self.__upstream
 
@@ -239,7 +239,7 @@ class SemanticVersion(
 
     def to_release_branch(self):
         """Return release branch name for this SemanticVersion."""
-        return "release-{major}.{minor}.x".format(major=self.major, minor=self.minor)
+        return f"release-{self.major}.{self.minor}.x"
 
     def next(self, at_index):
         """Returns the next SemanticVersion from this when bumping up.
@@ -248,7 +248,7 @@ class SemanticVersion(
            at_index: [int] The component *_INDEX to bump at.
         """
         if at_index is None:
-            raise_and_log_error(UnexpectedError("Invalid index={0}".format(at_index)))
+            raise_and_log_error(UnexpectedError(f"Invalid index={at_index}"))
 
         major = self.major
         minor = self.minor
@@ -265,7 +265,7 @@ class SemanticVersion(
                 major += 1
             else:
                 raise_and_log_error(
-                    UnexpectedError("Invalid index={0}".format(at_index))
+                    UnexpectedError(f"Invalid index={at_index}")
                 )
 
         return SemanticVersion(self.series_name, major, minor, patch)
@@ -379,7 +379,7 @@ class CommitMessage(
         match = CommitMessage._MEDIUM_PRETTY_COMMIT_MATCHER.match(entry)
         if match is None:
             raise_and_log_error(
-                UnexpectedError("Unexpected commit entry {0}".format(entry))
+                UnexpectedError(f"Unexpected commit entry {entry}")
             )
 
         text = entry[match.end(3) :]
@@ -627,7 +627,7 @@ class RepositorySummary(
         )
 
 
-class GitRunner(object):
+class GitRunner:
     """Helper class for interacting with Git"""
 
     __GITHUB_TOKEN = None
@@ -763,12 +763,12 @@ class GitRunner(object):
     @staticmethod
     def make_https_url(host, owner, repo):
         """Return github https url."""
-        return "https://{host}/{owner}/{repo}".format(host=host, owner=owner, repo=repo)
+        return f"https://{host}/{owner}/{repo}"
 
     @staticmethod
     def make_ssh_url(host, owner, repo):
         """Return github https url."""
-        return "git@{host}:{owner}/{repo}".format(host=host, owner=owner, repo=repo)
+        return f"git@{host}:{owner}/{repo}"
 
     @property
     def options(self):
@@ -800,14 +800,14 @@ class GitRunner(object):
         """Wrapper around run_subprocess."""
         self.__inject_auth(kwargs)
         return run_subprocess(
-            'git -C "{dir}" {command}'.format(dir=git_dir, command=command), **kwargs
+            f'git -C "{git_dir}" {command}', **kwargs
         )
 
     def check_run(self, git_dir, command, **kwargs):
         """Wrapper around check_subprocess."""
         self.__inject_auth(kwargs)
         return check_subprocess(
-            'git -C "{dir}" {command}'.format(dir=git_dir, command=command), **kwargs
+            f'git -C "{git_dir}" {command}', **kwargs
         )
 
     def check_run_sequence(self, git_dir, commands):
@@ -902,7 +902,7 @@ class GitRunner(object):
         lines = stdout.split("\n")
         if len(lines) != 1:
             raise_and_log_error(
-                UnexpectedError('"{tag}" -> "{msg}"'.format(tag=tag, msg=stdout))
+                UnexpectedError(f'"{tag}" -> "{stdout}"')
             )
         return stdout.split(" ")[0]
 
@@ -915,7 +915,7 @@ class GitRunner(object):
         """Returns the current commit for the remote repository."""
         args = {}
         self.__inject_auth(args)
-        result = check_subprocess("git ls-remote %s %s" % (url, branch), **args)
+        result = check_subprocess(f"git ls-remote {url} {branch}", **args)
         return result.split("\t")[0]
 
     def query_local_repository_branch(self, git_dir):
@@ -977,7 +977,7 @@ class GitRunner(object):
             logging.warning(
                 "SKIP pushing tag because --git_never_push=true."
                 "\nCommand would have been: %s",
-                'git -C "{dir}" push origin {tag}'.format(dir=git_dir, tag=tag),
+                f'git -C "{git_dir}" push origin {tag}',
             )
             return
 
@@ -1018,7 +1018,7 @@ class GitRunner(object):
             return
 
         logging.debug("Refreshing %s from %s", git_dir, remote_name)
-        command = "fetch {remote_name} --tags".format(remote_name=remote_name)
+        command = f"fetch {remote_name} --tags"
         result = self.check_run(git_dir, command)
         logging.info("%s:\n%s", repository.name, result)
 
@@ -1026,17 +1026,17 @@ class GitRunner(object):
         remaining_branches = list(branches)
         while True:
             branch = remaining_branches.pop(0)
-            cmd = "{clone} -b {branch}".format(clone=clone_command, branch=branch)
+            cmd = f"{clone_command} -b {branch}"
             retcode, stdout = self.run_git(base_dir, cmd)
             if not retcode:
                 return
 
             not_found = (
-                stdout.find("Remote branch {branch} not found".format(branch=branch))
+                stdout.find(f"Remote branch {branch} not found")
                 >= 0
             )
             if not not_found:
-                full_command = 'git -C "{dir}" {cmd}'.format(dir=base_dir, cmd=cmd)
+                full_command = f'git -C "{base_dir}" {cmd}'
                 raise_and_log_error(
                     ExecutionError(full_command, program="git"),
                     full_command + " failed with:\n" + stdout,
@@ -1058,7 +1058,7 @@ class GitRunner(object):
             )
             raise_and_log_error(
                 ConfigError(
-                    "Branches {0} do not exist in {1}.".format(branches, remote_url)
+                    f"Branches {branches} do not exist in {remote_url}."
                 )
             )
 
@@ -1147,7 +1147,7 @@ class GitRunner(object):
         )
         if self.__options.github_disable_upstream_push:
             self.check_run(
-                git_dir, "remote set-url --push {which} disabled".format(which=which)
+                git_dir, f"remote set-url --push {which} disabled"
             )
         if which != "origin" or not self.__options.github_disable_upstream_push:
             parts = self.normalize_repo_url(repository.origin)
@@ -1164,7 +1164,7 @@ class GitRunner(object):
 
     def tag_head(self, git_dir, tag):
         """Add tag to the local repository HEAD."""
-        self.check_run(git_dir, "tag {tag} HEAD".format(tag=tag))
+        self.check_run(git_dir, f"tag {tag} HEAD")
 
     def query_tag_commits(self, git_dir, tag_pattern):
         """Collect the TagCommit for each tag matching the pattern.
@@ -1175,7 +1175,7 @@ class GitRunner(object):
         if retcode and stdout:
             raise_and_log_error(
                 ExecutionError("git failed in %s" % git_dir, program="git"),
-                'git -C "%s" show-ref --tags: %s' % (git_dir, stdout),
+                f'git -C "{git_dir}" show-ref --tags: {stdout}',
             )
 
         ref_lines = stdout.split("\n")
@@ -1194,7 +1194,7 @@ class GitRunner(object):
         origin_url = remote_urls.get("origin")
         if not origin_url:
             raise_and_log_error(
-                UnexpectedError('{0} has no remote "origin"'.format(git_dir))
+                UnexpectedError(f'{git_dir} has no remote "origin"')
             )
         return GitRepositorySpec(
             os.path.basename(git_dir),

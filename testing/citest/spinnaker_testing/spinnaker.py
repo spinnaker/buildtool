@@ -155,7 +155,7 @@ class SpinnakerStatus(service_testing.HttpOperationStatus):
         self.__detail_path = path
 
     def export_to_json_snapshot(self, snapshot, entity):
-        super(SpinnakerStatus, self).export_to_json_snapshot(snapshot, entity)
+        super().export_to_json_snapshot(snapshot, entity)
         snapshot.edge_builder.make_output(
             entity, "Status Detail", self.__json_doc, format="json"
         )
@@ -169,7 +169,7 @@ class SpinnakerStatus(service_testing.HttpOperationStatus):
               returned from the Spinnaker request to track. This can be none to
               indicate an error making the original request.
         """
-        super(SpinnakerStatus, self).__init__(operation, original_response)
+        super().__init__(operation, original_response)
         if original_response is not None:
             # The request ID is typically the response payload.
             self.__request_id = original_response.output
@@ -207,8 +207,8 @@ class SpinnakerStatus(service_testing.HttpOperationStatus):
             # This is temporary to help track down a transient error.
             # Normally we dont want to do this because we want to scrub the output.
             sys.stderr.write(
-                "Bad response from agent={0}\n"
-                "CAUGHT {1}\nRESPONSE: {2}\n".format(self.agent, bex, http_response)
+                "Bad response from agent={}\n"
+                "CAUGHT {}\nRESPONSE: {}\n".format(self.agent, bex, http_response)
             )
             raise
 
@@ -293,12 +293,12 @@ class SpinnakerStatus(service_testing.HttpOperationStatus):
         offset = (start_time - base_time) / 1000.0
         end_time = info.get("endTime")
         if not end_time:
-            builder.make_data(entity, "Time", "Running since {0}".format(offset))
+            builder.make_data(entity, "Time", f"Running since {offset}")
         else:
             builder.make_data(
                 entity,
                 "Time",
-                "{0} secs + {1}".format(offset, (end_time - start_time) / 1000.0),
+                f"{offset} secs + {(end_time - start_time) / 1000.0}",
             )
 
     def _export_error_info(self, container, builder, entity):
@@ -411,7 +411,7 @@ class SpinnakerAgent(service_testing.HttpAgent):
                 name, status_factory, bindings, port
             )
 
-        raise ValueError("Unknown host_platform={0}".format(host_platform))
+        raise ValueError(f"Unknown host_platform={host_platform}")
 
     @classmethod
     def new_gce_instance_from_bindings(cls, name, status_factory, bindings, port):
@@ -443,7 +443,7 @@ class SpinnakerAgent(service_testing.HttpAgent):
         ignore_ssl_cert_verification = bindings["IGNORE_SSL_CERT_VERIFICATION"]
 
         logger = logging.getLogger(__name__)
-        JournalLogger.begin_context("Locating {0}...".format(name))
+        JournalLogger.begin_context(f"Locating {name}...")
         context_relation = "ERROR"
         try:
             gcloud = gcp.GCloudAgent(
@@ -456,20 +456,20 @@ class SpinnakerAgent(service_testing.HttpAgent):
                 gcloud=gcloud, instance=instance, target_port=port
             )
             if not netloc:
-                error = "Could not locate {0}.".format(name)
+                error = f"Could not locate {name}."
                 logger.error(error)
                 context_relation = "INVALID"
                 raise RuntimeError(error)
 
             protocol = bindings["NETWORK_PROTOCOL"]
-            base_url = "{protocol}://{netloc}".format(protocol=protocol, netloc=netloc)
+            base_url = f"{protocol}://{netloc}"
             logger.info("%s is available at %s. Using %s", name, netloc, base_url)
             deployed_config = scrape_spring_config(
                 os.path.join(base_url, "resolvedEnv"),
                 ignore_ssl_cert_verification=ignore_ssl_cert_verification,
             )
             JournalLogger.journal_or_log_detail(
-                "{0} configuration".format(name), deployed_config
+                f"{name} configuration", deployed_config
             )
             spinnaker_agent = cls(base_url, status_factory)
             spinnaker_agent.__deployed_config = deployed_config
@@ -512,14 +512,14 @@ class SpinnakerAgent(service_testing.HttpAgent):
         env_url = os.path.join(base_url, "resolvedEnv")
         headers = {}
         if bearer_auth_token:
-            headers["Authorization"] = "Bearer {}".format(bearer_auth_token)
+            headers["Authorization"] = f"Bearer {bearer_auth_token}"
         deployed_config = scrape_spring_config(
             env_url,
             headers=headers,
             ignore_ssl_cert_verification=ignore_ssl_cert_verification,
         )
         JournalLogger.journal_or_log_detail(
-            "{0} configuration".format(name), deployed_config
+            f"{name} configuration", deployed_config
         )
 
         spinnaker_agent = cls(base_url, status_factory)
@@ -528,7 +528,7 @@ class SpinnakerAgent(service_testing.HttpAgent):
 
         if bearer_auth_token:
             spinnaker_agent.add_header(
-                "Authorization", "Bearer {}".format(bearer_auth_token)
+                "Authorization", f"Bearer {bearer_auth_token}"
             )
 
         return spinnaker_agent
@@ -563,7 +563,7 @@ class SpinnakerAgent(service_testing.HttpAgent):
           status_factory: [SpinnakerStatus (SpinnakerAgent, HttpResponseType)]
              Factory method for creating specialized SpinnakerStatus instances.
         """
-        super(SpinnakerAgent, self).__init__(base_url)
+        super().__init__(base_url)
         self.__deployed_config = {}
         self.__default_status_factory = status_factory
 
@@ -609,7 +609,7 @@ class SpinnakerAgent(service_testing.HttpAgent):
             try:
                 yaml_accumulator.load_path(yaml_file, config_dict)
                 return config_dict
-            except IOError as ex:
+            except OSError as ex:
                 logger.error("Failed to load from %s: %s", yaml_file, ex)
                 return None
 

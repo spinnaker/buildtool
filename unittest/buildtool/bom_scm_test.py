@@ -36,7 +36,7 @@ def _foreach_func(repository, *pos_args, **kwargs):
 
 class TestBomSourceCodeManager(BaseGitRepoTestFixture):
     def make_test_options(self):
-        options = super(TestBomSourceCodeManager, self).make_test_options()
+        options = super().make_test_options()
         parser = argparse.ArgumentParser()
         parser.add_argument("--output_dir", default=options.output_dir)
         GitRunner.add_parser_args(parser, {"github_owner": "test_github_owner"})

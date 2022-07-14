@@ -22,7 +22,7 @@ import threading
 import time
 
 
-class Metric(object):
+class Metric:
     """A metric with unique combination of name and bindings."""
 
     @property
@@ -70,7 +70,7 @@ class Counter(Metric):
         return self.__count
 
     def __init__(self, family, labels):
-        super(Counter, self).__init__(family, labels)
+        super().__init__(family, labels)
         self.__count = 0
 
     def inc(self, amount=1, utc=None):
@@ -85,7 +85,7 @@ class Gauge(Metric):
         return self.__compute()
 
     def __init__(self, family, labels, compute=None):
-        super(Gauge, self).__init__(family, labels)
+        super().__init__(family, labels)
         func = lambda: self.__value
         self.__value = 0
         self.__compute = compute or func
@@ -131,7 +131,7 @@ class Timer(Metric):
         return self.__total
 
     def __init__(self, family, labels):
-        super(Timer, self).__init__(family, labels)
+        super().__init__(family, labels)
         self.__count = 0
         self.__total = 0
 
@@ -143,7 +143,7 @@ class Timer(Metric):
             self.touch(utc=utc)
 
 
-class MetricFamily(object):
+class MetricFamily:
     """A Factory for a counter or Gauge metric with specifically bound labels."""
 
     GAUGE = "GAUGE"
@@ -190,7 +190,7 @@ class MetricFamily(object):
 
     def get(self, labels):
         """Returns a metric instance with bound labels."""
-        key = "".join("{0}={1}".format(key, value) for key, value in labels.items())
+        key = "".join(f"{key}={value}" for key, value in labels.items())
         with self.__mutex:
             got = self.__instances.get(key)
             if got is None:
@@ -199,7 +199,7 @@ class MetricFamily(object):
             return got
 
 
-class BaseMetricsRegistry(object):
+class BaseMetricsRegistry:
     """Provides base class interface for metrics management.
 
     Specific metric stores would subclass this to specialize to push
@@ -271,7 +271,7 @@ class BaseMetricsRegistry(object):
                 labels[match.group(1)] = match.group(2)
             except Exception as ex:
                 raise ValueError(
-                    'Invalid monitoring_context_labels binding "%s": %s' % (binding, ex)
+                    f'Invalid monitoring_context_labels binding "{binding}": {ex}'
                 )
         return labels
 
@@ -283,7 +283,7 @@ class BaseMetricsRegistry(object):
         self.__pusher_thread_event = threading.Event()
         self.__metric_families = {}
         self.__family_mutex = threading.Lock()
-        self.__updated_metrics = set([])
+        self.__updated_metrics = set()
         self.__update_mutex = threading.Lock()
         self.__inject_labels = self.__make_context_labels(options)
         if self.__inject_labels:
@@ -378,7 +378,7 @@ class BaseMetricsRegistry(object):
         if family:
             if family.family_type != family_type:
                 raise TypeError(
-                    "{have} is not a {want}".format(have=family, want=family_type)
+                    f"{family} is not a {family_type}"
                 )
             return family.get(labels)
 
@@ -479,5 +479,5 @@ class BaseMetricsRegistry(object):
 
         with self.__update_mutex:
             updated_metrics = self.__updated_metrics
-            self.__updated_metrics = set([])
+            self.__updated_metrics = set()
         self._do_flush_updated_metrics(updated_metrics)

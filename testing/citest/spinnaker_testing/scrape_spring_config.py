@@ -71,7 +71,7 @@ def infer(json):
         location_names = names if location.endswith("/") else [""]
         for name in location_names:
             # pylint: disable=bad-indentation
-            root_filename = "file:{location}{name}".format(location=location, name=name)
+            root_filename = f"file:{location}{name}"
             expr_dict.update(application_config.get(root_filename + ".yml", {}))
             for profile in profiles:
                 key = root_filename + "-" + profile + ".yml"

@@ -148,7 +148,7 @@ class ChangelogRepositoryData(
         return result
 
 
-class ChangelogBuilder(object):
+class ChangelogBuilder:
     """Knows how to create changelogs from git.RepositorySummary."""
 
     STRIP_GITHUB_ID_MATCHER = re.compile(r"^(.*?)\s*\(#\d+\)$")
@@ -232,7 +232,7 @@ class ChangelogBuilder(object):
         base_url = entry.repository.origin
         level_marker = "#" * 4
         for title, commit_messages in partitioned_commits.items():
-            report.append("{level} {title}".format(level=level_marker, title=title))
+            report.append(f"{level_marker} {title}")
             report.append("")
             for msg in commit_messages:
                 first_line = msg.message.split("\n", 1)[0].strip()
@@ -250,7 +250,7 @@ class ChangelogBuilder(object):
                     full_hash=msg.commit_id,
                     base_url=base_url,
                 )
-                report.append("* {text} ({link})".format(text=text, link=link))
+                report.append(f"* {text} ({link})")
             report.append("")
         return report
 
@@ -301,7 +301,7 @@ class BuildChangelogCommand(RepositoryCommandProcessor):
         options_copy.github_disable_upstream_push = True
 
         if options.relative_to_bom_path:
-            with open(options.relative_to_bom_path, "r", encoding="utf-8") as stream:
+            with open(options.relative_to_bom_path, encoding="utf-8") as stream:
                 self.__relative_bom = yaml.safe_load(stream.read())
         elif options.relative_to_bom_version:
             self.__relative_bom = HalRunner(options).retrieve_bom_version(
@@ -309,7 +309,7 @@ class BuildChangelogCommand(RepositoryCommandProcessor):
             )
         else:
             self.__relative_bom = None
-        super(BuildChangelogCommand, self).__init__(factory, options_copy, **kwargs)
+        super().__init__(factory, options_copy, **kwargs)
 
     def _do_repository(self, repository):
         """Collect the summary for the given repository."""
@@ -342,7 +342,7 @@ class BuildChangelogFactory(RepositoryCommandFactory):
     """Builds changelog files."""
 
     def __init__(self, **kwargs):
-        super(BuildChangelogFactory, self).__init__(
+        super().__init__(
             BUILD_CHANGELOG_COMMAND,
             BuildChangelogCommand,
             "Build a git changelog and write it out to a file.",
@@ -352,7 +352,7 @@ class BuildChangelogFactory(RepositoryCommandFactory):
 
     def init_argparser(self, parser, defaults):
         """Adds command-specific arguments."""
-        super(BuildChangelogFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
 
         self.add_argument(
             parser,
@@ -387,7 +387,7 @@ class BuildChangelogFactory(RepositoryCommandFactory):
 
 class PublishChangelogFactory(RepositoryCommandFactory):
     def __init__(self, **kwargs):
-        super(PublishChangelogFactory, self).__init__(
+        super().__init__(
             "publish_changelog",
             PublishChangelogCommand,
             "Publish Spinnaker version Changelog to spinnaker.io.",
@@ -396,7 +396,7 @@ class PublishChangelogFactory(RepositoryCommandFactory):
         )
 
     def init_argparser(self, parser, defaults):
-        super(PublishChangelogFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
         GitRunner.add_parser_args(parser, defaults)
         GitRunner.add_publishing_parser_args(parser, defaults)
 
@@ -423,7 +423,7 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
         check_options_set(options, ["spinnaker_version", "changelog_path"])
         check_path_exists(options.changelog_path, why="changelog_path")
 
-        super(PublishChangelogCommand, self).__init__(
+        super().__init__(
             factory,
             make_options_with_fallback(options),
             source_repository_names=[SPINNAKER_IO_REPOSITORY_NAME],
@@ -457,8 +457,8 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
             # so the branch may already exist from the earlier attempt.
             "fetch origin " + base_branch,
             "checkout " + base_branch,
-            "checkout {flag} {branch}".format(flag=branch_flag, branch=head_branch),
-            "add {file}".format(file=(os.path.abspath(new_changelog))),
+            f"checkout {branch_flag} {head_branch}",
+            f"add {(os.path.abspath(new_changelog))}",
         ]
         logging.debug(
             'Commiting changes into local repository "%s" branch=%s',
@@ -467,7 +467,7 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
         )
         git = self.git
         git.check_run_sequence(git_dir, local_git_commands)
-        git.check_commit_or_no_changes(git_dir, '-m "{msg}"'.format(msg=message))
+        git.check_commit_or_no_changes(git_dir, f'-m "{message}"')
 
         logging.info('Pushing branch="%s" into "%s"', head_branch, repository.origin)
         git.push_branch_to_origin(git_dir, branch=head_branch)
@@ -476,10 +476,10 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
         if repository.name != SPINNAKER_IO_REPOSITORY_NAME:
             raise_and_log_error(UnexpectedError('Got "%s"' % repository.name))
 
-        timestamp = "{:%Y-%m-%d %H:%M:%S +0000}".format(datetime.datetime.utcnow())
+        timestamp = f"{datetime.datetime.utcnow():%Y-%m-%d %H:%M:%S +0000}"
         version = self.options.spinnaker_version
 
-        changelog_filename = "{version}-changelog.md".format(version=version)
+        changelog_filename = f"{version}-changelog.md"
         target_path = os.path.join(
             repository.git_dir, "content", "en", "changelogs", changelog_filename
         )
@@ -490,7 +490,7 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
             self.options.changelog_path,
             target_path,
         )
-        with open(self.options.changelog_path, "r", encoding="utf-8") as source:
+        with open(self.options.changelog_path, encoding="utf-8") as source:
             body = source.read()
         with open(target_path, "w", encoding="utf-8") as f:
             # pylint: disable=trailing-whitespace

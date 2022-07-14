@@ -82,7 +82,7 @@ class BuildHalyardCommand(GradleCommandProcessor):
                 base=options.halyard_bucket_base_url,
                 filename=self.HALYARD_VERSIONS_BASENAME,
             )
-        super(BuildHalyardCommand, self).__init__(
+        super().__init__(
             factory,
             options_copy,
             source_repository_names=[SPINNAKER_HALYARD_REPOSITORY_NAME],
@@ -122,7 +122,7 @@ class BuildHalyardCommand(GradleCommandProcessor):
         with open(tmp_path, "w") as stream:
             stream.write(contents)
         check_subprocess(
-            "gsutil cp {path} {url}".format(path=tmp_path, url=self.__versions_url)
+            f"gsutil cp {tmp_path} {self.__versions_url}"
         )
         self.__emit_last_commit_entry(new_entry)
 
@@ -170,7 +170,7 @@ class BuildHalyardCommand(GradleCommandProcessor):
 
         git_dir = repository.git_dir
         summary = self.source_code_manager.git.collect_repository_summary(git_dir)
-        self.__build_version = "%s-%s" % (summary.version, options.build_number)
+        self.__build_version = f"{summary.version}-{options.build_number}"
 
         commands = [
             self.gcloud_command(
@@ -255,7 +255,7 @@ class BuildHalyardCommand(GradleCommandProcessor):
             if stdout.find("No URLs matched") < 0:
                 raise_and_log_error(
                     ExecutionError("No URLs matched", program="gsutil"),
-                    'Could not fetch "%s": %s' % (self.__versions_url, stdout),
+                    f'Could not fetch "{self.__versions_url}": {stdout}',
                 )
             contents = ""
             logging.warning(
@@ -313,7 +313,7 @@ class BuildHalyardFactory(GradleCommandFactory):
     # pylint: disable=too-few-public-methods
 
     def __init__(self):
-        super(BuildHalyardFactory, self).__init__(
+        super().__init__(
             "build_halyard",
             BuildHalyardCommand,
             "Build halyard from the local git repository.",
@@ -322,7 +322,7 @@ class BuildHalyardFactory(GradleCommandFactory):
 
     def init_argparser(self, parser, defaults):
         """Adds command-specific arguments."""
-        super(BuildHalyardFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
 
         self.add_argument(
             parser,
@@ -389,12 +389,12 @@ class BuildHalyardFactory(GradleCommandFactory):
 
 class PublishHalyardCommandFactory(CommandFactory):
     def __init__(self):
-        super(PublishHalyardCommandFactory, self).__init__(
+        super().__init__(
             "publish_halyard", PublishHalyardCommand, "Publish a new halyard release."
         )
 
     def init_argparser(self, parser, defaults):
-        super(PublishHalyardCommandFactory, self).init_argparser(parser, defaults)
+        super().init_argparser(parser, defaults)
         GradleCommandFactory.add_bom_parser_args(parser, defaults)
         SpinnakerSourceCodeManager.add_parser_args(parser, defaults)
         GradleRunner.add_parser_args(parser, defaults)
@@ -511,7 +511,7 @@ class PublishHalyardCommand(CommandProcessor):
         options_copy.git_branch = "master"
         options_copy.github_hostname = "github.com"
         # Overrides later if --git_allow_publish_master_branch is false
-        super(PublishHalyardCommand, self).__init__(factory, options_copy, **kwargs)
+        super().__init__(factory, options_copy, **kwargs)
 
         check_options_set(options, ["halyard_version"])
         match = re.match(r"(\d+)\.(\d+)\.(\d+)-\d+", options.halyard_version)
@@ -557,12 +557,12 @@ class PublishHalyardCommand(CommandProcessor):
 
         if os.path.exists(versions_url):
             logging.debug("Loading halyard version info from file %s", versions_url)
-            with open(versions_url, "r") as stream:
+            with open(versions_url) as stream:
                 version_data = stream.read()
         else:
             logging.debug("Loading halyard version info from bucket %s", versions_url)
             gsutil_output = check_subprocess(
-                "gsutil cat {url}".format(url=versions_url), stderr=subprocess.PIPE
+                f"gsutil cat {versions_url}", stderr=subprocess.PIPE
             )
 
             # The latest version of gsutil prints a bunch of python warnings to stdout
@@ -708,7 +708,7 @@ class PublishHalyardCommand(CommandProcessor):
                 now=now
             )
         )
-        with open(source_path, "r") as source:
+        with open(source_path) as source:
             body = source.read()
         with open(target_path, "w") as stream:
             stream.write(header)
@@ -743,7 +743,7 @@ class PublishHalyardCommand(CommandProcessor):
             # build for some reason that is re-tried will have the same version
             # so the branch may already exist from the earlier attempt.
             "checkout " + base_branch,
-            "checkout {flag} {branch}".format(flag=branch_flag, branch=head_branch),
+            f"checkout {branch_flag} {head_branch}",
             "add " + target_rel_path,
         ]
 
@@ -755,7 +755,7 @@ class PublishHalyardCommand(CommandProcessor):
         git = self.__scm.git
         git.check_run_sequence(git_dir, local_git_commands)
         git.check_commit_or_no_changes(
-            git_dir, '-m "{msg}" {path}'.format(msg=message, path=target_rel_path)
+            git_dir, f'-m "{message}" {target_rel_path}'
         )
 
         logging.info(

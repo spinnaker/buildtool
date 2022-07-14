@@ -35,7 +35,7 @@ from test_util import (
 
 class TestBomRepositoryCommand(RepositoryCommandProcessor):
     def __init__(self, *pos_args, **kwargs):
-        super(TestBomRepositoryCommand, self).__init__(*pos_args, **kwargs)
+        super().__init__(*pos_args, **kwargs)
         self.summary_info = {}
 
     def _do_repository(self, repository):
@@ -48,7 +48,7 @@ class TestBomRepositoryCommand(RepositoryCommandProcessor):
 
 class TestBomRepositoryCommandProcessor(BaseGitRepoTestFixture):
     def make_test_options(self):
-        options = super(TestBomRepositoryCommandProcessor, self).make_test_options()
+        options = super().make_test_options()
         options.bom_path = os.path.join(self.test_root, "bom.yml")
         options.one_at_a_time = False
         options.only_repositories = None
@@ -82,7 +82,7 @@ class TestBomRepositoryCommandProcessor(BaseGitRepoTestFixture):
             self.assertFalse(os.path.exists(repository.git_dir))
         self.assertEqual(
             set(ALL_STANDARD_TEST_BOM_REPO_NAMES),
-            set([repo.name for repo in command.source_repositories]),
+            {repo.name for repo in command.source_repositories},
         )
 
         # Now run the command and verify it instantiated the working dir
