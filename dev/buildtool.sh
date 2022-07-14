@@ -16,4 +16,4 @@
 
 # Wrapper around buildtool that sets up the python path.
 
-PYTHONPATH=$(dirname $0) exec python $(dirname $0)/buildtool "$@"
+PYTHONPATH=$(dirname "$0") exec python "$(dirname "$0")"/buildtool "$@"

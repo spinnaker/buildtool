@@ -183,14 +183,14 @@ class BomBuilder:
                     labels["reason"] = "same commit"
                     self.__metrics.inc_counter("UpdateBomEntry", labels)
                     continue
-                else:
-                    # An earlier branch was patched since our base bom.
-                    labels["reason"] = "different version"
-                    logging.debug(
-                        "%s version changed to %s even though commit has not",
-                        name,
-                        info,
-                    )
+
+                # An earlier branch was patched since our base bom.
+                labels["reason"] = "different version"
+                logging.debug(
+                    "%s version changed to %s even though commit has not",
+                    name,
+                    info,
+                )
             else:
                 labels["reason"] = "different commit"
             self.__metrics.inc_counter("UpdateBomEntry", labels)
@@ -287,7 +287,7 @@ class BuildBomCommandFactory(RepositoryCommandFactory):
             "Build a BOM file.",
             BranchSourceCodeManager,
             source_repository_names=SPINNAKER_BOM_REPOSITORY_NAMES,
-            **kwargs
+            **kwargs,
         )
 
     def init_argparser(self, parser, defaults):
