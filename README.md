@@ -66,8 +66,7 @@ Tag repositories with their respective next tag.
 
 At time of writing, tagging designated (`master` and `release-*`) branches will:
 
-1. (on `master`) provide a commit SHA to branch at for a new Spinnaker Release,
-   e.g: `1.28.0`.
+1. (on `master`) provide a commit SHA to create new `release-*` branches at.
 1. trigger GitHub Actions to build new artifacts with the tag
 1. trigger auto-bump Pull Request's across services bumping dependency versions.
    NOTE: This will in-turn increment `{minor}` tag on the downstream service

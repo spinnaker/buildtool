@@ -157,7 +157,12 @@ class TagBranchCommand(RepositoryCommandProcessor):
     def _do_repository(self, repository):
         """Implements RepositoryCommandProcessor interface."""
         head_commit_id = self.__git.query_local_repository_commit_id(repository.git_dir)
-        logging.debug("%s HEAD commit: %s", repository.name, head_commit_id)
+        logging.debug(
+            "%s %s branch HEAD commit: %s",
+            repository.name,
+            self.options.git_branch,
+            head_commit_id,
+        )
 
         (
             latest_tag,
@@ -167,16 +172,18 @@ class TagBranchCommand(RepositoryCommandProcessor):
         )
         if latest_tag_commit_id == head_commit_id:
             logging.info(
-                "%s HEAD commit: %s already tagged at: %s. Skipping.",
+                "%s %s branch HEAD commit: %s already tagged at: %s. Skipping.",
                 repository.name,
+                self.options.git_branch,
                 head_commit_id,
                 latest_tag,
             )
             return
 
         logging.debug(
-            "%s latest tag: %s - latest tag commit: %s",
+            "%s %s branch latest tag: %s - latest tag commit: %s",
             repository.name,
+            self.options.git_branch,
             latest_tag,
             latest_tag_commit_id,
         )
@@ -191,8 +198,9 @@ class TagBranchCommand(RepositoryCommandProcessor):
         next_tag = next_semver.to_tag()
 
         logging.info(
-            "%s latest tag: %s not at HEAD, generating next tag: %s",
+            "%s %s branch latest tag: %s not at HEAD, generating next tag: %s",
             repository.name,
+            self.options.git_branch,
             latest_tag,
             next_tag,
         )
