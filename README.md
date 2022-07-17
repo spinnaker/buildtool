@@ -74,7 +74,7 @@ At time of writing, tagging designated (`master` and `release-*`) branches will:
    and build a new set of artifacts.
 
 ```
-./dev/buildtool.sh tag_branches \
+./dev/buildtool.sh tag_branch \
   --git_branch master
 ```
 
@@ -85,7 +85,7 @@ disabling git push:
 git_branch=master
 fork_owner=<you>
 
-./dev/buildtool.sh tag_branches \
+./dev/buildtool.sh tag_branch \
   --git_branch "${git_branch}" \
   --github_owner "${fork_owner}" \
   --only_repositories clouddriver \
