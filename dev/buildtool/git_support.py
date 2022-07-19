@@ -863,7 +863,7 @@ class GitRunner:
         if tag_commit == commit_id:
             logging.debug("Commit %s is already tagged with %s", tag_commit, tag)
         else:
-            logging.warning(
+            logging.debug(
                 "%s HEAD commit of %s is newer than %s tag at %s. Using last tag & its commit",
                 git_dir.split("/")[2],
                 commit_id,
@@ -1161,6 +1161,10 @@ class GitRunner:
 
     def checkout(self, repository, commit):
         self.check_run(repository.git_dir, "checkout -q " + commit, echo=True)
+
+    def tag_commit(self, git_dir, tag, commit_id):
+        """Add tag to the local repository at commit_id."""
+        self.check_run(git_dir, f"tag {tag} {commit_id}")
 
     def tag_head(self, git_dir, tag):
         """Add tag to the local repository HEAD."""

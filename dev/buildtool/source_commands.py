@@ -20,12 +20,17 @@ import shutil
 
 from buildtool import (
     DEFAULT_BUILD_NUMBER,
+    SPIN_REPOSITORY_NAMES,
     SPINNAKER_BOM_REPOSITORY_NAMES,
     SPINNAKER_HALYARD_REPOSITORY_NAME,
     SPINNAKER_PROCESS_REPOSITORY_NAMES,
+    SPINNAKER_RUNNABLE_NON_CORE_REPOSITORY_NAMES,
+    SPINNAKER_RUNNABLE_REPOSITORY_NAMES,
     BranchSourceCodeManager,
+    GitRunner,
     RepositoryCommandFactory,
     RepositoryCommandProcessor,
+    SemanticVersion,
     raise_and_log_error,
     ConfigError,
 )
@@ -40,9 +45,7 @@ class FetchSourceCommand(RepositoryCommandProcessor):
         all_names = list(SPINNAKER_BOM_REPOSITORY_NAMES)
         all_names.append(SPINNAKER_HALYARD_REPOSITORY_NAME)
         all_names.extend(SPINNAKER_PROCESS_REPOSITORY_NAMES)
-        super().__init__(
-            factory, options, source_repository_names=all_names
-        )
+        super().__init__(factory, options, source_repository_names=all_names)
 
     def ensure_local_repository(self, repository):
         """Implements RepositoryCommandProcessor interface."""
@@ -138,6 +141,88 @@ class ExtractSourceInfoCommandFactory(RepositoryCommandFactory):
         )
 
 
+class TagBranchCommand(RepositoryCommandProcessor):
+    """Implements the tag_branch command."""
+
+    def __init__(self, factory, options):
+        """Implements CommandProcessor interface."""
+
+        self.__git = GitRunner(options)
+
+        all_names = list(SPINNAKER_RUNNABLE_REPOSITORY_NAMES)
+        all_names.extend(SPINNAKER_RUNNABLE_NON_CORE_REPOSITORY_NAMES)
+        super().__init__(factory, options, source_repository_names=all_names)
+
+    def _do_repository(self, repository):
+        """Implements RepositoryCommandProcessor interface."""
+        head_commit_id = self.__git.query_local_repository_commit_id(repository.git_dir)
+        logging.debug(
+            "%s %s branch HEAD commit: %s",
+            repository.name,
+            self.options.git_branch,
+            head_commit_id,
+        )
+
+        (
+            latest_tag,
+            latest_tag_commit_id,
+        ) = self.__git.find_newest_tag_and_common_commit_from_id(
+            repository.git_dir, head_commit_id
+        )
+        if latest_tag_commit_id == head_commit_id:
+            logging.info(
+                "%s %s branch HEAD commit: %s already tagged at: %s. Skipping.",
+                repository.name,
+                self.options.git_branch,
+                head_commit_id,
+                latest_tag,
+            )
+            return
+
+        logging.debug(
+            "%s %s branch latest tag: %s - latest tag commit: %s",
+            repository.name,
+            self.options.git_branch,
+            latest_tag,
+            latest_tag_commit_id,
+        )
+
+        latest_tag_semver = SemanticVersion.make(latest_tag)
+
+        if self.options.git_branch == "master":
+            next_semver = latest_tag_semver.next(2)  # increment minor
+        else:
+            next_semver = latest_tag_semver.next(3)  # increment patch
+
+        next_tag = next_semver.to_tag()
+
+        logging.info(
+            "%s %s branch latest tag: %s not at HEAD, generating next tag: %s",
+            repository.name,
+            self.options.git_branch,
+            latest_tag,
+            next_tag,
+        )
+
+        self.__git.tag_commit(repository.git_dir, next_tag, head_commit_id)
+        self.__git.push_tag_to_origin(repository.git_dir, next_tag)
+
+
+class TagBranchCommandFactory(RepositoryCommandFactory):
+    def __init__(self):
+        super().__init__(
+            "tag_branch",
+            TagBranchCommand,
+            "Tag HEAD of service repository branches if there are commits since previous tag.",
+            BranchSourceCodeManager,
+        )
+
+    def init_argparser(self, parser, defaults):
+        super().init_argparser(parser, defaults)
+        GitRunner.add_publishing_parser_args(parser, defaults)
+
+
 def register_commands(registry, subparsers, defaults):
     ExtractSourceInfoCommandFactory().register(registry, subparsers, defaults)
     FetchSourceCommandFactory().register(registry, subparsers, defaults)
+    TagBranchCommandFactory().register(registry, subparsers, defaults)
