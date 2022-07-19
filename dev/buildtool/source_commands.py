@@ -151,7 +151,6 @@ class TagBranchCommand(RepositoryCommandProcessor):
 
         all_names = list(SPINNAKER_RUNNABLE_REPOSITORY_NAMES)
         all_names.extend(SPINNAKER_RUNNABLE_NON_CORE_REPOSITORY_NAMES)
-        all_names.extend(SPIN_REPOSITORY_NAMES)
         super().__init__(factory, options, source_repository_names=all_names)
 
     def _do_repository(self, repository):
