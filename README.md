@@ -59,16 +59,17 @@ FAILED (errors=4)
 Tag repositories with their respective next tag.
 
 - branches without any new commits since the last tag will not be re-tagged.
-- `master` branches will be tagged with the next `{minor}` and `{patch}` of `0`.
+- `master` branches are tagged with the next `{minor}` and `{patch}` of `0`.
   For example, a repo with `master` tagged `1.2.0` will be tagged `1.3.0`.
-- all other branches (e.g: `release-*`) will be tagged with the next `{patch}`.
+- all other branches (e.g: `release-*`) are tagged with the next `{patch}`.
   For example, a repo with `release-1.27.x` tagged `1.2.3` will be tagged `1.2.4`.
 
 At time of writing, tagging designated (`master` and `release-*`) branches will:
 
-1. (on `master`) provide a commit SHA to create new `release-*` branches at.
-1. trigger GitHub Actions to build new artifacts with the tag
-1. trigger auto-bump Pull Request's across services bumping dependency versions.
+1. (on `master`) provide a marker (the tag) to create a new `release-*` branch
+1. (on both) trigger GitHub Actions to build new artifacts with the tag
+1. (on both) trigger auto-bump Pull Request's across services bumping
+   dependency versions.
    NOTE: This will in-turn increment `{minor}` tag on the downstream service
    and build a new set of artifacts.
 
