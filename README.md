@@ -73,13 +73,49 @@ At time of writing, tagging designated (`master` and `release-*`) branches will:
    NOTE: This will in-turn increment `{minor}` tag on the downstream service
    and build a new set of artifacts.
 
+Set target branch:
+
 ```
-./dev/buildtool.sh tag_branch \
-  --git_branch master
+git_branch=master
+
+# or target a release branch
+# git_branch=release-1.27.x
 ```
 
-When troubleshooting try using your fork, targeting a single service and
-disabling git push:
+Tag `kork` and wait for `autobumps` to propagate and be merged:
+
+```
+./dev/buildtool.sh tag_branch \
+  --git_branch "${git_branch}" \
+  --only_repositories kork
+```
+
+Tag `fiat` and wait for `autobumps` to propagate and be merged:
+
+```
+./dev/buildtool.sh tag_branch \
+  --git_branch "${git_branch}" \
+  --only_repositories fiat
+```
+
+Tag `orca` and wait for `autobumps` to propagate and be merged:
+
+```
+./dev/buildtool.sh tag_branch \
+  --git_branch "${git_branch}" \
+  --only_repositories orca
+```
+
+Tag the rest:
+
+```
+./dev/buildtool.sh tag_branch \
+  --git_branch "${git_branch}" \
+  --only_repositories clouddriver,deck,echo,front50,gate,igor,keel,rosco
+```
+
+When troubleshooting try using your fork, targeting a single repository and
+disabling `git push`:
 
 ```
 git_branch=master
@@ -88,19 +124,29 @@ fork_owner=<you>
 ./dev/buildtool.sh tag_branch \
   --git_branch "${git_branch}" \
   --github_owner "${fork_owner}" \
-  --only_repositories clouddriver \
-  --git_never_push true
+  --git_never_push true \
+  --only_repositories clouddriver
 ```
+
+### Validate dependency versions match
+
+Before moving on with cutting branches or generating a BOM we need to confirm
+that each service is building with the correct version of its dependencies,
+such as kork, fiat and orca.
+
+Check each service's `gradle.properties` file has versions that match the
+latest tag in the associated repository.
+
+TODO: Write a command to do this.
 
 ### Create Release Branches
 
 Before starting this step all branches should be tagged with the latest semVer
 `{minor}` version and a `{patch}` value of `0`. For example: `1.2.0`
 
-TODO: Check that this walks back to last tag and doesn't create branches from
-HEAD.
+TODO: Rewrite to branch off latest tag and not HEAD.
 
-Create new `release-{major}-{minor}-x` branches off the latest tag on `master` branch.
+Create new `release-{major}-{minor}-x` branches off HEAD on `master` branch.
 
 ```
 new_branch=release-1.27.x
