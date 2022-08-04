@@ -18,6 +18,9 @@ SPINNAKER_RUNNABLE_REPOSITORY_NAMES = [
 # These are not included in the BOM but are included in some buildtool tasks
 SPINNAKER_RUNNABLE_NON_CORE_REPOSITORY_NAMES = ["keel"]
 
+# Imported by runnable services
+SPINNAKER_LIBRARY_REPOSITORY_NAMES = ["kork"]
+
 # For building and validating a release
 SPINNAKER_PROCESS_REPOSITORY_NAMES = ["buildtool", "spinrel"]
 
