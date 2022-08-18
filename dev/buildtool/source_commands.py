@@ -152,7 +152,7 @@ class NewReleaseBranchFactory(RepositoryCommandFactory):
         super().__init__(
             "new_release_branch",
             NewReleaseBranchCommand,
-            "Create a new spinnaker release branch off master in each of the repos.",
+            "Create a new release branch at the latest tag in each of the repos.",
             BranchSourceCodeManager,
             source_repository_names=all_names,
             **kwargs,
@@ -164,10 +164,10 @@ class NewReleaseBranchFactory(RepositoryCommandFactory):
         super().init_argparser(parser, defaults)
         self.add_argument(
             parser,
-            "spinnaker_version",
+            "release_branch_name",
             defaults,
             None,
-            help='The version branch name should be "release-<num>.<num>.x"',
+            help='The release branch name should be "release-<num>.<num>.x"',
         )
         self.add_argument(
             parser,
@@ -175,7 +175,7 @@ class NewReleaseBranchFactory(RepositoryCommandFactory):
             defaults,
             False,
             type=bool,
-            help="Delete existing release branch if already present and create a new one.",
+            help="Delete existing release branch if present and create a new one.",
         )
         self.add_argument(
             parser,
@@ -190,12 +190,12 @@ class NewReleaseBranchFactory(RepositoryCommandFactory):
 class NewReleaseBranchCommand(RepositoryCommandProcessor):
     def __init__(self, factory, options, **kwargs):
         super().__init__(factory, options, **kwargs)
-        check_options_set(options, ["spinnaker_version"])
+        check_options_set(options, ["release_branch_name"])
         self.__git = GitRunner(options)
 
     def _do_repository(self, repository):
         git_dir = repository.git_dir
-        branch = self.options.spinnaker_version
+        branch = self.options.release_branch_name
 
         logging.debug('Checking for branch="%s" in "%s"', branch, git_dir)
         remote_branches = [
@@ -206,7 +206,7 @@ class NewReleaseBranchCommand(RepositoryCommandProcessor):
         if "origin/" + branch in remote_branches:
             if self.options.skip_existing:
                 logging.info(
-                    'Branch "%s" already exists in "%s" -- skip',
+                    'Branch "%s" already exists in "%s". Skipping.',
                     branch,
                     repository.origin,
                 )
@@ -214,7 +214,7 @@ class NewReleaseBranchCommand(RepositoryCommandProcessor):
 
             if self.options.delete_existing:
                 logging.warning(
-                    'Branch "%s" already exists in "%s" -- delete',
+                    'Branch "%s" already exists in "%s". Deleting.',
                     branch,
                     repository.origin,
                 )
@@ -227,10 +227,21 @@ class NewReleaseBranchCommand(RepositoryCommandProcessor):
                     )
                 )
 
-        logging.info(
-            'Creating and pushing branch "%s" to "%s"', branch, repository.origin
+        head_commit_id = self.__git.query_local_repository_commit_id(repository.git_dir)
+        logging.debug("%s HEAD commit: %s", repository.name, head_commit_id)
+
+        tag, _ = self.__git.find_newest_tag_and_common_commit_from_id(
+            repository.git_dir, head_commit_id
         )
-        self.__git.check_run(git_dir, "checkout -b " + branch)
+
+        logging.info(
+            'Creating "%s" off %s at "%s" and pushing to "%s"',
+            branch,
+            self.options.git_branch,
+            tag,
+            repository.origin,
+        )
+        self.__git.checkout_branch(git_dir, branch, tag)
         self.__git.push_branch_to_origin(git_dir, branch)
 
 

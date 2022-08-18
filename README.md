@@ -14,8 +14,9 @@ source .venv/bin/activate
 
 # install dependencies
 pip3 install pip --upgrade
-pip3 install -r dev/requirements.txt
-pip3 install -r dev/buildtool/requirements.txt
+pip3 install -r ./dev/requirements.txt
+pip3 install -r ./dev/buildtool/requirements.txt
+pip3 install -r ./testing/citest/requirements.txt
 
 # setup PYTHONPATH for IDE's and testing
 export PYTHONPATH="${PWD}/dev/"
