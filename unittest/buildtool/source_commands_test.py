@@ -19,6 +19,7 @@ import unittest
 from test_util import (
     BASE_VERSION_TAG,
     NORMAL_REPO,
+    NORMAL_SERVICE,
     UNTAGGED_BRANCH,
     init_runtime,
     BaseGitRepoTestFixture,
@@ -33,11 +34,59 @@ NEW_MINOR_TAG = "v7.9.0"
 NEW_PATCH_TAG = "v7.8.10"
 
 
-class TestSpinnakerCommandFixture(BaseGitRepoTestFixture):
+class TestSourceCommandFixture(BaseGitRepoTestFixture):
     def setUp(self):
         super().setUp()
         self.parser = argparse.ArgumentParser()
         self.subparsers = self.parser.add_subparsers(title="command", dest="command")
+
+    def test_new_release_branch_command(self):
+        """assert new release branching off master:
+        1. when branch doesn't exist the command should succeed
+        2. TODO: when branch already exists the command should fail
+        3. TODO: when branch already exists and skip_existing specified it should succeed
+        4. TODO: when branch already exists and delete_existing specified it should succeed
+        5. TODO: when master is tagged should branch off latest tag and succeed
+        6. TODO: when master is not tagged, should fail
+        """
+
+        defaults = {
+            "input_dir": self.options.input_dir,
+            "output_dir": self.options.output_dir,
+            "only_repositories": NORMAL_SERVICE,
+            "github_owner": "default",
+            "git_branch": "master",
+            "spinnaker_version": "NewSpinnakerVersion",
+            "github_repository_root": self.options.github_repository_root,
+        }
+
+        registry = {}
+        buildtool_main.add_standard_parser_args(self.parser, defaults)
+        buildtool.source_commands.register_commands(registry, self.subparsers, defaults)
+
+        factory = registry["new_release_branch"]
+        factory.init_argparser(self.parser, defaults)
+
+        options = self.parser.parse_args(["new_release_branch"])
+
+        mock_push_tag = self.patch_method(GitRunner, "push_tag_to_origin")
+        mock_push_branch = self.patch_method(GitRunner, "push_branch_to_origin")
+
+        command = factory.make_command(options)
+        command()
+
+        base_git_dir = os.path.join(options.input_dir, "new_release_branch")
+        self.assertEqual(os.listdir(base_git_dir), [NORMAL_SERVICE])
+        git_dir = os.path.join(base_git_dir, NORMAL_SERVICE)
+
+        # new 'release' branch HEAD should match 'master' branch HEAD
+        self.assertEqual(
+            GitRunner(options).query_local_repository_commit_id(git_dir),
+            self.repo_commit_map[NORMAL_SERVICE]["master"],
+        )
+
+        mock_push_branch.assert_called_once_with(git_dir, "NewSpinnakerVersion")
+        self.assertEqual(0, mock_push_tag.call_count)
 
     def test_tag_branch_master_command(self):
         """assert tagging behaviour on master branch:

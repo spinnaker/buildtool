@@ -32,6 +32,7 @@ from buildtool import (
     RepositoryCommandFactory,
     RepositoryCommandProcessor,
     SemanticVersion,
+    check_options_set,
     raise_and_log_error,
     ConfigError,
 )
@@ -142,6 +143,97 @@ class ExtractSourceInfoCommandFactory(RepositoryCommandFactory):
         )
 
 
+class NewReleaseBranchFactory(RepositoryCommandFactory):
+    def __init__(self, **kwargs):
+        all_names = list(SPINNAKER_RUNNABLE_REPOSITORY_NAMES)
+        all_names.extend(SPINNAKER_RUNNABLE_NON_CORE_REPOSITORY_NAMES)
+        all_names.extend(SPINNAKER_LIBRARY_REPOSITORY_NAMES)
+        all_names.extend(SPIN_REPOSITORY_NAMES)
+        super().__init__(
+            "new_release_branch",
+            NewReleaseBranchCommand,
+            "Create a new spinnaker release branch off master in each of the repos.",
+            BranchSourceCodeManager,
+            source_repository_names=all_names,
+            **kwargs,
+        )
+
+    def init_argparser(self, parser, defaults):
+        GitRunner.add_parser_args(parser, defaults)
+        GitRunner.add_publishing_parser_args(parser, defaults)
+        super().init_argparser(parser, defaults)
+        self.add_argument(
+            parser,
+            "spinnaker_version",
+            defaults,
+            None,
+            help='The version branch name should be "release-<num>.<num>.x"',
+        )
+        self.add_argument(
+            parser,
+            "delete_existing",
+            defaults,
+            False,
+            type=bool,
+            help="Delete existing release branch if already present and create a new one.",
+        )
+        self.add_argument(
+            parser,
+            "skip_existing",
+            defaults,
+            False,
+            type=bool,
+            help="Skip repository if release branch already exists.",
+        )
+
+
+class NewReleaseBranchCommand(RepositoryCommandProcessor):
+    def __init__(self, factory, options, **kwargs):
+        super().__init__(factory, options, **kwargs)
+        check_options_set(options, ["spinnaker_version"])
+        self.__git = GitRunner(options)
+
+    def _do_repository(self, repository):
+        git_dir = repository.git_dir
+        branch = self.options.spinnaker_version
+
+        logging.debug('Checking for branch="%s" in "%s"', branch, git_dir)
+        remote_branches = [
+            line.strip()
+            for line in self.__git.check_run(git_dir, "branch -r").split("\n")
+        ]
+
+        if "origin/" + branch in remote_branches:
+            if self.options.skip_existing:
+                logging.info(
+                    'Branch "%s" already exists in "%s" -- skip',
+                    branch,
+                    repository.origin,
+                )
+                return
+
+            if self.options.delete_existing:
+                logging.warning(
+                    'Branch "%s" already exists in "%s" -- delete',
+                    branch,
+                    repository.origin,
+                )
+                self.__git.delete_branch_on_origin(git_dir, branch)
+            else:
+                raise_and_log_error(
+                    ConfigError(
+                        f'Branch "{branch}" already exists in "{repository.name}"',
+                        cause="branch_exists",
+                    )
+                )
+
+        logging.info(
+            'Creating and pushing branch "%s" to "%s"', branch, repository.origin
+        )
+        self.__git.check_run(git_dir, "checkout -b " + branch)
+        self.__git.push_branch_to_origin(git_dir, branch)
+
+
 class TagBranchCommand(RepositoryCommandProcessor):
     """Implements the tag_branch command."""
 
@@ -227,4 +319,5 @@ class TagBranchCommandFactory(RepositoryCommandFactory):
 def register_commands(registry, subparsers, defaults):
     ExtractSourceInfoCommandFactory().register(registry, subparsers, defaults)
     FetchSourceCommandFactory().register(registry, subparsers, defaults)
+    NewReleaseBranchFactory().register(registry, subparsers, defaults)
     TagBranchCommandFactory().register(registry, subparsers, defaults)
