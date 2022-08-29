@@ -19,7 +19,9 @@ import unittest
 from test_util import (
     BASE_VERSION_TAG,
     NORMAL_REPO,
+    NORMAL_SERVICE,
     UNTAGGED_BRANCH,
+    PATCH_BRANCH,
     init_runtime,
     BaseGitRepoTestFixture,
 )
@@ -33,11 +35,131 @@ NEW_MINOR_TAG = "v7.9.0"
 NEW_PATCH_TAG = "v7.8.10"
 
 
-class TestSpinnakerCommandFixture(BaseGitRepoTestFixture):
+class TestSourceCommandFixture(BaseGitRepoTestFixture):
     def setUp(self):
         super().setUp()
         self.parser = argparse.ArgumentParser()
         self.subparsers = self.parser.add_subparsers(title="command", dest="command")
+
+    def test_new_release_branch_command(self):
+        """assert new release branch creation:
+        when source branch HEAD is tagged, successfully branch at latest tag (HEAD)
+        """
+
+        defaults = {
+            "input_dir": self.options.input_dir,
+            "output_dir": self.options.output_dir,
+            "only_repositories": NORMAL_SERVICE,
+            "github_owner": "default",
+            "git_branch": "master",  # tagged at HEAD
+            "new_branch": "release-0.1.x",
+            "github_repository_root": self.options.github_repository_root,
+        }
+
+        registry = {}
+        buildtool_main.add_standard_parser_args(self.parser, defaults)
+        buildtool.source_commands.register_commands(registry, self.subparsers, defaults)
+
+        factory = registry["new_release_branch"]
+        factory.init_argparser(self.parser, defaults)
+
+        options = self.parser.parse_args(["new_release_branch"])
+
+        mock_push_branch = self.patch_method(GitRunner, "push_branch_to_origin")
+
+        command = factory.make_command(options)
+        command()
+
+        base_git_dir = os.path.join(options.input_dir, "new_release_branch")
+        self.assertEqual(os.listdir(base_git_dir), [NORMAL_SERVICE])
+        git_dir = os.path.join(base_git_dir, NORMAL_SERVICE)
+
+        # new 'release' branch HEAD should match 'master' branch HEAD
+        self.assertEqual(
+            GitRunner(options).query_local_repository_commit_id(git_dir),
+            self.repo_commit_map[NORMAL_SERVICE]["master"],
+        )
+
+        # new 'release' branch should have tag
+        self.assertIsNotNone(
+            GitRunner(options).query_commit_at_tag(git_dir, BASE_VERSION_TAG)
+        )
+
+        mock_push_branch.assert_called_once_with(git_dir, "release-0.1.x")
+
+    def test_new_release_branch_with_commits_command(self):
+        """assert new release branch creation:
+        when source branch HEAD is not tagged but a tag exists, successfully branch at latest tag
+        """
+
+        defaults = {
+            "input_dir": self.options.input_dir,
+            "output_dir": self.options.output_dir,
+            "only_repositories": NORMAL_SERVICE,
+            "github_owner": "default",
+            "git_branch": PATCH_BRANCH,  # this branch has commits since last tag
+            "new_branch": "release-0.1.x",
+            "github_repository_root": self.options.github_repository_root,
+        }
+
+        registry = {}
+        buildtool_main.add_standard_parser_args(self.parser, defaults)
+        buildtool.source_commands.register_commands(registry, self.subparsers, defaults)
+
+        factory = registry["new_release_branch"]
+        factory.init_argparser(self.parser, defaults)
+
+        options = self.parser.parse_args(["new_release_branch"])
+
+        mock_push_branch = self.patch_method(GitRunner, "push_branch_to_origin")
+
+        command = factory.make_command(options)
+        command()
+
+        base_git_dir = os.path.join(options.input_dir, "new_release_branch")
+        self.assertEqual(os.listdir(base_git_dir), [NORMAL_SERVICE])
+        git_dir = os.path.join(base_git_dir, NORMAL_SERVICE)
+
+        # new 'release' branch HEAD should match 'master' branch HEAD (which is tagged)
+        self.assertEqual(
+            GitRunner(options).query_local_repository_commit_id(git_dir),
+            self.repo_commit_map[NORMAL_SERVICE]["master"],
+        )
+
+        # new 'release' branch should have tag
+        self.assertIsNotNone(
+            GitRunner(options).query_commit_at_tag(git_dir, BASE_VERSION_TAG)
+        )
+
+        mock_push_branch.assert_called_once_with(git_dir, "release-0.1.x")
+
+    @unittest.expectedFailure
+    def test_new_release_branch_exists_command(self):
+        """assert new release branch creation:
+        when destination branch already exists should fail
+        """
+
+        defaults = {
+            "input_dir": self.options.input_dir,
+            "output_dir": self.options.output_dir,
+            "only_repositories": NORMAL_SERVICE,
+            "github_owner": "default",
+            "git_branch": PATCH_BRANCH,  # this branch has commits since last tag
+            "new_branch": PATCH_BRANCH,  # same as source, i.e: already exists
+            "github_repository_root": self.options.github_repository_root,
+        }
+
+        registry = {}
+        buildtool_main.add_standard_parser_args(self.parser, defaults)
+        buildtool.source_commands.register_commands(registry, self.subparsers, defaults)
+
+        factory = registry["new_release_branch"]
+        factory.init_argparser(self.parser, defaults)
+
+        options = self.parser.parse_args(["new_release_branch"])
+
+        command = factory.make_command(options)
+        command()
 
     def test_tag_branch_master_command(self):
         """assert tagging behaviour on master branch:

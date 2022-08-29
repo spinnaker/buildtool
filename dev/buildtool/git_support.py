@@ -1160,7 +1160,12 @@ class GitRunner:
         logging.debug("Finished cloning %s", pull_url)
 
     def checkout(self, repository, commit):
+        """Checkout local repository at commit"""
         self.check_run(repository.git_dir, "checkout -q " + commit, echo=True)
+
+    def create_branch(self, git_dir, branch, start_point):
+        """Create branch at a specific start point"""
+        self.check_run(git_dir, f"checkout -q -b {branch} {start_point}", echo=True)
 
     def tag_commit(self, git_dir, tag, commit_id):
         """Add tag to the local repository at commit_id."""
