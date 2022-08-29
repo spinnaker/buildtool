@@ -61,9 +61,9 @@ Tag repositories with their respective next tag.
 
 - branches without any new commits since the last tag will not be re-tagged.
 - `master` branches are tagged with the next `{minor}` and `{patch}` of `0`.
-  For example, a repo with `master` tagged `1.2.0` will be tagged `1.3.0`.
+  For example, a repo with `master` tagged `v1.2.0` will be tagged `v1.3.0`.
 - all other branches (e.g: `release-*`) are tagged with the next `{patch}`.
-  For example, a repo with `release-1.27.x` tagged `1.2.3` will be tagged `1.2.4`.
+  For example, a repo with `release-1.27.x` tagged `v1.2.3` will be tagged `v1.2.4`.
 
 At time of writing, tagging designated (`master` and `release-*`) branches will:
 
@@ -142,19 +142,18 @@ TODO: Write a command to do this.
 
 ### Create Release Branches
 
+Create new `release-{major}-{minor}-x` branches off `master` at the most recent
+tag.
+
 Before starting this step all branches should be tagged with the latest semVer
-`{minor}` version and a `{patch}` value of `0`. For example: `1.2.0`
-
-TODO: Rewrite to branch off latest tag and not HEAD.
-
-Create new `release-{major}-{minor}-x` branches off HEAD on `master` branch.
+`{minor}` version and a `{patch}` value of `0`. For example: `v1.2.0`
 
 ```
 new_branch=release-1.27.x
 
 ./dev/buildtool.sh new_release_branch \
   --git_branch master \
-  --spinnaker_version "${new_branch}"
+  --new_branch "${new_branch}"
 ```
 
 When troubleshooting try using your forks, targeting a single service and
@@ -168,7 +167,7 @@ fork_owner=<you>
   --log_level debug \
   new_release_branch \
   --git_branch master \
-  --spinnaker_version "${new_branch}" \
+  --new_branch "${new_branch}" \
   --github_owner "${fork_owner}" \
   --only_repositories clouddriver \
   --git_never_push true

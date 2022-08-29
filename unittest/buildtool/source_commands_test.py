@@ -52,7 +52,7 @@ class TestSourceCommandFixture(BaseGitRepoTestFixture):
             "only_repositories": NORMAL_SERVICE,
             "github_owner": "default",
             "git_branch": "master",  # tagged at HEAD
-            "release_branch_name": "release-0.1.x",
+            "new_branch": "release-0.1.x",
             "github_repository_root": self.options.github_repository_root,
         }
 
@@ -98,7 +98,7 @@ class TestSourceCommandFixture(BaseGitRepoTestFixture):
             "only_repositories": NORMAL_SERVICE,
             "github_owner": "default",
             "git_branch": PATCH_BRANCH,  # this branch has commits since last tag
-            "release_branch_name": "release-0.1.x",
+            "new_branch": "release-0.1.x",
             "github_repository_root": self.options.github_repository_root,
         }
 
@@ -145,7 +145,7 @@ class TestSourceCommandFixture(BaseGitRepoTestFixture):
             "only_repositories": NORMAL_SERVICE,
             "github_owner": "default",
             "git_branch": PATCH_BRANCH,  # this branch has commits since last tag
-            "release_branch_name": PATCH_BRANCH,  # same as source, i.e: already exists
+            "new_branch": PATCH_BRANCH,  # same as source, i.e: already exists
             "github_repository_root": self.options.github_repository_root,
         }
 

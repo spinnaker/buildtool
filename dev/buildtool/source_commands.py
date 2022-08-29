@@ -164,10 +164,10 @@ class NewReleaseBranchFactory(RepositoryCommandFactory):
         super().init_argparser(parser, defaults)
         self.add_argument(
             parser,
-            "release_branch_name",
+            "new_branch",
             defaults,
             None,
-            help='The release branch name should be "release-<num>.<num>.x"',
+            help='The new release branch name should be "release-<num>.<num>.x"',
         )
         self.add_argument(
             parser,
@@ -190,12 +190,12 @@ class NewReleaseBranchFactory(RepositoryCommandFactory):
 class NewReleaseBranchCommand(RepositoryCommandProcessor):
     def __init__(self, factory, options, **kwargs):
         super().__init__(factory, options, **kwargs)
-        check_options_set(options, ["release_branch_name"])
+        check_options_set(options, ["new_branch"])
         self.__git = GitRunner(options)
 
     def _do_repository(self, repository):
         git_dir = repository.git_dir
-        branch = self.options.release_branch_name
+        branch = self.options.new_branch
 
         logging.debug('Checking for branch="%s" in "%s"', branch, git_dir)
         remote_branches = [
@@ -235,7 +235,7 @@ class NewReleaseBranchCommand(RepositoryCommandProcessor):
         )
 
         logging.info(
-            'Creating "%s" off %s at "%s" and pushing to "%s"',
+            'Creating "%s" off "%s" at "%s" and pushing to "%s"',
             branch,
             self.options.git_branch,
             tag,
