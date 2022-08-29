@@ -241,7 +241,7 @@ class NewReleaseBranchCommand(RepositoryCommandProcessor):
             tag,
             repository.origin,
         )
-        self.__git.checkout_branch(git_dir, branch, tag)
+        self.__git.create_branch(git_dir, branch, tag)
         self.__git.push_branch_to_origin(git_dir, branch)
 
 

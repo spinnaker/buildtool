@@ -1163,7 +1163,7 @@ class GitRunner:
         """Checkout local repository at commit"""
         self.check_run(repository.git_dir, "checkout -q " + commit, echo=True)
 
-    def checkout_branch(self, git_dir, branch, start_point):
+    def create_branch(self, git_dir, branch, start_point):
         """Create branch at a specific start point"""
         self.check_run(git_dir, f"checkout -q -b {branch} {start_point}", echo=True)
 
