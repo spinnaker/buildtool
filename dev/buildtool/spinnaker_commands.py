@@ -20,7 +20,6 @@ import logging
 import os
 import subprocess
 import yaml
-from __main__ import add_standard_parser_args
 
 from source_commands import TagBranchCommandFactory, NewReleaseBranchFactory
 
@@ -31,22 +30,11 @@ except ImportError:
     from urllib.error import HTTPError
 
 from buildtool import (
-    SPINNAKER_BOM_REPOSITORY_NAMES,
-    SPINNAKER_IO_REPOSITORY_NAME,
-    SPINNAKER_PROCESS_REPOSITORY_NAMES,
-    SPIN_REPOSITORY_NAMES,
-    BomSourceCodeManager,
-    BranchSourceCodeManager,
     CommandProcessor,
     CommandFactory,
-    RepositoryCommandFactory,
-    RepositoryCommandProcessor,
     GitRunner,
-    HalRunner,
-    exception_to_message,
     check_options_set,
     check_subprocess,
-    write_to_path,
     raise_and_log_error,
     ConfigError,
 )
@@ -64,10 +52,8 @@ class PublishSpinnakerFactory(CommandFactory):
 
     def init_argparser(self, parser, defaults):
         super().init_argparser(parser, defaults)
-        HalRunner.add_parser_args(parser, defaults)
         GitRunner.add_parser_args(parser, defaults)
         GitRunner.add_publishing_parser_args(parser, defaults)
-        PublishChangelogFactory().init_argparser(parser, defaults)
 
         self.add_argument(
             parser,
@@ -81,7 +67,7 @@ class PublishSpinnakerFactory(CommandFactory):
             "min_halyard_version",
             defaults,
             None,
-            help="The minimum halyard version required.",
+            help="The minimum halyard version required if changed.",
         )
 
 
@@ -178,110 +164,36 @@ class PublishSpinnakerCommand(CommandProcessor):
             [
                 "spinnaker_version",
                 "github_owner",
-                "min_halyard_version",
+                # "min_halyard_version", # we will use latest in versions.yml
             ],
         )
 
-        major, minor, _ = self.options.spinnaker_version.split(".")
-        self.__branch = f"release-{major}.{minor}.x"
+        # Set some defaults that are defined in various other files
+        # TODO: Consider making these CONSTANT or importing other factories?
+        options.github_hostname = "github.com"
+        options.github_upstream_owner = "spinnaker"
+        options.exclude_repositories = []
+        options.only_repositories = None
 
-        options_copy = copy.copy(options)
-        self.__git = GitRunner(options)
+        # major, minor, _ = self.options.spinnaker_version.split(".")
+        # self.__branch = f"release-{major}.{minor}.x"
 
-        if options.only_repositories:
-            self.__only_repositories = options.only_repositories.split(",")
-        else:
-            self.__only_repositories = []
+        # options_copy = copy.copy(options)
+        # self.__git = GitRunner(options)
 
-        options_copy.git_branch = self.__branch
-        self.__branch_scm = BranchSourceCodeManager(options_copy, self.get_input_dir())
+        # if options.only_repositories:
+        #     self.__only_repositories = options.only_repositories.split(",")
+        # else:
+        #     self.__only_repositories = []
 
-    def push_branches_and_tags(self, bom):
-        """Update the release branches and tags in each of the BOM repositires."""
-        logging.info("Tagging each of the BOM service repos")
-
-        bom_scm = self.__bom_scm
-        branch_scm = self.__branch_scm
-
-        # Run in two passes so we dont push anything if we hit a problem
-        # in the tagging pass. Since we are spread against multiple repositiories,
-        # we cannot do this atomically. The two passes gives us more protection
-        # from a partial push due to errors in a repo.
-        names_to_push = set()
-        for which in ["tag", "push"]:
-            for name, spec in bom["services"].items():
-                if name in ["monitoring-third-party", "defaultArtifact"]:
-                    # Ignore this, it is redundant to monitoring-daemon
-                    continue
-                if name == "monitoring-daemon":
-                    name = "spinnaker-monitoring"
-                if self.__only_repositories and name not in self.__only_repositories:
-                    logging.debug("Skipping %s because of --only_repositories", name)
-                    continue
-                if spec is None:
-                    logging.warning("HAVE bom.services.%s = None", name)
-                    continue
-
-                repository = bom_scm.make_repository_spec(name)
-                bom_scm.ensure_local_repository(repository)
-                version = bom_scm.determine_repository_version(repository)
-                if which == "tag":
-                    added = self.__branch_and_tag_repository(
-                        repository, self.__branch, version
-                    )
-                    if added:
-                        names_to_push.add(name)
-                else:
-                    self.__push_branch_and_maybe_tag_repository(
-                        repository, self.__branch, version, name in names_to_push
-                    )
-
-    def __already_have_tag(self, repository, tag):
-        """Determine if we already have the tag in the repository."""
-        git_dir = repository.git_dir
-        existing_commit = self.__git.query_commit_at_tag(git_dir, tag)
-        if not existing_commit:
-            return False
-        want_commit = self.__git.query_local_repository_commit_id(git_dir)
-        if want_commit == existing_commit:
-            logging.debug('Already have "%s" at %s', tag, want_commit)
-            return True
-
-        raise_and_log_error(
-            ConfigError(
-                '"{tag}" already exists in "{repo}" at commit {have}, not {want}'.format(
-                    tag=tag, repo=git_dir, have=existing_commit, want=want_commit
-                )
-            )
-        )
-        return False  # not reached
-
-    def __branch_and_tag_repository(self, repository, branch, version):
-        """Create a branch and/or version tag in the repository, if needed."""
-        tag = "version-" + version
-        if self.__already_have_tag(repository, tag):
-            return False
-
-        self.__git.check_run(repository.git_dir, "tag " + tag)
-        return True
-
-    def __push_branch_and_maybe_tag_repository(
-        self, repository, branch, version, also_tag
-    ):
-        """Push the branch and version tag to the origin."""
-        tag = "version-" + version
-        self.__git.push_branch_to_origin(repository.git_dir, branch)
-        if also_tag:
-            self.__git.push_tag_to_origin(repository.git_dir, tag)
-        else:
-            logging.info(
-                '%s was already tagged with "%s" -- skip', repository.git_dir, tag
-            )
+        # options_copy.git_branch = self.__branch
+        # self.__branch_scm = BranchSourceCodeManager(options_copy, self.get_input_dir())
 
     def __tag_branches(self, branch, options):
+        """Tag branch with next version tag."""
         options.git_branch = branch
         options.git_never_push = True
-        logging.info("options: %s", options)
+        logging.debug("Tagging branches - options: %s", options)
 
         options.only_repositories = "kork"
         tag_branch_kork_command = TagBranchCommandFactory().make_command(options)
@@ -304,10 +216,11 @@ class PublishSpinnakerCommand(CommandProcessor):
         tag_branch_rest_command()
 
     def __create_branches(self, branch, options):
+        """Create release-* branch."""
         options.git_branch = "master"
         options.new_branch = branch
         options.git_never_push = True
-        logging.info("options: %s", options)
+        logging.debug("Creating branches - options: %s", options)
 
         create_branches_command = NewReleaseBranchFactory().make_command(options)
         create_branches_command()
@@ -315,7 +228,7 @@ class PublishSpinnakerCommand(CommandProcessor):
     def _do_command(self):
         """Implements CommandProcessor interface."""
         options = self.options
-        logging.info("options: %s", options)
+        logging.info("Publish Spinnaker - options: %s", options)
 
         # Setup Release defaults
         major_minor = get_major_minor_version(options.spinnaker_version)
@@ -357,7 +270,6 @@ class PublishSpinnakerCommand(CommandProcessor):
         # self.__hal.publish_bom_path(bom_path)
         # self.push_branches_and_tags(bom)
 
-        logging.info("Publishing changelog")
         # publish_changelog_command()
 
 
