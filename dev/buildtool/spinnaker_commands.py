@@ -12,22 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Implements spinnaker support commands for buildtool."""
+"""Implements spinnaker release commands for buildtool."""
 
-import argparse
 import copy
 import logging
 import os
 import subprocess
 import yaml
-
-from source_commands import TagBranchCommandFactory, NewReleaseBranchFactory
-
-try:
-    from urllib2 import urlopen, HTTPError
-except ImportError:
-    from urllib.request import urlopen
-    from urllib.error import HTTPError
 
 from buildtool import (
     CommandProcessor,
@@ -39,7 +30,9 @@ from buildtool import (
     ConfigError,
 )
 
-from buildtool.changelog_commands import PublishChangelogFactory
+from buildtool.bom_commands import BuildBomCommandFactory
+from buildtool.source_commands import TagBranchCommandFactory, NewReleaseBranchFactory
+from buildtool.changelog_commands import BuildChangelogFactory, PublishChangelogFactory
 
 
 class PublishSpinnakerFactory(CommandFactory):
@@ -164,7 +157,7 @@ class PublishSpinnakerCommand(CommandProcessor):
             [
                 "spinnaker_version",
                 "github_owner",
-                # "min_halyard_version", # we will use latest in versions.yml
+                # "min_halyard_version", # we will use latest in versions.yml if not provided
             ],
         )
 
@@ -174,20 +167,6 @@ class PublishSpinnakerCommand(CommandProcessor):
         options.github_upstream_owner = "spinnaker"
         options.exclude_repositories = []
         options.only_repositories = None
-
-        # major, minor, _ = self.options.spinnaker_version.split(".")
-        # self.__branch = f"release-{major}.{minor}.x"
-
-        # options_copy = copy.copy(options)
-        # self.__git = GitRunner(options)
-
-        # if options.only_repositories:
-        #     self.__only_repositories = options.only_repositories.split(",")
-        # else:
-        #     self.__only_repositories = []
-
-        # options_copy.git_branch = self.__branch
-        # self.__branch_scm = BranchSourceCodeManager(options_copy, self.get_input_dir())
 
     def __tag_branches(self, branch, options):
         """Tag branch with next version tag."""
@@ -222,8 +201,46 @@ class PublishSpinnakerCommand(CommandProcessor):
         options.git_never_push = True
         logging.debug("Creating branches - options: %s", options)
 
-        create_branches_command = NewReleaseBranchFactory().make_command(options)
-        create_branches_command()
+        command = NewReleaseBranchFactory().make_command(options)
+        command()
+
+    def __build_bom(self, branch, version, options):
+        """Build BOM."""
+        # options.github_owner = "spinnaker"
+        options.git_branch = branch
+        options.build_number = version
+        options.refresh_from_bom_path = "dev/buildtool/bom_base.yml"
+        options.refresh_from_bom_version = None
+        options.bom_dependencies_path = None
+        options.bom_path = None
+        options.exclude_repositories = "spinnaker-monitoring"
+        logging.debug("Building BOM - options: %s", options)
+
+        command = BuildBomCommandFactory().make_command(options)
+        command()
+
+    def __build_changelog(self, previous_version, bom_path, options):
+        """Build Changelog."""
+        options.bom_path = bom_path
+        options.relative_to_bom_path = f"input/{previous_version}.yml"
+        options.relative_to_bom_version = None
+        options.include_changelog_details = False
+        options.exclude_repositories = "spinnaker-monitoring"
+        logging.debug("Building changelog - options: %s", options)
+
+        previous_bom_url = f"gs://halconfig/bom/{previous_version}.yml"
+
+        logging.info("about to fetch previous bom %s", previous_bom_url)
+
+        previous_bom = check_subprocess(f"gsutil cat {previous_bom_url}")
+
+        if not os.path.exists("input/"):
+            os.mkdir("input")
+        with open(f"input/{previous_version}.yml", "w", encoding="utf-8") as file:
+            file.write(previous_bom)
+
+        command = BuildChangelogFactory().make_command(options)
+        command()
 
     def _do_command(self):
         """Implements CommandProcessor interface."""
@@ -235,33 +252,32 @@ class PublishSpinnakerCommand(CommandProcessor):
         release_branch = f"release-{major_minor}.x"
 
         # Tag branches and create release-* branches as required
-        tag_options = copy.copy(options)
         if is_new_minor_version(options.spinnaker_version):
-            self.__tag_branches("master", tag_options)
+            self.__tag_branches("master", copy.copy(options))
             self.__create_branches(release_branch, copy.copy(options))
         else:
-            self.__tag_branches(release_branch, tag_options)
+            self.__tag_branches(release_branch, copy.copy(options))
 
         # TODO: Validation each repository gradle.properties has correct dependency versions.
 
-        # determine previous version for use in bom, changelog, etc, eg: 1.27.1 -> 1.27.0. 1.28.0 -> 1.27.0
+        # Build BOM
+        self.__build_bom(release_branch, options.spinnaker_version, copy.copy(options))
+
+        # Build Changelog
         previous_version = get_prior_version(options.spinnaker_version)
         logging.info(
             "spinnaker_version: %s - previous_version: %s",
             options.spinnaker_version,
             previous_version,
         )
+        bom_path = f"output/build_bom/{release_branch}-{options.spinnaker_version}.yml"
+        self.__build_changelog(previous_version, bom_path, copy.copy(options))
 
-        # Build BOM
-
-        # Build Changelog
+        # Tag containers with regctl
 
         # Build versions.yml
 
         # Publish BOM, Changelog, versions.yml
-
-        # options_copy.git_branch = "master"  # push to master in spinnaker.io
-        # publish_changelog_command = PublishChangelogFactory().make_command(options_copy)
 
         # bom = self.__hal.retrieve_bom_version(self.options.bom_version)
         # bom["version"] = spinnaker_version
@@ -270,6 +286,7 @@ class PublishSpinnakerCommand(CommandProcessor):
         # self.__hal.publish_bom_path(bom_path)
         # self.push_branches_and_tags(bom)
 
+        # publish_changelog_command = PublishChangelogFactory().make_command(options_copy)
         # publish_changelog_command()
 
 
