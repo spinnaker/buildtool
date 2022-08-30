@@ -14,11 +14,15 @@
 
 """Implements spinnaker support commands for buildtool."""
 
+import argparse
 import copy
 import logging
 import os
 import subprocess
 import yaml
+from __main__ import add_standard_parser_args
+
+from source_commands import TagBranchCommandFactory, NewReleaseBranchFactory
 
 try:
     from urllib2 import urlopen, HTTPError
@@ -67,24 +71,10 @@ class PublishSpinnakerFactory(CommandFactory):
 
         self.add_argument(
             parser,
-            "spinnaker_release_alias",
+            "spinnaker_version",
             defaults,
             None,
-            help="The spinnaker version alias to publish as.",
-        )
-        self.add_argument(
-            parser,
-            "halyard_bom_bucket",
-            defaults,
-            "halconfig",
-            help="The bucket manaing halyard BOMs and config profiles.",
-        )
-        self.add_argument(
-            parser,
-            "bom_version",
-            defaults,
-            None,
-            help="The existing bom version usef for this release.",
+            help="The new version to publish.",
         )
         self.add_argument(
             parser,
@@ -187,9 +177,6 @@ class PublishSpinnakerCommand(CommandProcessor):
             options,
             [
                 "spinnaker_version",
-                "spinnaker_release_alias",
-                "bom_version",
-                "changelog_gist_url",
                 "github_owner",
                 "min_halyard_version",
             ],
@@ -199,12 +186,8 @@ class PublishSpinnakerCommand(CommandProcessor):
         self.__branch = f"release-{major}.{minor}.x"
 
         options_copy = copy.copy(options)
-        self.__bom_scm = BomSourceCodeManager(options_copy, self.get_input_dir())
-        self.__hal = HalRunner(options)
         self.__git = GitRunner(options)
-        self.__hal.check_property(
-            "spinnaker.config.input.bucket", options.halyard_bom_bucket
-        )
+
         if options.only_repositories:
             self.__only_repositories = options.only_repositories.split(",")
         else:
@@ -295,65 +278,110 @@ class PublishSpinnakerCommand(CommandProcessor):
                 '%s was already tagged with "%s" -- skip', repository.git_dir, tag
             )
 
+    def __tag_branches(self, branch, options):
+        options.git_branch = branch
+        options.git_never_push = True
+        logging.info("options: %s", options)
+
+        options.only_repositories = "kork"
+        tag_branch_kork_command = TagBranchCommandFactory().make_command(options)
+        tag_branch_kork_command()
+
+        # TODO: wait for bumpdeps
+        options.only_repositories = "fiat"
+        tag_branch_fiat_command = TagBranchCommandFactory().make_command(options)
+        tag_branch_fiat_command()
+
+        # TODO: wait for bumpdeps
+        options.only_repositories = "orca"
+        tag_branch_orca_command = TagBranchCommandFactory().make_command(options)
+        tag_branch_orca_command()
+
+        # TODO: wait for bumpdeps
+        options.only_repositories = None
+        options.exclude_repositories = "kork,fiat,orca"
+        tag_branch_rest_command = TagBranchCommandFactory().make_command(options)
+        tag_branch_rest_command()
+
+    def __create_branches(self, branch, options):
+        options.git_branch = "master"
+        options.new_branch = branch
+        options.git_never_push = True
+        logging.info("options: %s", options)
+
+        create_branches_command = NewReleaseBranchFactory().make_command(options)
+        create_branches_command()
+
     def _do_command(self):
         """Implements CommandProcessor interface."""
         options = self.options
-        spinnaker_version = options.spinnaker_version
-        options_copy = copy.copy(options)
-        options_copy.git_branch = "master"  # push to master in spinnaker.io
-        publish_changelog_command = PublishChangelogFactory().make_command(options_copy)
-        changelog_gist_url = options.changelog_gist_url
+        logging.info("options: %s", options)
 
-        # Make sure changelog exists already.
-        # If it does not then fail.
-        try:
-            logging.debug("Verifying changelog ready at %s", changelog_gist_url)
-            urlopen(changelog_gist_url)
-        except HTTPError:
-            logging.error(exception_to_message)
-            raise_and_log_error(
-                ConfigError(
-                    'Changelog gist "{url}" must exist before publising a release.'.format(
-                        url=changelog_gist_url
-                    ),
-                    cause="ChangelogMissing",
-                )
-            )
+        # Setup Release defaults
+        major_minor = get_major_minor_version(options.spinnaker_version)
+        release_branch = f"release-{major_minor}.x"
 
-        bom = self.__hal.retrieve_bom_version(self.options.bom_version)
-        bom["version"] = spinnaker_version
-        bom_path = os.path.join(self.get_output_dir(), spinnaker_version + ".yml")
-        write_to_path(yaml.safe_dump(bom, default_flow_style=False), bom_path)
-        self.__hal.publish_bom_path(bom_path)
-        self.push_branches_and_tags(bom)
+        # Tag branches and create release-* branches as required
+        tag_options = copy.copy(options)
+        if is_new_minor_version(options.spinnaker_version):
+            self.__tag_branches("master", tag_options)
+            self.__create_branches(release_branch, copy.copy(options))
+        else:
+            self.__tag_branches(release_branch, tag_options)
 
-        self.__hal.publish_spinnaker_release(
-            spinnaker_version,
-            options.spinnaker_release_alias,
-            changelog_gist_url,
-            options.min_halyard_version,
+        # TODO: Validation each repository gradle.properties has correct dependency versions.
+
+        # determine previous version for use in bom, changelog, etc, eg: 1.27.1 -> 1.27.0. 1.28.0 -> 1.27.0
+        previous_version = get_prior_version(options.spinnaker_version)
+        logging.info(
+            "spinnaker_version: %s - previous_version: %s",
+            options.spinnaker_version,
+            previous_version,
         )
 
-        prior_version = get_prior_version(spinnaker_version)
-        if prior_version is not None:
-            self.__hal.deprecate_spinnaker_release(prior_version)
+        # Build BOM
+
+        # Build Changelog
+
+        # Build versions.yml
+
+        # Publish BOM, Changelog, versions.yml
+
+        # options_copy.git_branch = "master"  # push to master in spinnaker.io
+        # publish_changelog_command = PublishChangelogFactory().make_command(options_copy)
+
+        # bom = self.__hal.retrieve_bom_version(self.options.bom_version)
+        # bom["version"] = spinnaker_version
+        # bom_path = os.path.join(self.get_output_dir(), spinnaker_version + ".yml")
+        # write_to_path(yaml.safe_dump(bom, default_flow_style=False), bom_path)
+        # self.__hal.publish_bom_path(bom_path)
+        # self.push_branches_and_tags(bom)
 
         logging.info("Publishing changelog")
-        publish_changelog_command()
+        # publish_changelog_command()
+
+
+def is_new_minor_version(version):
+    _, _, patch = version.split(".")
+    patch = int(patch)
+    if patch == 0:
+        return True
+    return False
 
 
 def get_prior_version(version):
     major, minor, patch = version.split(".")
     patch = int(patch)
+    minor = int(minor)
     if patch == 0:
-        return None
-    return ".".join([major, minor, str(patch - 1)])
+        return f"{major}.{str(minor - 1)}.{patch}"
+    return f"{major}.{minor}.{str(patch - 1)}"
 
 
 def get_next_version(version):
     major, minor, patch = version.split(".")
     patch = int(patch)
-    return ".".join([major, minor, str(patch + 1)])
+    return f"{major}.{minor}.{str(patch + 1)}"
 
 
 def get_major_minor_version(version):
