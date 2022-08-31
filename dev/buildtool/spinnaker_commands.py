@@ -21,6 +21,7 @@ import subprocess
 import yaml
 
 from buildtool import (
+    SPINNAKER_HALYARD_GCS_BUCKET_NAME,
     CommandProcessor,
     CommandFactory,
     GitRunner,
@@ -156,7 +157,6 @@ class PublishSpinnakerCommand(CommandProcessor):
             options,
             [
                 "spinnaker_version",
-                "github_owner",
                 # "min_halyard_version", # we will use latest in versions.yml if not provided
             ],
         )
@@ -219,27 +219,27 @@ class PublishSpinnakerCommand(CommandProcessor):
         command = BuildBomCommandFactory().make_command(options)
         command()
 
-    def __build_changelog(self, previous_version, bom_path, options):
+    def __build_changelog(self, bom_path, previous_version, options):
         """Build Changelog."""
         options.bom_path = bom_path
-        options.relative_to_bom_path = f"input/{previous_version}.yml"
-        options.relative_to_bom_version = None
+        options.relative_to_bom_path = None
+        options.relative_to_bom_version = previous_version
         options.include_changelog_details = False
         options.exclude_repositories = "spinnaker-monitoring"
         logging.debug("Building changelog - options: %s", options)
 
-        previous_bom_url = f"gs://halconfig/bom/{previous_version}.yml"
-
-        logging.info("about to fetch previous bom %s", previous_bom_url)
-
-        previous_bom = check_subprocess(f"gsutil cat {previous_bom_url}")
-
-        if not os.path.exists("input/"):
-            os.mkdir("input")
-        with open(f"input/{previous_version}.yml", "w", encoding="utf-8") as file:
-            file.write(previous_bom)
-
         command = BuildChangelogFactory().make_command(options)
+        command()
+
+    def __publish_changelog(self, changelog_path, version, options):
+        """Publish Changelog."""
+        options.changelog_path = changelog_path
+        options.git_branch = "master"
+        options.git_allow_publish_master_branch = False
+        options.spinnaker_version = version
+        logging.debug("Publishing changelog - options: %s", options)
+
+        command = PublishChangelogFactory().make_command(options)
         command()
 
     def _do_command(self):
@@ -271,7 +271,8 @@ class PublishSpinnakerCommand(CommandProcessor):
             previous_version,
         )
         bom_path = f"output/build_bom/{release_branch}-{options.spinnaker_version}.yml"
-        self.__build_changelog(previous_version, bom_path, copy.copy(options))
+        self.__build_changelog(bom_path, previous_version, copy.copy(options))
+        changelog_path = "output/publish_spinnaker/changelog.md"
 
         # Tag containers with regctl
 
@@ -285,9 +286,9 @@ class PublishSpinnakerCommand(CommandProcessor):
         # write_to_path(yaml.safe_dump(bom, default_flow_style=False), bom_path)
         # self.__hal.publish_bom_path(bom_path)
         # self.push_branches_and_tags(bom)
-
-        # publish_changelog_command = PublishChangelogFactory().make_command(options_copy)
-        # publish_changelog_command()
+        self.__publish_changelog(
+            changelog_path, options.spinnaker_version, copy.copy(options)
+        )
 
 
 def is_new_minor_version(version):
