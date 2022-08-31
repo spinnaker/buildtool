@@ -31,7 +31,11 @@ from buildtool import (
     ConfigError,
 )
 
-from buildtool.bom_commands import BuildBomCommandFactory
+from buildtool.bom_commands import (
+    BuildBomCommandFactory,
+    PublishBomCommand,
+    PublishBomCommandFactory,
+)
 from buildtool.source_commands import TagBranchCommandFactory, NewReleaseBranchFactory
 from buildtool.changelog_commands import BuildChangelogFactory, PublishChangelogFactory
 
@@ -140,7 +144,8 @@ class GetNextPatchParametersCommand(CommandProcessor):
 
     def _get_versions(self):
         version_data = check_subprocess(
-            "gsutil cat gs://halconfig/versions.yml", stderr=subprocess.PIPE
+            f"gsutil cat gs://{SPINNAKER_HALYARD_GCS_BUCKET_NAME}/versions.yml",
+            stderr=subprocess.PIPE,
         )
         versions = yaml.safe_load(version_data).get("versions")
         return versions
@@ -231,6 +236,15 @@ class PublishSpinnakerCommand(CommandProcessor):
         command = BuildChangelogFactory().make_command(options)
         command()
 
+    def __publish_bom(self, bom_path, options):
+        """Publish BOM."""
+        options.bom_path = bom_path
+        options.dry_run = True
+        logging.debug("Publishing BOM - options: %s", options)
+
+        command = PublishBomCommandFactory().make_command(options)
+        command()
+
     def __publish_changelog(self, changelog_path, version, options):
         """Publish Changelog."""
         options.changelog_path = changelog_path
@@ -277,15 +291,15 @@ class PublishSpinnakerCommand(CommandProcessor):
         # Tag containers with regctl
 
         # Build versions.yml
-
-        # Publish BOM, Changelog, versions.yml
-
         # bom = self.__hal.retrieve_bom_version(self.options.bom_version)
         # bom["version"] = spinnaker_version
         # bom_path = os.path.join(self.get_output_dir(), spinnaker_version + ".yml")
         # write_to_path(yaml.safe_dump(bom, default_flow_style=False), bom_path)
-        # self.__hal.publish_bom_path(bom_path)
-        # self.push_branches_and_tags(bom)
+
+        self.__publish_bom(bom_path, copy.copy(options))
+
+        # self.__publish_versions(version_path, copy.copy(options))
+
         self.__publish_changelog(
             changelog_path, options.spinnaker_version, copy.copy(options)
         )

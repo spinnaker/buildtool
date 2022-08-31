@@ -186,6 +186,18 @@ class BaseTestFixture(unittest.TestCase):
         self.test_root = os.path.join(self.base_temp_dir, self._testMethodName)
         self.options = self.make_test_options()
 
+    def patch_function(self, name):
+        patcher = patch(name)
+        hook = patcher.start()
+        self.addCleanup(patcher.stop)
+        return hook
+
+    def patch_method(self, klas, method):
+        patcher = patch.object(klas, method)
+        hook = patcher.start()
+        self.addCleanup(patcher.stop)
+        return hook
+
 
 class BaseGitRepoTestFixture(BaseTestFixture):
     @classmethod
