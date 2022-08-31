@@ -26,6 +26,7 @@ import yaml
 
 from buildtool import (
     SPINNAKER_IO_REPOSITORY_NAME,
+    SPINNAKER_HALYARD_GCS_BUCKET_NAME,
     CommandFactory,
     CommandProcessor,
     RepositoryCommandFactory,
@@ -36,7 +37,6 @@ from buildtool import (
     UnexpectedError,
     CommitMessage,
     GitRunner,
-    HalRunner,
     check_kwargs_empty,
     check_options_set,
     check_path_exists,
@@ -304,7 +304,7 @@ class BuildChangelogCommand(RepositoryCommandProcessor):
             with open(options.relative_to_bom_path, encoding="utf-8") as stream:
                 self.__relative_bom = yaml.safe_load(stream.read())
         elif options.relative_to_bom_version:
-            self.__relative_bom = HalRunner(options).retrieve_bom_version(
+            self.__relative_bom = BomSourceCodeManager.bom_from_gcs_bucket(
                 options.relative_to_bom_version
             )
         else:
@@ -347,7 +347,7 @@ class BuildChangelogFactory(RepositoryCommandFactory):
             BuildChangelogCommand,
             "Build a git changelog and write it out to a file.",
             BomSourceCodeManager,
-            **kwargs
+            **kwargs,
         )
 
     def init_argparser(self, parser, defaults):
@@ -364,7 +364,6 @@ class BuildChangelogFactory(RepositoryCommandFactory):
             " in time sequence in the changelog.",
         )
 
-        HalRunner.add_parser_args(parser, defaults)
         self.add_argument(
             parser,
             "relative_to_bom_path",
@@ -392,7 +391,7 @@ class PublishChangelogFactory(RepositoryCommandFactory):
             PublishChangelogCommand,
             "Publish Spinnaker version Changelog to spinnaker.io.",
             BranchSourceCodeManager,
-            **kwargs
+            **kwargs,
         )
 
     def init_argparser(self, parser, defaults):
@@ -427,7 +426,7 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
             factory,
             make_options_with_fallback(options),
             source_repository_names=[SPINNAKER_IO_REPOSITORY_NAME],
-            **kwargs
+            **kwargs,
         )
 
     def _do_repository(self, repository):

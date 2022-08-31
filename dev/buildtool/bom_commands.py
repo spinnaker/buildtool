@@ -25,10 +25,10 @@ from buildtool import (
     SPINNAKER_DEBIAN_REPOSITORY,
     SPINNAKER_DOCKER_REGISTRY,
     SPINNAKER_GOOGLE_IMAGE_PROJECT,
+    BomSourceCodeManager,
     BranchSourceCodeManager,
     RepositoryCommandFactory,
     RepositoryCommandProcessor,
-    HalRunner,
     GitRunner,
     check_path_exists,
     raise_and_log_error,
@@ -242,7 +242,7 @@ class BuildBomCommand(RepositoryCommandProcessor):
             logging.debug(
                 'Using base bom version "%s"', options.refresh_from_bom_version
             )
-            base_bom = HalRunner(options).retrieve_bom_version(
+            base_bom = BomSourceCodeManager.bom_from_gcs_bucket(
                 options.refresh_from_bom_version
             )
         else:
@@ -292,7 +292,6 @@ class BuildBomCommandFactory(RepositoryCommandFactory):
 
     def init_argparser(self, parser, defaults):
         super().init_argparser(parser, defaults)
-        HalRunner.add_parser_args(parser, defaults)
 
         self.add_argument(
             parser,
@@ -341,7 +340,7 @@ class BuildBomCommandFactory(RepositoryCommandFactory):
             defaults,
             None,
             help="Similar to refresh_from_bom_path but using a version obtained."
-            " from halyard.",
+            " from GCS Bucket.",
         )
         self.add_argument(
             parser,
