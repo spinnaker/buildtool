@@ -1,4 +1,5 @@
 PyYAML
+schema
 
 # This is for testing
 python-dateutil
