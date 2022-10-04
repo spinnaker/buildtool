@@ -3,8 +3,8 @@
 set -o errexit -o nounset -o pipefail
 
 # Set and uncomment these lines to run script
-# git_branch=release-1.27.x
-# version=1.27.0
+# git_branch=release-1.29.x
+# version=1.29.0
 
 # Disable any cloud resource upserts - docker push, gcs upload, etc
 dryrun="true"
@@ -39,6 +39,7 @@ build_changelog() {
 upload_bom() {
 	if [ "${dryrun}" == "true" ]; then
 		echo "WARNING: not uploading BOM ${version}.yml"
+		echo gsutil cp "${bom}" "gs://${bucket}/bom/${version}.yml"
 		return
 	fi
 
@@ -55,6 +56,7 @@ update_versions() {
 upload_versions() {
 	if [ "${dryrun}" == "true" ]; then
 		echo "WARNING: not uploading versions.yml"
+		echo gsutil cp "${versions_file}" "gs://${bucket}/versions.yml"
 		return
 	fi
 
@@ -90,25 +92,22 @@ tag_containers() {
 
 		echo -e "\nTagging ${service} containers at '${tag}' and 'spinnaker-${version}'"
 
-		docker pull "${registry}/${service}:${tag}-unvalidated"
-		docker pull "${registry}/${service}:${tag}-unvalidated-ubuntu"
+		echo regctl image copy "${registry}/${service}:${tag}-unvalidated" "${registry}/${service}:${tag}"
+		echo regctl image copy "${registry}/${service}:${tag}-unvalidated" "${registry}/${service}:spinnaker-${version}"
 
-		docker tag "${registry}/${service}:${tag}-unvalidated" "${registry}/${service}:${tag}"
-		docker tag "${registry}/${service}:${tag}-unvalidated" "${registry}/${service}:spinnaker-${version}"
-
-		docker tag "${registry}/${service}:${tag}-unvalidated-ubuntu" "${registry}/${service}:${tag}-ubuntu"
-		docker tag "${registry}/${service}:${tag}-unvalidated-ubuntu" "${registry}/${service}:spinnaker-${version}-ubuntu"
+		echo regctl image copy "${registry}/${service}:${tag}-unvalidated-ubuntu" "${registry}/${service}:${tag}-ubuntu"
+		echo regctl image copy "${registry}/${service}:${tag}-unvalidated-ubuntu" "${registry}/${service}:spinnaker-${version}-ubuntu"
 
 		if [ "${dryrun}" == "true" ]; then
 			echo "WARNING: not pushing containers for ${service}"
 			continue
 		fi
 
-		docker push "${registry}/${service}:${tag}"
-		docker push "${registry}/${service}:spinnaker-${version}"
+		regctl image copy "${registry}/${service}:${tag}-unvalidated" "${registry}/${service}:${tag}"
+		regctl image copy "${registry}/${service}:${tag}-unvalidated" "${registry}/${service}:spinnaker-${version}"
 
-		docker push "${registry}/${service}:${tag}-ubuntu"
-		docker push "${registry}/${service}:spinnaker-${version}-ubuntu"
+		regctl image copy "${registry}/${service}:${tag}-unvalidated-ubuntu" "${registry}/${service}:${tag}-ubuntu"
+		regctl image copy "${registry}/${service}:${tag}-unvalidated-ubuntu" "${registry}/${service}:spinnaker-${version}-ubuntu"
 
 		echo -e "\n"
 	done
@@ -121,6 +120,7 @@ main() {
 	tag_containers
 	upload_bom
 	update_versions
+	upload_versions
 }
 
 main
