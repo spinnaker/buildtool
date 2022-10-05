@@ -400,7 +400,7 @@ The previous step created a branch in a local copy of your fork here:
 ### Fetch versions.yml
 
 Halyard uses `versions.yml` as the source of truth for available Spinnaker
-versions to deploy. Fetch the file from GCS bucket for editing.
+versions to deploy. Fetch the file from GCS for editing.
 
 ```
 ./dev/buildtool.sh fetch_versions
