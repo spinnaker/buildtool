@@ -114,6 +114,24 @@ class TestVersionsBuilder(BaseTestFixture):
         with self.assertRaises(ValueError):
             builder.add_or_replace_release(release_120, releases)
 
+    def test_build_new_version_with_default_base(self):
+        """Adding a new version to default base_versions_dict should update all of the fields."""
+
+        builder = VersionsBuilder()
+
+        spinnaker_version = "1.29.0"
+        minimum_halyard_version = "1.75.0"
+        latest_halyard_version = "1.99.0"
+        got = builder.build(
+            spinnaker_version,
+            minimum_halyard_version,
+            latest_halyard_version,
+        )
+
+        self.assertEqual(len(got["versions"]), 1)
+        self.assertEqual(got["latestSpinnaker"], spinnaker_version)
+        self.assertEqual(got["latestHalyard"], latest_halyard_version)
+
     def test_build_new_version_latest_halyard_unchanged(self):
         """Adding a new version should update all of the fields."""
 
