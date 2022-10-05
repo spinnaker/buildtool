@@ -428,7 +428,7 @@ versions:
 
 ### Update versions.yml
 
-Add the new Spinnaker release version to `versions.yml`.
+Add a new Spinnaker version to `versions.yml`.
 
 ```
 version=1.27.0
@@ -453,8 +453,8 @@ diff \
 
 ### Publish versions.yml
 
-When ready to release the new Spinnaker version to users, publish the
-`versions.yml` file to GCS bucket.
+When ready to release a new Spinnaker version to users, publish the
+`versions.yml` file to GCS.
 
 ```
 versions_yml_path=source_code/update_versions/versions.yml
