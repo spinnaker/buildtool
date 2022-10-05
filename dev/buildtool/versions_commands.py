@@ -177,7 +177,7 @@ class VersionsBuilder:
         minimum_halyard_version,
         latest_halyard_version=None,
     ):
-        """Build versions.yml. If an optional versions_dict is supplied then update."""
+        """Build versions.yml."""
 
         new_release = self.build_single_release_dict(
             new_spinnaker_version, minimum_halyard_version
