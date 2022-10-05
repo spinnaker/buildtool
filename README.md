@@ -39,14 +39,16 @@ See [testing/citest/README.md](testing/citest/README.md)
 run all unittests:
 
 ```
-./unittest/run_tests.sh
+# Avoid personal git config interfering with tests
+GIT_CONFIG_GLOBAL=/dev/null ./unittest/run_tests.sh
 
 ```
 
 run a specific test:
 
 ```
-python ./unittest/buildtool/git_support_test.py -v
+# Avoid personal git config interfering with tests
+GIT_CONFIG_GLOBAL=/dev/null python ./unittest/buildtool/git_support_test.py -v
 <snip>
 Ran 25 tests in 2.509s
 
