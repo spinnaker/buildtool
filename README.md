@@ -39,14 +39,16 @@ See [testing/citest/README.md](testing/citest/README.md)
 run all unittests:
 
 ```
-./unittest/run_tests.sh
+# Avoid personal git config interfering with tests
+GIT_CONFIG_GLOBAL=/dev/null ./unittest/run_tests.sh
 
 ```
 
 run a specific test:
 
 ```
-python ./unittest/buildtool/git_support_test.py -v
+# Avoid personal git config interfering with tests
+GIT_CONFIG_GLOBAL=/dev/null python ./unittest/buildtool/git_support_test.py -v
 <snip>
 Ran 25 tests in 2.509s
 
@@ -394,3 +396,80 @@ The previous step created a branch in a local copy of your fork here:
 
     1. Raise a PR to:
        [github.com/spinnaker/spinnaker.io](https://github.com/spinnaker/spinnaker/io/pulls)
+
+### Fetch versions.yml
+
+Halyard uses `versions.yml` as the source of truth for available Spinnaker
+versions to deploy. Fetch the file from GCS for editing.
+
+```
+./dev/buildtool.sh fetch_versions
+```
+
+To troubleshoot, check the fetched file.
+
+```
+$ cat output/fetch_versions/versions.yml
+illegalVersions:
+- reason: Broken apache config makes the UI unreachable
+  version: 1.2.0
+- reason: UI does not load
+  version: 1.4.0
+latestHalyard: 1.49.0
+latestSpinnaker: 1.28.1
+versions:
+- alias: v1.28.1
+  changelog: https://spinnaker.io/changelogs/1.28.1-changelog/
+  lastUpdate: 1661279166000
+  minimumHalyardVersion: '1.45'
+  version: 1.28.1
+  <snip>
+```
+
+### Update versions.yml
+
+Add a new Spinnaker version to `versions.yml`.
+
+```
+version=1.27.0
+halyard_version=1.45.0
+latest_halyard_version=1.51.0 # optional
+versions_yml_path=source_code/update_versions/versions.yml
+
+./dev/buildtool.sh update_versions \
+  --versions_yml_path "${versions_path}" \
+  --spinnaker_version "${version}" \
+  --minimum_halyard_version "${halyard_version}" \
+  --latest_halyard_version "${latest_halyard_version}"
+```
+
+To troubleshoot, check input and output `versions.yml` files.
+
+```
+diff \
+  source_code/fetch_versions/versions.yml \
+  source_code/update_versions/versions.yml \
+```
+
+### Publish versions.yml
+
+When ready to release a new Spinnaker version to users, publish the
+`versions.yml` file to GCS.
+
+```
+versions_yml_path=source_code/update_versions/versions.yml
+
+./dev/buildtool.sh publish_versions \
+  --versions_yml_path "${versions_path}" \
+  --dry_run false
+```
+
+To troubleshoot, try a dry run (the default) to confirm paths are correct:
+
+```
+versions_yml_path=source_code/update_versions/versions.yml
+
+./dev/buildtool.sh publish_versions \
+  --versions_yml_path "${versions_path}" \
+  --dry_run true
+```

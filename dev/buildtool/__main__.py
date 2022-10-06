@@ -268,6 +268,7 @@ def main():
             "image",
             "source",
             "spinnaker",
+            "versions",
             "inspection",
         ]
     ]

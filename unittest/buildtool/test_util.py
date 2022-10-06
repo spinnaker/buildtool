@@ -170,6 +170,18 @@ class BaseTestFixture(unittest.TestCase):
         options.output_dir = os.path.join(self.test_root, "output_dir")
         return options
 
+    def patch_function(self, name):
+        patcher = patch(name)
+        hook = patcher.start()
+        self.addCleanup(patcher.stop)
+        return hook
+
+    def patch_method(self, klas, method):
+        patcher = patch.object(klas, method)
+        hook = patcher.start()
+        self.addCleanup(patcher.stop)
+        return hook
+
     def setUp(self):
         self.test_root = os.path.join(self.base_temp_dir, self._testMethodName)
         self.options = self.make_test_options()
@@ -207,18 +219,6 @@ class BaseGitRepoTestFixture(BaseTestFixture):
     @classmethod
     def to_origin(cls, repo_name):
         return cls.repo_commit_map[repo_name]["ORIGIN"]
-
-    def patch_function(self, name):
-        patcher = patch(name)
-        hook = patcher.start()
-        self.addCleanup(patcher.stop)
-        return hook
-
-    def patch_method(self, klas, method):
-        patcher = patch.object(klas, method)
-        hook = patcher.start()
-        self.addCleanup(patcher.stop)
-        return hook
 
     def setUp(self):
         super().setUp()

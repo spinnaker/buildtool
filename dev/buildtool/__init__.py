@@ -32,11 +32,13 @@ SPINNAKER_HALYARD_REPOSITORY_NAME = "halyard"
 
 # Documentation is version agnostic
 SPINNAKER_IO_REPOSITORY_NAME = "spinnaker.io"
+SPINNAKER_CHANGELOG_BASE_URL = "https://spinnaker.io/changelogs"  # /M.m.p-changelog/
 
 # Artifact sources are per GitHub Action build jobs
 SPINNAKER_DEBIAN_REPOSITORY = "https://us-apt.pkg.dev/projects/spinnaker-community"
 SPINNAKER_DOCKER_REGISTRY = "us-docker.pkg.dev/spinnaker-community/docker"
 SPINNAKER_GOOGLE_IMAGE_PROJECT = "marketplace-spinnaker-release"
+SPINNAKER_HALYARD_GCS_BUCKET_NAME = "halconfig"
 
 
 from buildtool.util import (

@@ -1,0 +1,23 @@
+illegalVersions:
+- reason: Broken apache config makes the UI unreachable
+  version: 1.2.0
+- reason: UI does not load
+  version: 1.4.0
+latestHalyard: 1.49.0
+latestSpinnaker: 1.28.1
+versions:
+- alias: v1.28.1
+  changelog: https://spinnaker.io/changelogs/1.28.1-changelog/
+  lastUpdate: 1661279166000
+  minimumHalyardVersion: '1.45'
+  version: 1.28.1
+- alias: v1.27.1
+  changelog: https://spinnaker.io/changelogs/1.27.1-changelog/
+  lastUpdate: 1660858660000
+  minimumHalyardVersion: '1.45'
+  version: 1.27.1
+- alias: v1.26.7
+  changelog: https://gist.github.com/spinnaker-release/e3714a97bbdd3e7c3b4d92adec938e7f
+  lastUpdate: 1625100544812
+  minimumHalyardVersion: '1.41'
+  version: 1.26.7
