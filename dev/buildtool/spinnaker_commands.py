@@ -33,8 +33,12 @@ from buildtool import (
 
 from buildtool.bom_commands import (
     BuildBomCommandFactory,
-    PublishBomCommand,
     PublishBomCommandFactory,
+)
+from buildtool.versions_commands import (
+    FetchVersionsFactory,
+    PublishVersionsFactory,
+    UpdateVersionsFactory,
 )
 from buildtool.source_commands import TagBranchCommandFactory, NewReleaseBranchFactory
 from buildtool.changelog_commands import BuildChangelogFactory, PublishChangelogFactory
@@ -62,10 +66,17 @@ class PublishSpinnakerFactory(CommandFactory):
         )
         self.add_argument(
             parser,
-            "min_halyard_version",
+            "minimum_halyard_version",
             defaults,
             None,
             help="The minimum halyard version required if changed.",
+        )
+        self.add_argument(
+            parser,
+            "latest_halyard_version",
+            defaults,
+            None,
+            help="The latest halyard version available if changed.",
         )
 
 
@@ -245,6 +256,40 @@ class PublishSpinnakerCommand(CommandProcessor):
         command = PublishBomCommandFactory().make_command(options)
         command()
 
+    def __fetch_versions(self, options):
+        """Fetch versions.yml."""
+        logging.debug("Fetching versions.yml - options: %s", options)
+
+        command = FetchVersionsFactory().make_command(options)
+        command()
+
+    def __update_versions(
+        self,
+        versions_yml_path,
+        spinnaker_version,
+        minimum_halyard_version,
+        latest_halyard_version,
+        options,
+    ):
+        """Update versions.yml."""
+        logging.debug("Updating versions.yml - options: %s", options)
+        options.versions_yml_path = versions_yml_path
+        options.spinnaker_version = spinnaker_version
+        options.miniumum_halyard_version = minimum_halyard_version
+        options.latest_halyard_version = latest_halyard_version
+
+        command = UpdateVersionsFactory().make_command(options)
+        command()
+
+    def __publish_versions(self, versions_yml_path, options):
+        """Publish versions.yml."""
+        options.versions_yml_path = versions_yml_path
+        options.dry_run = True
+        logging.debug("Publishing versions.yml - options: %s", options)
+
+        command = PublishVersionsFactory().make_command(options)
+        command()
+
     def __publish_changelog(self, changelog_path, version, options):
         """Publish Changelog."""
         options.changelog_path = changelog_path
@@ -288,20 +333,28 @@ class PublishSpinnakerCommand(CommandProcessor):
         self.__build_changelog(bom_path, previous_version, copy.copy(options))
         changelog_path = "output/publish_spinnaker/changelog.md"
 
-        # Tag containers with regctl
-
         # Build versions.yml
-        # bom = self.__hal.retrieve_bom_version(self.options.bom_version)
-        # bom["version"] = spinnaker_version
-        # bom_path = os.path.join(self.get_output_dir(), spinnaker_version + ".yml")
-        # write_to_path(yaml.safe_dump(bom, default_flow_style=False), bom_path)
+        self.__fetch_versions(copy.copy(options))
+        self.__update_versions(
+            "output/fetch_versions/versions.yml",
+            options.spinnaker_version,
+            options.minimum_halyard_version,
+            options.latest_halyard_version,
+            copy.copy(options),
+        )
 
-        self.__publish_bom(bom_path, copy.copy(options))
+        # Publishing Actions
 
-        # self.__publish_versions(version_path, copy.copy(options))
+        # Tag containers with regctl
 
         self.__publish_changelog(
             changelog_path, options.spinnaker_version, copy.copy(options)
+        )
+
+        self.__publish_bom(bom_path, copy.copy(options))
+
+        self.__publish_versions(
+            "output/update_versions/versions.yml", copy.copy(options)
         )
 
 
