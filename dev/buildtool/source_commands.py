@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Implements fetch_source command for buildtool."""
+"""Implements source commands for buildtool."""
 
 import logging
 import os

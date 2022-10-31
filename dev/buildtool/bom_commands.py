@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Implements build_bom command for buildtool."""
+"""Implements bom commands for buildtool."""
 
 import datetime
 import logging
