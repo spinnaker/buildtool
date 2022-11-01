@@ -237,11 +237,12 @@ class PublishSpinnakerCommand(CommandProcessor):
         release_branch = f"release-{major_minor}.x"
 
         # Tag branches and create release-* branches as required
-        if is_new_minor_version(options.spinnaker_version):
-            self.__tag_branches("master", copy.copy(options))
-            self.__create_branches(release_branch, copy.copy(options))
-        else:
-            self.__tag_branches(release_branch, copy.copy(options))
+        # TODO: Reconcile bumpdeps. Until then tag and branch manually.
+        # if is_new_minor_version(options.spinnaker_version):
+        #     self.__tag_branches("master", copy.copy(options))
+        #     self.__create_branches(release_branch, copy.copy(options))
+        # else:
+        #     self.__tag_branches(release_branch, copy.copy(options))
 
         # TODO: Validation each repository gradle.properties has correct dependency versions.
 

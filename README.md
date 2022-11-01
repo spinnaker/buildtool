@@ -57,6 +57,10 @@ FAILED (errors=4)
 
 ## Release
 
+WARNING: `release-*` branches must be tagged and bumpdeps propagated before
+running this because buildtool tagging & branch creation is disabled in the
+`publish_spinnaker` command below.
+
 Publish a new Spinnaker release in a single command.
 
 By default `buildtool`:
