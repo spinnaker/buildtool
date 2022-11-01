@@ -13,19 +13,11 @@
 # limitations under the License.
 
 import argparse
-import datetime
-import os
-import tempfile
-import textwrap
 import unittest
 
-import yaml
+from test_util import init_runtime, BaseGitRepoTestFixture
 
-import buildtool.__main__ as bomtool_main
 import buildtool.spinnaker_commands
-from buildtool import GitRunner
-
-from test_util import EXTRA_REPO, init_runtime, BaseGitRepoTestFixture
 
 
 class TestSpinnakerCommandFixture(BaseGitRepoTestFixture):
@@ -33,6 +25,24 @@ class TestSpinnakerCommandFixture(BaseGitRepoTestFixture):
         super().setUp()
         self.parser = argparse.ArgumentParser()
         self.subparsers = self.parser.add_subparsers(title="command", dest="command")
+
+    def test_default_publish_spinnaker_options(self):
+        """Test publish_spinnaker default argument options"""
+        registry = {}
+        buildtool.spinnaker_commands.register_commands(registry, self.subparsers, {})
+        self.assertTrue("publish_spinnaker" in registry)
+
+        options = self.parser.parse_args(["publish_spinnaker"])
+        option_dict = vars(options)
+
+        for key in [
+            "spinnaker_version",
+            "latest_halyard_version",
+            "minimum_halyard_version",
+        ]:
+            self.assertIsNone(option_dict[key])
+
+        self.assertEqual(options.dry_run, True)
 
 
 if __name__ == "__main__":

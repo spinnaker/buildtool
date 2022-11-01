@@ -71,6 +71,14 @@ class PublishSpinnakerFactory(CommandFactory):
             None,
             help="The latest halyard version available if changed.",
         )
+        self.add_argument(
+            parser,
+            "dry_run",
+            defaults,
+            True,
+            type=bool,
+            help="Show proposed actions, don't actually do them. Default True.",
+        )
 
 
 class PublishSpinnakerCommand(CommandProcessor):
@@ -84,21 +92,31 @@ class PublishSpinnakerCommand(CommandProcessor):
             options,
             [
                 "spinnaker_version",
-                # "min_halyard_version", # we will use latest in versions.yml if not provided
+                "minimum_halyard_version",
             ],
         )
 
         # Set some defaults that are defined in various other files
         # TODO: Consider making these CONSTANT or importing other factories?
         options.github_hostname = "github.com"
-        options.github_upstream_owner = "spinnaker"
+
+        # Default to suitable values for GitHub Actions running buildtool on git tag
+        if options.github_owner is None:
+            options.github_owner = "spinnaker"
+        if "github_upstream_owner" not in options:
+            options.github_upstream_owner = "spinnaker"
+        if options.dry_run:
+            logging.info(
+                "Dry run selected, disabling push to git and artifact repositories"
+            )
+            options.git_never_push = True
+
         options.exclude_repositories = []
         options.only_repositories = None
 
     def __tag_branches(self, branch, options):
         """Tag branch with next version tag."""
         options.git_branch = branch
-        options.git_never_push = True
         logging.debug("Tagging branches - options: %s", options)
 
         options.only_repositories = "kork"
@@ -125,7 +143,6 @@ class PublishSpinnakerCommand(CommandProcessor):
         """Create release-* branch."""
         options.git_branch = "master"
         options.new_branch = branch
-        options.git_never_push = True
         logging.debug("Creating branches - options: %s", options)
 
         command = NewReleaseBranchFactory().make_command(options)
@@ -161,7 +178,6 @@ class PublishSpinnakerCommand(CommandProcessor):
     def __publish_bom(self, bom_path, options):
         """Publish BOM."""
         options.bom_path = bom_path
-        options.dry_run = True
         logging.debug("Publishing BOM - options: %s", options)
 
         command = PublishBomCommandFactory().make_command(options)
@@ -195,7 +211,6 @@ class PublishSpinnakerCommand(CommandProcessor):
     def __publish_versions(self, versions_yml_path, options):
         """Publish versions.yml."""
         options.versions_yml_path = versions_yml_path
-        options.dry_run = True
         logging.debug("Publishing versions.yml - options: %s", options)
 
         command = PublishVersionsFactory().make_command(options)
