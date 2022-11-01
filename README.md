@@ -57,6 +57,29 @@ FAILED (errors=4)
 
 ## Release
 
+Publish a new Spinnaker release in a single command.
+
+By default `buildtool`:
+
+1. targets `github.com/spinnaker` repositories.
+2. does a dry run, doing all the steps but without pushing back up to git or to
+   any artifact repositories like GCS.
+
+```
+version=1.27.0
+min_hal_version=1.45
+fork_owner=<you>
+
+./dev/buildtool.sh \
+  publish_spinnaker \
+  --spinnaker_version "${version}" \
+  --minimum_halyard_version "${min_hal_version}" \
+  --dry_run true \
+  --github_owner "${fork_owner}"
+```
+
+## Release - Step by Step
+
 ### Tag branches
 
 Tag repositories with their respective next tag.
