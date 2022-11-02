@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    tags:
+    - "v[0-9]+.[0-9]+.[0-9]+"
+    - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
+
+env:
+  # Bump this when new releases require a newer Halyard version.
+  MINIMUM_HALYARD_VERSION: "1.45"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+      - name: Install dependencies with pip
+        run: |
+          pip install -r dev/requirements.txt
+          pip install -r dev/buildtool/requirements.txt
+      - name: Setup git
+        run: |
+          git config --global user.email "sig-platform@spinnaker.io"
+          git config --global user.name "Spinnaker GHA"
+
+      - name: Assemble release info
+        id: release_info
+        run: |
+          echo REPOSITORY_OWNER="${GITHUB_REPOSITORY%/*}" >> $GITHUB_OUTPUT
+          tag="$( echo ${{ github.ref }} | sed 's@refs/tags/@@')"
+          version="${tag##v}"
+          echo "Running publish_spinnaker for version: ${version}"
+          if [[ "${version}" == *-rc* ]]; then
+            echo "Release candidate detected."
+            echo IS_CANDIDATE="true" >> $GITHUB_OUTPUT
+            echo VERSION="${version%%-rc*}" >> $GITHUB_OUTPUT
+            echo "Version: ${version%%-rc*}"
+          else
+            echo IS_CANDIDATE="false" >> $GITHUB_OUTPUT
+            echo VERSION="${version}" >> $GITHUB_OUTPUT
+            echo "Version: ${version}"
+          fi
+
+      - name: Run dry_run of release
+        run: |
+          ./dev/buildtool.sh \
+            publish_spinnaker \
+            --spinnaker_version "${{ steps.release_info.outputs.VERSION }}" \
+            --minimum_halyard_version "${{ env.MINIMUM_HALYARD_VERSION }}" \
+            --github_owner "${{ steps.release_info.outputs.REPOSITORY_OWNER }}" \
+            --dry_run true
+
+      - name: Cat output files for review
+        run: |
+          for f in \
+            output/build_bom/*.yml \
+            output/publish_spinnaker/changelog.md \
+            output/update_versions/versions.yml \
+            ; do echo -e "\n*** ${f} ***"; cat "${f}"; done
+
+      - name: Attach output files to GHA Job
+        uses: actions/upload-artifact@v3
+        with:
+          name: spinnaker_release_${{ steps.release_info.outputs.VERSION }}
+          path: |
+            output/build_bom/*.yml
+            output/publish_spinnaker/changelog.md
+            output/update_versions/versions.yml
