@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Implements build_bom command for buildtool."""
+"""Implements bom commands for buildtool."""
 
 import datetime
 import logging
@@ -25,12 +25,17 @@ from buildtool import (
     SPINNAKER_DEBIAN_REPOSITORY,
     SPINNAKER_DOCKER_REGISTRY,
     SPINNAKER_GOOGLE_IMAGE_PROJECT,
+    SPINNAKER_HALYARD_GCS_BUCKET_NAME,
+    BomSourceCodeManager,
     BranchSourceCodeManager,
+    CommandProcessor,
+    CommandFactory,
     RepositoryCommandFactory,
     RepositoryCommandProcessor,
-    HalRunner,
     GitRunner,
+    check_options_set,
     check_path_exists,
+    check_subprocess,
     raise_and_log_error,
     write_to_path,
     ConfigError,
@@ -134,7 +139,7 @@ class BomBuilder:
             logging.debug(
                 "Loading bom dependencies from %s", self.__bom_dependencies_path
             )
-            with open(self.__bom_dependencies_path) as stream:
+            with open(self.__bom_dependencies_path, encoding="UTF-8") as stream:
                 dependencies = yaml.safe_load(stream.read())
                 logging.debug("Loaded %s", dependencies)
         else:
@@ -236,13 +241,13 @@ class BuildBomCommand(RepositoryCommandProcessor):
                 'Using base bom from path "%s"', options.refresh_from_bom_path
             )
             check_path_exists(options.refresh_from_bom_path, "refresh_from_bom_path")
-            with open(options.refresh_from_bom_path) as stream:
+            with open(options.refresh_from_bom_path, encoding="utf-8") as stream:
                 base_bom = yaml.safe_load(stream.read())
         elif options.refresh_from_bom_version:
             logging.debug(
                 'Using base bom version "%s"', options.refresh_from_bom_version
             )
-            base_bom = HalRunner(options).retrieve_bom_version(
+            base_bom = BomSourceCodeManager.bom_from_gcs_bucket(
                 options.refresh_from_bom_version
             )
         else:
@@ -280,6 +285,8 @@ class BuildBomCommand(RepositoryCommandProcessor):
 
 
 class BuildBomCommandFactory(RepositoryCommandFactory):
+    """Builds BOM - Bill of Materials"""
+
     def __init__(self, **kwargs):
         super().__init__(
             "build_bom",
@@ -292,7 +299,6 @@ class BuildBomCommandFactory(RepositoryCommandFactory):
 
     def init_argparser(self, parser, defaults):
         super().init_argparser(parser, defaults)
-        HalRunner.add_parser_args(parser, defaults)
 
         self.add_argument(
             parser,
@@ -341,7 +347,7 @@ class BuildBomCommandFactory(RepositoryCommandFactory):
             defaults,
             None,
             help="Similar to refresh_from_bom_path but using a version obtained."
-            " from halyard.",
+            " from GCS Bucket.",
         )
         self.add_argument(
             parser,
@@ -355,5 +361,78 @@ class BuildBomCommandFactory(RepositoryCommandFactory):
         )
 
 
+class PublishBomCommand(CommandProcessor):
+    """ "Implements the publish_bom command."""
+
+    def __init__(self, factory, options, **kwargs):
+        super().__init__(factory, options, **kwargs)
+        check_options_set(
+            options,
+            [
+                "bom_path",
+            ],
+        )
+
+    def gcs_upload(self, file, url):
+        """Upload file to GCS Bucket"""
+        result = check_subprocess(f"gsutil cp {file} {url}")
+        logging.info("Published BOM: %s", result)
+
+    def _do_command(self):
+        """Implements CommandProcessor interface."""
+        options = self.options
+        logging.info("options: %s", options)
+
+        check_path_exists(options.bom_path, "bom_path")
+        bom_data = BomSourceCodeManager.bom_from_path(options.bom_path)
+        version = bom_data.get("version")
+
+        if not version:
+            raise_and_log_error(ConfigError("BOM malformed, missing version key"))
+
+        bom_url = f"gs://{SPINNAKER_HALYARD_GCS_BUCKET_NAME}/bom/{version}.yml"
+
+        if options.dry_run:
+            logging.info(
+                "Dry run selected, not publishing %s BOM to: %s", version, bom_url
+            )
+        else:
+            logging.info("Publishing %s BOM to: %s", version, bom_url)
+            self.gcs_upload(options.bom_path, bom_url)
+
+
+class PublishBomCommandFactory(CommandFactory):
+    """Publishes BOM to GCS Bucket"""
+
+    def __init__(self, **kwargs):
+        super().__init__(
+            "publish_bom",
+            PublishBomCommand,
+            "Publish a BOM file.",
+            **kwargs,
+        )
+
+    def init_argparser(self, parser, defaults):
+        super().init_argparser(parser, defaults)
+
+        self.add_argument(
+            parser,
+            "bom_path",
+            defaults,
+            None,
+            help="The path to the local BOM file to publish.",
+        )
+
+        self.add_argument(
+            parser,
+            "dry_run",
+            defaults,
+            True,
+            type=bool,
+            help="Show proposed actions, don't actually do them. Default True.",
+        )
+
+
 def register_commands(registry, subparsers, defaults):
     BuildBomCommandFactory().register(registry, subparsers, defaults)
+    PublishBomCommandFactory().register(registry, subparsers, defaults)

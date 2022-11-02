@@ -37,7 +37,7 @@ import buildtool
 
 import buildtool.__main__ as bomtool_main
 import buildtool.bom_commands
-from buildtool.bom_commands import BomBuilder, BuildBomCommand
+from buildtool.bom_commands import BomBuilder, BuildBomCommand, PublishBomCommand
 
 
 from test_util import (
@@ -49,6 +49,7 @@ from test_util import (
     OUTLIER_REPO,
     OUTLIER_SERVICE,
     BaseGitRepoTestFixture,
+    BaseTestFixture,
     init_runtime,
 )
 
@@ -424,6 +425,83 @@ class TestBomBuilder(BaseGitRepoTestFixture):
             source_info = SourceInfo("BuildThree", summary)
             builder.add_repository(repository, source_info)
             self.assertEqual(prefix[which], builder.determine_most_common_prefix())
+
+
+class TestPublishBomCommand(BaseTestFixture):
+    """Test publish_bom command."""
+
+    def setUp(self):
+        super().setUp()
+        self.parser = argparse.ArgumentParser()
+        self.subparsers = self.parser.add_subparsers()
+
+    def test_default_bom_options(self):
+        """Test publish_bom default argument options"""
+        registry = {}
+        buildtool.bom_commands.register_commands(registry, self.subparsers, {})
+        self.assertTrue("publish_bom" in registry)
+
+        options = self.parser.parse_args(["publish_bom"])
+        option_dict = vars(options)
+
+        self.assertEqual(True, options.dry_run)
+
+        self.assertIsNone(option_dict["bom_path"])
+
+    def test_publish_bom_dry_run(self):
+        """Test publish_bom with dry_run enabled.
+        gcs_upload function should not be called."""
+
+        options = self.options
+
+        options.bom_path = os.path.join(
+            os.path.dirname(__file__), "standard_test_bom.yml"
+        )
+        options.dry_run = True
+
+        mock_gcs_upload = self.patch_method(PublishBomCommand, "gcs_upload")
+
+        defaults = vars(make_default_options(self.options))
+        parser = argparse.ArgumentParser()
+        registry = bomtool_main.make_registry(
+            [buildtool.bom_commands], parser, defaults
+        )
+        bomtool_main.add_standard_parser_args(parser, defaults)
+        factory = registry["publish_bom"]
+        command = factory.make_command(options)
+        command()
+
+        self.assertEqual(0, mock_gcs_upload.call_count)
+
+    def test_publish_bom(self):
+        """Test publish_bom with dry_run disabled.
+        Verify mocked gsutil command is called with test BOM file path and
+        GCS Bucket url generated from the BOM's 'version' key."""
+
+        options = self.options
+
+        options.bom_path = os.path.join(
+            os.path.dirname(__file__), "standard_test_bom.yml"
+        )
+        options.dry_run = False
+
+        mock_gcs_upload = self.patch_method(PublishBomCommand, "gcs_upload")
+
+        defaults = vars(make_default_options(self.options))
+        parser = argparse.ArgumentParser()
+        registry = bomtool_main.make_registry(
+            [buildtool.bom_commands], parser, defaults
+        )
+        bomtool_main.add_standard_parser_args(parser, defaults)
+        factory = registry["publish_bom"]
+        command = factory.make_command(options)
+        command()
+
+        # dry run disabled, upload BOM file (path on disk) to GCS bucket at
+        # version specified in BOM file 'version:' key.
+        mock_gcs_upload.assert_called_once_with(
+            options.bom_path, "gs://halconfig/bom/master-20181122334455.yml"
+        )
 
 
 if __name__ == "__main__":

@@ -20,11 +20,12 @@ import yaml
 
 from buildtool import (
     SPINNAKER_RUNNABLE_REPOSITORY_NAMES,
-    HalRunner,
+    SPINNAKER_HALYARD_GCS_BUCKET_NAME,
     SpinnakerSourceCodeManager,
     add_parser_argument,
     check_kwargs_empty,
     check_path_exists,
+    check_subprocess,
     raise_and_log_error,
     ConfigError,
     UnexpectedError,
@@ -58,7 +59,6 @@ class BomSourceCodeManager(SpinnakerSourceCodeManager):
             return
         parser.added_bom_scm = True
         SpinnakerSourceCodeManager.add_parser_args(parser, defaults)
-        HalRunner.add_parser_args(parser, defaults)
         add_parser_argument(
             parser,
             "bom_path",
@@ -78,8 +78,18 @@ class BomSourceCodeManager(SpinnakerSourceCodeManager):
     def bom_from_path(path):
         """Load a BOM from a file."""
         logging.debug("Loading bom from %s", path)
-        with open(path) as f:
+        with open(path, "r", encoding="utf-8") as f:
             bom_yaml_string = f.read()
+        return yaml.safe_load(bom_yaml_string)
+
+    @staticmethod
+    def bom_from_gcs_bucket(version):
+        """Load a BOM from GCS Bucket."""
+        bom_url = f"gs://{SPINNAKER_HALYARD_GCS_BUCKET_NAME}/bom/{version}.yml"
+        logging.debug("Loading bom from %s", bom_url)
+
+        bom_yaml_string = check_subprocess(f"gsutil cat {bom_url}")
+
         return yaml.safe_load(bom_yaml_string)
 
     @staticmethod
@@ -103,7 +113,7 @@ class BomSourceCodeManager(SpinnakerSourceCodeManager):
             raise_and_log_error(UnexpectedError("Not reachable", cause="NotReachable"))
 
         logging.debug("Retrieving bom version %s", bom_version)
-        return HalRunner(options).retrieve_bom_version(bom_version)
+        return BomSourceCodeManager.bom_from_gcs_bucket(bom_version)
 
     @property
     def bom(self):
@@ -196,9 +206,7 @@ class BomSourceCodeManager(SpinnakerSourceCodeManager):
         bom_commit = check_bom_service(self.__bom, service_name)["commit"]
         if have_commit != bom_commit:
             raise_and_log_error(
-                UnexpectedError(
-                    f'"{git_dir}" is at the wrong commit "{bom_commit}"'
-                )
+                UnexpectedError(f'"{git_dir}" is at the wrong commit "{bom_commit}"')
             )
         return True
 
