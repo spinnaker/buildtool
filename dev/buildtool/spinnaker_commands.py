@@ -62,7 +62,7 @@ class PublishSpinnakerFactory(CommandFactory):
             "minimum_halyard_version",
             defaults,
             None,
-            help="The minimum halyard version required if changed.",
+            help="The minimum halyard version required for this release.",
         )
         self.add_argument(
             parser,

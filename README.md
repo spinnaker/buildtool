@@ -69,6 +69,9 @@ By default `buildtool`:
 2. does a dry run, doing all the steps but without pushing back up to git or to
    any artifact repositories like GCS.
 
+When releasing a new minor version `x.y.0` make sure to update the Release
+Notes per: [Add next release preview](https://github.com/spinnaker/buildtool#for-new-minor-xy0-releases---add-next-release-preview)
+
 ```
 version=1.27.0
 min_hal_version=1.45
