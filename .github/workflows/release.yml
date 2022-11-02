@@ -6,6 +6,21 @@ on:
     - "v[0-9]+.[0-9]+.[0-9]+"
     - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
 
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release version, for example: v1.30.0, v1.31.1-rc.1'
+        type: string
+        required: true
+      dryRun:
+        description: 'Perform a dry_run regardless of tag. "-rc*" are always dry run.'
+        default: 'true'
+        options:
+        - 'true'
+        - 'false'
+        type: choice
+        required: true
+
 env:
   # Bump this when new releases require a newer Halyard version.
   MINIMUM_HALYARD_VERSION: "1.45"
@@ -35,21 +50,38 @@ jobs:
         id: release_info
         run: |
           echo REPOSITORY_OWNER="${GITHUB_REPOSITORY%/*}" >> $GITHUB_OUTPUT
-          tag="$( echo ${{ github.ref }} | sed 's@refs/tags/@@')"
-          version="${tag##v}"
-          echo "Running publish_spinnaker for version: ${version}"
-          if [[ "${version}" == *-rc* ]]; then
-            echo "Release candidate detected."
-            echo IS_CANDIDATE="true" >> $GITHUB_OUTPUT
-            echo VERSION="${version%%-rc*}" >> $GITHUB_OUTPUT
-            echo "Version: ${version%%-rc*}"
+
+          if [[ "${{ inputs.tag }}" != "" ]]; then
+            tag="${{ inputs.tag }}"
           else
-            echo IS_CANDIDATE="false" >> $GITHUB_OUTPUT
-            echo VERSION="${version}" >> $GITHUB_OUTPUT
-            echo "Version: ${version}"
+            tag="$( echo ${{ github.ref }} | sed 's@refs/tags/@@')"
+          fi
+          echo "Using tag: ${tag}"
+
+          semver="${tag##v}"
+          echo "Using semver: ${semver}"
+
+          if [[ "${semver}" == *-rc* ]]; then
+            echo "Release candidate detected."
+            rc="true"
+            version="${semver%%-rc*}"
+          else
+           echo "Final version detected."
+           rc="false"
+           version="${semver}"
           fi
 
-      - name: Run dry_run of release
+          if [[ "${{ inputs.dryRun }}" == "true" ]]; then
+            echo "Manual trigger with dry run selected, overriding release candidate status."
+            rc="true"
+          fi
+
+          echo IS_CANDIDATE="${rc}" >> $GITHUB_OUTPUT
+          echo VERSION="${version}" >> $GITHUB_OUTPUT
+
+          echo "Running publish_spinnaker for version: ${version} - release candidate: ${rc}"
+
+      - name: Publish release - dry run
         run: |
           ./dev/buildtool.sh \
             publish_spinnaker \
