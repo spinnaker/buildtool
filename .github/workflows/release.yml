@@ -59,7 +59,7 @@ jobs:
             --spinnaker_version "${{ inputs.spinnakerVersion }}" \
             --minimum_halyard_version "${{ inputs.minimumHalyardVersion }}" \
             --github_owner "${{ steps.release_info.outputs.REPOSITORY_OWNER }}" \
-            --dry_run true
+            --dry_run ${{ inputs.dryRun }}
 
       - name: Cat output files for review
         run: |
