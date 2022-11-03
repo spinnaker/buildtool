@@ -1,29 +1,25 @@
 name: Release
 
 on:
-  push:
-    tags:
-    - "v[0-9]+.[0-9]+.[0-9]+"
-    - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
-
   workflow_dispatch:
     inputs:
-      tag:
-        description: 'Release version, for example: v1.30.0, v1.31.1-rc.1'
+      spinnakerVersion:
+        description: 'Spinnaker release version, for example: 1.30.0 or 1.30.1'
+        type: string
+        required: true
+      minimumHalyardVersion:
+        description: 'Minimum Halyard version required for release, "major.minor", For example: 1.45'
+        default: '1.45'
         type: string
         required: true
       dryRun:
-        description: 'Perform a dry_run regardless of tag. "-rc*" are always dry run.'
+        description: 'Perform a dry run without publishing to git or artifact repositories.'
         default: 'true'
         options:
         - 'true'
         - 'false'
         type: choice
         required: true
-
-env:
-  # Bump this when new releases require a newer Halyard version.
-  MINIMUM_HALYARD_VERSION: "1.45"
 
 jobs:
   release:
@@ -51,42 +47,17 @@ jobs:
         run: |
           echo REPOSITORY_OWNER="${GITHUB_REPOSITORY%/*}" >> $GITHUB_OUTPUT
 
-          if [[ "${{ inputs.tag }}" != "" ]]; then
-            tag="${{ inputs.tag }}"
-          else
-            tag="$( echo ${{ github.ref }} | sed 's@refs/tags/@@')"
-          fi
-          echo "Using tag: ${tag}"
+          echo "Running publish_spinnaker for:
+            release version: ${{ inputs.spinnakerVersion }}
+            minimum Halyard version: ${{ inputs.minimumHalyardVersion }}
+            dry run enabled: ${{ inputs.dryRun }}"
 
-          semver="${tag##v}"
-          echo "Using semver: ${semver}"
-
-          if [[ "${semver}" == *-rc* ]]; then
-            echo "Release candidate detected."
-            rc="true"
-            version="${semver%%-rc*}"
-          else
-           echo "Final version detected."
-           rc="false"
-           version="${semver}"
-          fi
-
-          if [[ "${{ inputs.dryRun }}" == "true" ]]; then
-            echo "Manual trigger with dry run selected, overriding release candidate status."
-            rc="true"
-          fi
-
-          echo IS_CANDIDATE="${rc}" >> $GITHUB_OUTPUT
-          echo VERSION="${version}" >> $GITHUB_OUTPUT
-
-          echo "Running publish_spinnaker for version: ${version} - release candidate: ${rc}"
-
-      - name: Publish release - dry run
+      - name: Publish release
         run: |
           ./dev/buildtool.sh \
             publish_spinnaker \
-            --spinnaker_version "${{ steps.release_info.outputs.VERSION }}" \
-            --minimum_halyard_version "${{ env.MINIMUM_HALYARD_VERSION }}" \
+            --spinnaker_version "${{ inputs.spinnakerVersion }}" \
+            --minimum_halyard_version "${{ inputs.minimumHalyardVersion }}" \
             --github_owner "${{ steps.release_info.outputs.REPOSITORY_OWNER }}" \
             --dry_run true
 
@@ -101,7 +72,7 @@ jobs:
       - name: Attach output files to GHA Job
         uses: actions/upload-artifact@v3
         with:
-          name: spinnaker_release_${{ steps.release_info.outputs.VERSION }}
+          name: spinnaker_release_${{ inputs.spinnakerVersion }}
           path: |
             output/build_bom/*.yml
             output/publish_spinnaker/changelog.md
