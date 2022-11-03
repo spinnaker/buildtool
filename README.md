@@ -57,20 +57,40 @@ FAILED (errors=4)
 
 ## Release
 
-WARNING: `release-*` branches must be tagged and bumpdeps propagated before
-running this because buildtool tagging & branch creation is disabled in the
-`publish_spinnaker` command below.
+WARNING: Before performing a release:
 
-Publish a new Spinnaker release in a single command.
+- `release-*` branches must be created
+- branches tagged
+- bumpdeps propagated
 
-By default `buildtool`:
+This is because buildtool tagging & branch creation is disabled in the
+`publish_spinnaker` command. TODO: add validation/bumpdep wait support.
+
+When releasing a new minor version `x.y.0` make sure to update the Release
+Notes per: [Add next release preview](https://github.com/spinnaker/buildtool#for-new-minor-xy0-releases---add-next-release-preview)
+
+### Using GitHub Actions
+
+1. Open the [release workflow action](https://github.com/spinnaker/buildtool/actions/workflows/release.yml)
+2. Click `Run workflow` at the top right
+3. Fill out all fields. Do a dry run first and check the job output.
+
+To bump the default `Minimum Halyard Version` edit the `release.yml` workflow
+file.
+
+### Using buildtool
+
+Publish a new Spinnaker release in a single command. GitHub Actions use this
+under the covers.
+
+By default `buildtool publish_spinnaker`:
 
 1. targets `github.com/spinnaker` repositories.
 2. does a dry run, doing all the steps but without pushing back up to git or to
    any artifact repositories like GCS.
 
-When releasing a new minor version `x.y.0` make sure to update the Release
-Notes per: [Add next release preview](https://github.com/spinnaker/buildtool#for-new-minor-xy0-releases---add-next-release-preview)
+When troubleshooting try using your (in sync) forks and disabling `git push`
+and artifactory repository uploads:
 
 ```
 version=1.27.0
