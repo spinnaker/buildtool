@@ -1,4 +1,5 @@
 name: Release
+run-name: 'release: ${{ inputs.spinnakerVersion }} - halyard: ${{ inputs.minimumHalyardVersion }} - dry run: ${{ inputs.dryRun }}'
 
 on:
   workflow_dispatch:
