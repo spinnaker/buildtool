@@ -1,14 +1,26 @@
 name: Release
+run-name: 'release: ${{ inputs.spinnakerVersion }} - halyard: ${{ inputs.minimumHalyardVersion }} - dry run: ${{ inputs.dryRun }}'
 
 on:
-  push:
-    tags:
-    - "v[0-9]+.[0-9]+.[0-9]+"
-    - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
-
-env:
-  # Bump this when new releases require a newer Halyard version.
-  MINIMUM_HALYARD_VERSION: "1.45"
+  workflow_dispatch:
+    inputs:
+      spinnakerVersion:
+        description: 'Spinnaker release version, for example: 1.30.0 or 1.30.1'
+        type: string
+        required: true
+      minimumHalyardVersion:
+        description: 'Minimum Halyard version required for release, "major.minor", For example: 1.45'
+        default: '1.45'
+        type: string
+        required: true
+      dryRun:
+        description: 'Perform a dry run without publishing to git or artifact repositories.'
+        default: 'true'
+        options:
+        - 'true'
+        - 'false'
+        type: choice
+        required: true
 
 jobs:
   release:
@@ -35,28 +47,20 @@ jobs:
         id: release_info
         run: |
           echo REPOSITORY_OWNER="${GITHUB_REPOSITORY%/*}" >> $GITHUB_OUTPUT
-          tag="$( echo ${{ github.ref }} | sed 's@refs/tags/@@')"
-          version="${tag##v}"
-          echo "Running publish_spinnaker for version: ${version}"
-          if [[ "${version}" == *-rc* ]]; then
-            echo "Release candidate detected."
-            echo IS_CANDIDATE="true" >> $GITHUB_OUTPUT
-            echo VERSION="${version%%-rc*}" >> $GITHUB_OUTPUT
-            echo "Version: ${version%%-rc*}"
-          else
-            echo IS_CANDIDATE="false" >> $GITHUB_OUTPUT
-            echo VERSION="${version}" >> $GITHUB_OUTPUT
-            echo "Version: ${version}"
-          fi
 
-      - name: Run dry_run of release
+          echo "Running publish_spinnaker for:
+            release version: ${{ inputs.spinnakerVersion }}
+            minimum Halyard version: ${{ inputs.minimumHalyardVersion }}
+            dry run enabled: ${{ inputs.dryRun }}"
+
+      - name: Publish release
         run: |
           ./dev/buildtool.sh \
             publish_spinnaker \
-            --spinnaker_version "${{ steps.release_info.outputs.VERSION }}" \
-            --minimum_halyard_version "${{ env.MINIMUM_HALYARD_VERSION }}" \
+            --spinnaker_version "${{ inputs.spinnakerVersion }}" \
+            --minimum_halyard_version "${{ inputs.minimumHalyardVersion }}" \
             --github_owner "${{ steps.release_info.outputs.REPOSITORY_OWNER }}" \
-            --dry_run true
+            --dry_run ${{ inputs.dryRun }}
 
       - name: Cat output files for review
         run: |
@@ -69,7 +73,7 @@ jobs:
       - name: Attach output files to GHA Job
         uses: actions/upload-artifact@v3
         with:
-          name: spinnaker_release_${{ steps.release_info.outputs.VERSION }}
+          name: spinnaker_release_${{ inputs.spinnakerVersion }}
           path: |
             output/build_bom/*.yml
             output/publish_spinnaker/changelog.md
