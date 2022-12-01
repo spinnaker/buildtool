@@ -1,5 +1,5 @@
 name: Release
-run-name: 'release: ${{ inputs.spinnakerVersion }} - halyard: ${{ inputs.minimumHalyardVersion }} - dry run: ${{ inputs.dryRun }}'
+run-name: 'release: ${{ inputs.spinnakerVersion }} - halyard: ${{ inputs.minimumHalyardVersion }} / ${{ inputs.latestHalyardVersion }} - dry run: ${{ inputs.dryRun }}'
 
 on:
   workflow_dispatch:
@@ -11,6 +11,11 @@ on:
       minimumHalyardVersion:
         description: 'Minimum Halyard version required for release, "major.minor", For example: 1.45'
         default: '1.45'
+        type: string
+        required: true
+      latestHalyardVersion:
+        description: 'Latest Halyard version to use, "major.minor.patch", For example: 1.45.0'
+        default: '1.54.0'
         type: string
         required: true
       dryRun:
@@ -51,6 +56,7 @@ jobs:
           echo "Running publish_spinnaker for:
             release version: ${{ inputs.spinnakerVersion }}
             minimum Halyard version: ${{ inputs.minimumHalyardVersion }}
+            latest Halyard version: ${{ inputs.latestHalyardVersion }}
             dry run enabled: ${{ inputs.dryRun }}"
 
       - name: Publish release
@@ -59,6 +65,7 @@ jobs:
             publish_spinnaker \
             --spinnaker_version "${{ inputs.spinnakerVersion }}" \
             --minimum_halyard_version "${{ inputs.minimumHalyardVersion }}" \
+            --latest_halyard_version "${{ inputs.latestHalyardVersion }}" \
             --github_owner "${{ steps.release_info.outputs.REPOSITORY_OWNER }}" \
             --dry_run ${{ inputs.dryRun }}
 
