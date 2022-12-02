@@ -67,6 +67,7 @@ jobs:
             --minimum_halyard_version "${{ inputs.minimumHalyardVersion }}" \
             --latest_halyard_version "${{ inputs.latestHalyardVersion }}" \
             --github_owner "${{ steps.release_info.outputs.REPOSITORY_OWNER }}" \
+            --github_oauth_token "${{ secrets.SPINNAKERBOT_PERSONAL_ACCESS_TOKEN }}" \
             --dry_run ${{ inputs.dryRun }}
 
       - name: Cat output files for review
