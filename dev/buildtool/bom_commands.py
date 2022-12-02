@@ -375,6 +375,13 @@ class PublishBomCommand(CommandProcessor):
 
     def gcs_upload(self, file, url):
         """Upload file to GCS Bucket"""
+        # https://github.com/google-github-actions/auth/blob/main/README.md#other-inputs
+        # describes GOOGLE_GHA_CREDS_PATH
+        if "GOOGLE_GHA_CREDS_PATH" in os.environ:
+            creds_path=os.environ["GOOGLE_GHA_CREDS_PATH"]
+            result = check_subprocess(f"gcloud auth activate-service-account --key-file={creds_path}")
+            logging.info("gcloud auth result: %s", result)
+
         result = check_subprocess(f"gsutil cp {file} {url}")
         logging.info("Published BOM: %s", result)
 
