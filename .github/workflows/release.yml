@@ -59,6 +59,15 @@ jobs:
             latest Halyard version: ${{ inputs.latestHalyardVersion }}
             dry run enabled: ${{ inputs.dryRun }}"
 
+      - name: Login to Google Cloud
+        # This is required to publish the bom and versions file
+        #
+        # Only run this on repositories in the 'spinnaker' org, not on forks.
+        if: startsWith(github.repository, 'spinnaker/')
+        uses: 'google-github-actions/auth@v1'
+        # use service account flow defined at: https://github.com/google-github-actions/upload-cloud-storage#authenticating-via-service-account-key-json
+        with:
+          credentials_json: '${{ secrets.GAR_JSON_KEY }}'
       - name: Publish release
         run: |
           ./dev/buildtool.sh \
@@ -67,6 +76,7 @@ jobs:
             --minimum_halyard_version "${{ inputs.minimumHalyardVersion }}" \
             --latest_halyard_version "${{ inputs.latestHalyardVersion }}" \
             --github_owner "${{ steps.release_info.outputs.REPOSITORY_OWNER }}" \
+            --github_oauth_token "${{ secrets.SPINNAKERBOT_PERSONAL_ACCESS_TOKEN }}" \
             --dry_run ${{ inputs.dryRun }}
 
       - name: Cat output files for review

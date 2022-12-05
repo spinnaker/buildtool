@@ -24,6 +24,7 @@ import os
 import re
 import tempfile
 import time
+import urllib.parse
 
 # pylint: disable=no-name-in-module
 # pylint: disable=import-error
@@ -694,6 +695,14 @@ class GitRunner:
             " from a commit to the previous version. Normally this would not"
             " be allowed.",
         )
+        add_parser_argument(
+            parser,
+            "github_oauth_token",
+            defaults,
+            None,
+            help="a Github OAuth access token with permission to push and create PRs in"
+            " https://github.com/spinnaker/spinnaker.io.",
+        )
 
     @staticmethod
     def add_publishing_parser_args(parser, defaults):
@@ -765,9 +774,17 @@ class GitRunner:
         """Return github https url."""
         return f"https://{host}/{owner}/{repo}"
 
+    def make_https_push_url(self, host, owner, repo):
+        """Return github https url appropriate for pushing."""
+        if self.__options.github_oauth_token:
+            # Inspired by https://stackoverflow.com/a/18936804/9572 and https://stackoverflow.com/a/66156992/9572
+            encoded_oauth_token = urllib.parse.quote(self.__options.github_oauth_token, safe='')
+            return f"https://{encoded_oauth_token}@{host}/{owner}/{repo}"
+        return f"https://{host}/{owner}/{repo}"
+
     @staticmethod
     def make_ssh_url(host, owner, repo):
-        """Return github https url."""
+        """Return github git/ssh url."""
         return f"git@{host}:{owner}/{repo}"
 
     @property
@@ -1093,10 +1110,11 @@ class GitRunner:
         """Return the push URL for a given repository from its origin."""
         parts = self.normalize_repo_url(origin)
         if len(parts) == 3:
+            # If there's a github oauth token, use an https URL since it can include the token.
             return (
                 self.make_ssh_url(*parts)
-                if self.__options.github_push_ssh
-                else self.make_https_url(*parts)
+                if (self.__options.github_push_ssh and not self.__options.github_oauth_token)
+                else self.make_https_push_url(*parts)
             )
         return origin
 

@@ -469,7 +469,8 @@ class PublishChangelogCommand(RepositoryCommandProcessor):
         git.check_commit_or_no_changes(git_dir, f'-m "{message}"')
 
         logging.info('Pushing branch="%s" into "%s"', head_branch, repository.origin)
-        git.push_branch_to_origin(git_dir, branch=head_branch)
+        # force push is helpful for the changelog in case the branch already exists
+        git.push_branch_to_origin(git_dir, branch=head_branch, force=True)
 
     def write_new_version(self, repository):
         if repository.name != SPINNAKER_IO_REPOSITORY_NAME:
