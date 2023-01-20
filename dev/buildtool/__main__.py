@@ -264,6 +264,7 @@ def main():
             "apidocs",
             "bom",
             "changelog",
+            "container",
             "halyard",
             "image",
             "source",

@@ -21,6 +21,11 @@ jobs:
           pip install flake8
           pip install -r dev/requirements.txt
           pip install -r dev/buildtool/requirements.txt
+      - name: Install regctl for container image tagging
+        run: |
+          curl -L https://github.com/regclient/regclient/releases/download/v0.4.5/regctl-linux-amd64 >regctl
+          install --mode 755 regctl /usr/local/bin/
+          regctl version
       - name: Setup for tests
         run: |
           git config --global user.email "sig-platform@spinnaker.io"
