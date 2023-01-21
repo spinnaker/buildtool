@@ -28,13 +28,14 @@ from buildtool.bom_commands import (
     BuildBomCommandFactory,
     PublishBomCommandFactory,
 )
+from buildtool.changelog_commands import BuildChangelogFactory, PublishChangelogFactory
+from buildtool.container_commands import TagContainersFactory
+from buildtool.source_commands import TagBranchCommandFactory, NewReleaseBranchFactory
 from buildtool.versions_commands import (
     FetchVersionsFactory,
     PublishVersionsFactory,
     UpdateVersionsFactory,
 )
-from buildtool.source_commands import TagBranchCommandFactory, NewReleaseBranchFactory
-from buildtool.changelog_commands import BuildChangelogFactory, PublishChangelogFactory
 
 
 class PublishSpinnakerFactory(CommandFactory):
@@ -208,6 +209,15 @@ class PublishSpinnakerCommand(CommandProcessor):
         command = UpdateVersionsFactory().make_command(options)
         command()
 
+    def __tag_containers(self, bom_path, spinnaker_version, options):
+        """Tag containers."""
+        logging.debug("Tagging containers - options: %s", options)
+        options.bom_path = bom_path
+        options.spinnaker_version = spinnaker_version
+
+        command = TagContainersFactory().make_command(options)
+        command()
+
     def __publish_versions(self, versions_yml_path, options):
         """Publish versions.yml."""
         options.versions_yml_path = versions_yml_path
@@ -271,8 +281,7 @@ class PublishSpinnakerCommand(CommandProcessor):
         )
 
         # Publishing Actions
-
-        # Tag containers with regctl
+        self.__tag_containers(bom_path, options.spinnaker_version, copy.copy(options))
 
         self.__publish_changelog(
             changelog_path, options.spinnaker_version, copy.copy(options)
