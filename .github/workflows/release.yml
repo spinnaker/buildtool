@@ -64,6 +64,17 @@ jobs:
             latest Halyard version: ${{ inputs.latestHalyardVersion }}
             dry run enabled: ${{ inputs.dryRun }}"
 
+      - name: Login to GAR
+        # This is required to tag docker images
+        #
+        # Only run this on repositories in the 'spinnaker' org, not on forks.
+        if: startsWith(github.repository, 'spinnaker/')
+        uses: docker/login-action@v1
+        # use service account flow defined at: https://github.com/docker/login-action#service-account-based-authentication-1
+        with:
+          registry: us-docker.pkg.dev
+          username: _json_key
+          password: ${{ secrets.GAR_JSON_KEY }}
       - name: Login to Google Cloud
         # This is required to publish the bom and versions file
         #
