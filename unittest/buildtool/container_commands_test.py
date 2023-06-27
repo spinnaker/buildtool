@@ -46,6 +46,7 @@ class TestTagContainersCommand(BaseTestFixture):
         option_dict = vars(options)
 
         self.assertEqual(True, options.dry_run)
+        self.assertEqual("", options.tag_java11)
 
         self.assertIsNone(option_dict["bom_path"])
         self.assertIsNone(option_dict["spinnaker_version"])
@@ -61,6 +62,7 @@ class TestTagContainersCommand(BaseTestFixture):
             os.path.dirname(__file__), "standard_test_bom.yml"
         )
         options.dry_run = True
+        options.tag_java11 = "gate"
 
         mock_regctl_image_copy = self.patch_method(
             TagContainersCommand, "regctl_image_copy"
@@ -89,6 +91,7 @@ class TestTagContainersCommand(BaseTestFixture):
             os.path.dirname(__file__), "standard_test_bom.yml"
         )
         options.dry_run = False
+        options.tag_java11 = "gate"
 
         mock_regctl_image_copy = self.patch_method(
             TagContainersCommand, "regctl_image_copy"
@@ -108,6 +111,7 @@ class TestTagContainersCommand(BaseTestFixture):
         # without "-unvalidated" and with "spinnaker-{version}", 4 variations
         # each service (2 services), 8 permutations.
         # BOM service "monitoring-third-party" should be ignored.
+        # When tag_java11 flag set, extra 4 permutations per service
         calls = [
             call(
                 f"{SPINNAKER_DOCKER_REGISTRY}/gate:7.8.9-20180102030405-unvalidated",
@@ -118,12 +122,28 @@ class TestTagContainersCommand(BaseTestFixture):
                 f"{SPINNAKER_DOCKER_REGISTRY}/gate:7.8.9-20180102030405-ubuntu",
             ),
             call(
+                f"{SPINNAKER_DOCKER_REGISTRY}/gate:7.8.9-20180102030405-java11-unvalidated",
+                f"{SPINNAKER_DOCKER_REGISTRY}/gate:7.8.9-20180102030405-java11",
+            ),
+            call(
+                f"{SPINNAKER_DOCKER_REGISTRY}/gate:7.8.9-20180102030405-java11-unvalidated-ubuntu",
+                f"{SPINNAKER_DOCKER_REGISTRY}/gate:7.8.9-20180102030405-java11-ubuntu",
+            ),
+            call(
                 f"{SPINNAKER_DOCKER_REGISTRY}/gate:7.8.9-20180102030405-unvalidated",
                 f"{SPINNAKER_DOCKER_REGISTRY}/gate:spinnaker-1.2.3",
             ),
             call(
                 f"{SPINNAKER_DOCKER_REGISTRY}/gate:7.8.9-20180102030405-unvalidated-ubuntu",
                 f"{SPINNAKER_DOCKER_REGISTRY}/gate:spinnaker-1.2.3-ubuntu",
+            ),
+            call(
+                f"{SPINNAKER_DOCKER_REGISTRY}/gate:7.8.9-20180102030405-java11-unvalidated",
+                f"{SPINNAKER_DOCKER_REGISTRY}/gate:spinnaker-1.2.3-java11",
+            ),
+            call(
+                f"{SPINNAKER_DOCKER_REGISTRY}/gate:7.8.9-20180102030405-java11-unvalidated-ubuntu",
+                f"{SPINNAKER_DOCKER_REGISTRY}/gate:spinnaker-1.2.3-java11-ubuntu",
             ),
             call(
                 f"{SPINNAKER_DOCKER_REGISTRY}/monitoring-daemon:7.8.9-20180908070605-unvalidated",
@@ -146,7 +166,8 @@ class TestTagContainersCommand(BaseTestFixture):
         mock_regctl_image_copy.assert_has_calls(calls)
 
         # Should only be eight permutations, no more (e.g: NOT monitoring-third-party)
-        self.assertEqual(mock_regctl_image_copy.call_count, 8)
+        # Should be 12 when tagging JRE 11 images for Gate only
+        self.assertEqual(mock_regctl_image_copy.call_count, 12)
 
 
 if __name__ == "__main__":
