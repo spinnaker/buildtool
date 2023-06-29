@@ -26,6 +26,14 @@ on:
         - 'false'
         type: choice
         required: true
+      tagJava11:
+        description: 'Tag Java 11 variants of images.'
+        default: 'true'
+        options:
+          - 'true'
+          - 'false'
+        type: choice
+        required: true
 
 jobs:
   release:
@@ -62,7 +70,8 @@ jobs:
             release version: ${{ inputs.spinnakerVersion }}
             minimum Halyard version: ${{ inputs.minimumHalyardVersion }}
             latest Halyard version: ${{ inputs.latestHalyardVersion }}
-            dry run enabled: ${{ inputs.dryRun }}"
+            dry run enabled: ${{ inputs.dryRun }}
+            tag Java 11 variants: ${{ inputs.tagJava11 }}"
 
       - name: Login to GAR
         # This is required to tag docker images
@@ -93,7 +102,8 @@ jobs:
             --latest_halyard_version "${{ inputs.latestHalyardVersion }}" \
             --github_owner "${{ steps.release_info.outputs.REPOSITORY_OWNER }}" \
             --github_oauth_token "${{ secrets.SPINNAKERBOT_PERSONAL_ACCESS_TOKEN }}" \
-            --dry_run ${{ inputs.dryRun }}
+            --dry_run ${{ inputs.dryRun }} \
+            --tag_java11 ${{ inputs.tagJava11 }}
 
       - name: Cat output files for review
         run: |

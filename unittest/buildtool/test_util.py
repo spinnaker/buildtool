@@ -45,7 +45,7 @@ def init_runtime(options=None):
 
 
 #  These are used to define the standard test repositories
-NORMAL_SERVICE = "gate"
+NORMAL_SERVICE = "front50"
 NORMAL_REPO = NORMAL_SERVICE
 OUTLIER_SERVICE = "monitoring-daemon"
 OUTLIER_REPO = "spinnaker-monitoring"

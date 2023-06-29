@@ -91,9 +91,9 @@ class TestBomRepositoryCommandProcessor(BaseGitRepoTestFixture):
 
         for repository in command.source_repositories:
             self.assertTrue(os.path.exists(repository.git_dir))
-            # gate and spinnaker-monitoring have extra commits after last tag so the
+            # front50 and spinnaker-monitoring have extra commits after last tag so the
             # repo_commit_map won't match the summary we get (which is up to last tag)
-            if repository.name in ["gate", "spinnaker-monitoring"]:
+            if repository.name in ["front50", "spinnaker-monitoring"]:
                 self.assertNotEqual(
                     command.summary_info[repository.name].commit_id,
                     self.repo_commit_map[repository.name][PATCH_BRANCH],
