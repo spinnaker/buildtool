@@ -27,7 +27,7 @@ on:
         type: choice
         required: true
       tagJava11:
-        description: 'Tag Java 11 variants of images.'
+        description: 'Tag Java 11 variants of images. Only set to True for versions after 1.32.0.'
         default: 'true'
         options:
           - 'true'
