@@ -23,6 +23,7 @@ import yaml
 from buildtool import (
     SPINNAKER_DOCKER_REGISTRY,
     SPINNAKER_RUNNABLE_REPOSITORY_NAMES,
+    SPINNAKER_JAVA11_VARIANT_REPOSITORY_NAMES,
     CommandFactory,
     CommandProcessor,
     check_options_set,
@@ -73,6 +74,15 @@ class TagContainersFactory(CommandFactory):
             help="Show proposed actions, don't actually do them. Default True.",
         )
 
+        self.add_argument(
+            parser,
+            "tag_java11",
+            defaults,
+            True,
+            type=bool,
+            help="Tag JRE 11 variants of images for specified services. Default True.",
+        )
+
 
 class TagContainersCommand(CommandProcessor):
     """Implements tag_containers command."""
@@ -118,7 +128,6 @@ class TagContainersCommand(CommandProcessor):
         bom_dict = self.__load_bom_from_path(options.bom_path)
 
         logging.info("Tagging containers in bom: %s", options.bom_path)
-
         for service in bom_dict["services"]:
             if service == "monitoring-third-party":
                 continue
@@ -126,6 +135,9 @@ class TagContainersCommand(CommandProcessor):
             version = bom_dict["services"][service]["version"]
             existing_image = (
                 f"{SPINNAKER_DOCKER_REGISTRY}/{service}:{version}-unvalidated"
+            )
+            existing_image_java11 = (
+                f"{SPINNAKER_DOCKER_REGISTRY}/{service}:{version}-java11-unvalidated"
             )
 
             tag_permutations = [f"{version}", f"spinnaker-{options.spinnaker_version}"]
@@ -140,14 +152,22 @@ class TagContainersCommand(CommandProcessor):
                 continue
 
             logging.info("Tagging container: %s(-ubuntu)", existing_image)
+            if options.tag_java11 and service in SPINNAKER_JAVA11_VARIANT_REPOSITORY_NAMES:
+                logging.info("Tagging JRE 11 container variants: %s(-ubuntu)", existing_image_java11)
 
             for tag in tag_permutations:
-
                 alpine_image = f"{SPINNAKER_DOCKER_REGISTRY}/{service}:{tag}"
                 self.regctl_image_copy(existing_image, alpine_image)
 
                 ubuntu_image = f"{SPINNAKER_DOCKER_REGISTRY}/{service}:{tag}-ubuntu"
                 self.regctl_image_copy(f"{existing_image}-ubuntu", ubuntu_image)
+
+                if options.tag_java11 and service in SPINNAKER_JAVA11_VARIANT_REPOSITORY_NAMES:
+                    alpine_image_java11 = f"{SPINNAKER_DOCKER_REGISTRY}/{service}:{tag}-java11"
+                    self.regctl_image_copy(existing_image_java11, alpine_image_java11)
+
+                    ubuntu_image_java11 = f"{SPINNAKER_DOCKER_REGISTRY}/{service}:{tag}-java11-ubuntu"
+                    self.regctl_image_copy(f"{existing_image_java11}-ubuntu", ubuntu_image_java11)
 
 
 def register_commands(registry, subparsers, defaults):

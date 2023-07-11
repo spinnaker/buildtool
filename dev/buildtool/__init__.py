@@ -2,6 +2,11 @@
 
 # pylint: disable=wrong-import-position
 
+SPINNAKER_JAVA11_VARIANT_REPOSITORY_NAMES = [
+    "front50",
+    "igor"
+]
+
 # These would be required if running from source code
 SPINNAKER_RUNNABLE_REPOSITORY_NAMES = [
     "clouddriver",
@@ -15,6 +20,7 @@ SPINNAKER_RUNNABLE_REPOSITORY_NAMES = [
     "orca",
     "rosco",
 ]
+
 # These are not included in the BOM but are included in some buildtool tasks
 SPINNAKER_RUNNABLE_NON_CORE_REPOSITORY_NAMES = ["keel"]
 

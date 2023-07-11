@@ -310,8 +310,8 @@ class TestBomBuilder(BaseGitRepoTestFixture):
         }
 
         for key, value in bom["services"].items():
-            # gate has extra commit on branch so commit id's should not match
-            if key in ["gate", "monitoring-daemon", "monitoring-third-party"]:
+            # front50 has extra commit on branch so commit id's should not match
+            if key in ["front50", "monitoring-daemon", "monitoring-third-party"]:
                 self.assertNotEqual(
                     value,
                     golden_bom["services"][key],

@@ -80,6 +80,14 @@ class PublishSpinnakerFactory(CommandFactory):
             type=bool,
             help="Show proposed actions, don't actually do them. Default True.",
         )
+        self.add_argument(
+            parser,
+            "tag_java11",
+            defaults,
+            True,
+            type=bool,
+            help="Tag JRE 11 variants of images for specified services. Default True.",
+        )
 
 
 class PublishSpinnakerCommand(CommandProcessor):

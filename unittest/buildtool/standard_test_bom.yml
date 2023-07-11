@@ -11,7 +11,7 @@ dependencies:
   vault:
     version: 0.7.0
 services:
-  gate:
+  front50:
     commit: normalserviceocmmitid
     version: 7.8.9-20180102030405
   monitoring-daemon:
