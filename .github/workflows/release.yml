@@ -114,7 +114,7 @@ jobs:
             ; do echo -e "\n*** ${f} ***"; cat "${f}"; done
 
       - name: Attach output files to GHA Job
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: spinnaker_release_${{ inputs.spinnakerVersion }}
           path: |
