@@ -2,18 +2,6 @@
 
 # pylint: disable=wrong-import-position
 
-SPINNAKER_JAVA11_VARIANT_REPOSITORY_NAMES = [
-    "clouddriver",
-    "echo",
-    "fiat",
-    "front50",
-    "gate",
-    "igor",
-    "kayenta",
-    "orca",
-    "rosco"
-]
-
 # These would be required if running from source code
 SPINNAKER_RUNNABLE_REPOSITORY_NAMES = [
     "clouddriver",
