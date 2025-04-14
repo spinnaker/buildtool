@@ -1,7 +1,51 @@
 queue_rules:
- - name: default
-   conditions:
-     - status-success=build
+  - name: duplicated default from Automatically merge on CI success and review
+    queue_conditions:
+      - base=master
+      - status-success=build
+      - "label=ready to merge"
+      - "approved-reviews-by=@oss-approvers"
+    merge_conditions:
+      - status-success=build
+    merge_method: squash
+  - name: duplicated default from Automatically merge release branch changes on CI success and release manager
+      review
+    queue_conditions:
+      - base~=^release-
+      - status-success=build
+      - "label=ready to merge"
+      - "approved-reviews-by=@release-managers"
+    merge_conditions:
+      - status-success=build
+    merge_method: squash
+  - name: duplicated default from Automatically merge release branch changes on Travis CI success and release
+      manager review
+    queue_conditions:
+      - base~=^release-
+      - status-success=continuous-integration/travis-ci/pr
+      - "label=ready to merge"
+      - "approved-reviews-by=@release-managers"
+    merge_conditions:
+      - status-success=build
+    merge_method: squash
+  - name: duplicated default from Automatically merge PRs from maintainers on CI success and review
+    queue_conditions:
+      - base=master
+      - status-success=build
+      - "label=ready to merge"
+      - "author=@oss-approvers"
+    merge_conditions:
+      - status-success=build
+    merge_method: squash
+  - name: duplicated default from Automatically merge autobump PRs on CI success
+    queue_conditions:
+      - base=master
+      - status-success=build
+      - "label~=autobump-*"
+      - "author:spinnakerbot"
+    merge_conditions:
+      - status-success=build
+    merge_method: squash
 
 pull_request_rules:
   - name: Automatically merge on CI success and review
@@ -11,9 +55,6 @@ pull_request_rules:
       - "label=ready to merge"
       - "approved-reviews-by=@oss-approvers"
     actions:
-      queue:
-        method: squash
-        name: default
       label:
         add: ["auto merged"]
   - name: Automatically merge release branch changes on CI success and release manager review
@@ -23,13 +64,8 @@ pull_request_rules:
       - "label=ready to merge"
       - "approved-reviews-by=@release-managers"
     actions:
-      queue:
-        method: squash
-        name: default
       label:
         add: ["auto merged"]
-  # This rule exists to handle release branches that are still building using Travis CI instead of
-  # using Github actions. It can be deleted once all active release branches are running Github actions.
   - name: Automatically merge release branch changes on Travis CI success and release manager review
     conditions:
       - base~=^release-
@@ -37,9 +73,6 @@ pull_request_rules:
       - "label=ready to merge"
       - "approved-reviews-by=@release-managers"
     actions:
-      queue:
-        method: squash
-        name: default
       label:
         add: ["auto merged"]
   - name: Automatically merge PRs from maintainers on CI success and review
@@ -49,9 +82,6 @@ pull_request_rules:
       - "label=ready to merge"
       - "author=@oss-approvers"
     actions:
-      queue:
-        method: squash
-        name: default
       label:
         add: ["auto merged"]
   - name: Automatically merge autobump PRs on CI success
@@ -61,9 +91,6 @@ pull_request_rules:
       - "label~=autobump-*"
       - "author:spinnakerbot"
     actions:
-      queue:
-        method: squash
-        name: default
       label:
         add: ["auto merged"]
   - name: Request reviews for autobump PRs on CI failure
@@ -75,3 +102,10 @@ pull_request_rules:
     actions:
       request_reviews:
         teams: ["oss-approvers"]
+  - name: Automatically merge PRs from maintainers on CI success and review + Automatically merge autobump
+      PRs on CI success + Automatically merge on CI success and review + Automatically merge release branch
+      changes on CI success and release manager review + Automatically merge release branch changes on Travis
+      CI success and release manager review
+    conditions: []
+    actions:
+      queue:
