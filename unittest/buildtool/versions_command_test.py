@@ -62,7 +62,15 @@ class TestVersionsBuilder(BaseTestFixture):
     def test_get_major_minor_patch_version(self):
         """A version string should get split into an array of strings: major, minor, patch."""
         version = "1.2.3"
-        expected = ["1", "2", "3"]
+        expected = [1, 2, 3]
+        builder = VersionsBuilder()
+        got = builder.get_major_minor_patch_version(version)
+        self.assertListEqual(expected, got)
+
+    def test_get_major_minor_patch_version_with_multiple_digits(self):
+        """A version string should get split into an array of strings: major, minor, patch."""
+        version = "1.2.30"
+        expected = [1, 2, 30]
         builder = VersionsBuilder()
         got = builder.get_major_minor_patch_version(version)
         self.assertListEqual(expected, got)

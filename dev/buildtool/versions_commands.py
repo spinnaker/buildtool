@@ -117,7 +117,7 @@ class VersionsBuilder:
     def get_major_minor_patch_version(version):
         """Split a M.m.p version string into an list of [major, minor, patch]."""
         major, minor, patch = version.split(".")
-        return [major, minor, patch]
+        return [int(major), int(minor), int(patch)]
 
     def add_or_replace_release(self, new_release, versions):
         """Add new minor release versions to version list. If it's a new patch
